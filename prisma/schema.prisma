@@ -1,0 +1,219 @@
+// Translated directly from Arp-main/database/schema.sql.
+// Points at the SAME Postgres database - no data migration needed,
+// this only changes what talks to it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  fullName          String    @map("full_name") @db.VarChar(150)
+  username          String    @unique @db.VarChar(100)
+  password          String    @db.VarChar(255)
+  role              String    @db.VarChar(30) // Admin | Secondary Admin | Reception | Technician
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @map("updated_at")
+  isActive          Boolean   @default(true) @map("is_active")
+  profileImagePath  String?   @map("profile_image_path") @db.VarChar(255)
+  deletedAt         DateTime? @map("deleted_at")
+  isMainAdmin       Boolean   @default(false) @map("is_main_admin")
+
+  customersCreated     Customer[]         @relation("CustomerCreatedBy")
+  repairsAssigned      RepairJob[]        @relation("AssignedTechnician")
+  repairsSecondAdmin   RepairJob[]        @relation("AssignedSecondaryAdmin")
+  repairsAccepted      RepairJob[]        @relation("AcceptedBy")
+  statusChanges        StatusHistory[]
+  receiptsCreated      Receipt[]
+  whatsappPrepared     WhatsappLog[]
+  auditLogs            AuditLog[]
+  notificationsRecv    Notification[]     @relation("NotificationRecipient")
+  notificationsCreated Notification[]     @relation("NotificationCreatedBy")
+  passwordResetTokens  PasswordResetToken[]
+
+  @@map("users")
+}
+
+model LoginAttempt {
+  attemptKey     String    @id @map("attempt_key") @db.Char(64)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockLevel      Int       @default(0) @map("lock_level")
+  lockedUntil    DateTime? @map("locked_until")
+  updatedAt      DateTime  @default(now()) @map("updated_at")
+
+  @@map("login_attempts")
+}
+
+model Customer {
+  id                         Int      @id @default(autoincrement())
+  title                      String?  @db.VarChar(20)
+  fullName                   String   @map("full_name") @db.VarChar(150)
+  phoneNumber                String   @map("phone_number") @db.VarChar(30)
+  outlookEmail               String   @map("outlook_email") @db.VarChar(150)
+  outlookPasswordEncrypted   String   @map("outlook_password_encrypted")
+  personalEmail              String?  @map("personal_email") @db.VarChar(150)
+  regionalOffice              String? @map("regional_office") @db.VarChar(150)
+  createdBy                  Int      @map("created_by")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @default(now()) @map("updated_at")
+
+  creator     User        @relation("CustomerCreatedBy", fields: [createdBy], references: [id])
+  repairJobs  RepairJob[]
+
+  @@map("customers")
+}
+
+model RepairJob {
+  id                         Int       @id @default(autoincrement())
+  jobId                      String    @unique @map("job_id") @db.VarChar(40)
+  receiptNumber               String   @unique @map("receipt_number") @db.VarChar(40)
+  customerId                  Int      @map("customer_id")
+  aucAssetBarcode              String  @unique @map("auc_asset_barcode") @db.VarChar(120)
+  serialNumber                 String  @unique @map("serial_number") @db.VarChar(120)
+  macAddress                   String? @map("mac_address") @db.VarChar(50)
+  hostname                      String? @db.VarChar(255)
+  reportedProblem               String  @map("reported_problem")
+  technicianDiagnosis           String? @map("technician_diagnosis")
+  repairNotes                   String? @map("repair_notes")
+  assignedTechnicianId          Int?    @map("assigned_technician_id")
+  assignedSecondaryAdminId      Int?    @map("assigned_secondary_admin_id")
+  status                        String  @default("Received") @db.VarChar(20)
+  givenByName                   String  @map("given_by_name") @db.VarChar(150)
+  acceptedBy                    Int     @map("accepted_by")
+  receivedAt                    DateTime @default(now()) @map("received_at")
+  readyAt                       DateTime? @map("ready_at")
+  deliveredAt                   DateTime? @map("delivered_at")
+  expectedCompletionDate        DateTime? @map("expected_completion_date") @db.Date
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @default(now()) @map("updated_at")
+
+  customer            Customer        @relation(fields: [customerId], references: [id])
+  technician           User?          @relation("AssignedTechnician", fields: [assignedTechnicianId], references: [id])
+  secondaryAdmin        User?         @relation("AssignedSecondaryAdmin", fields: [assignedSecondaryAdminId], references: [id])
+  acceptedByUser         User         @relation("AcceptedBy", fields: [acceptedBy], references: [id])
+  accessories            Accessories?
+  statusHistory          StatusHistory[]
+  receipts               Receipt[]
+  whatsappLogs           WhatsappLog[]
+
+  @@map("repair_jobs")
+}
+
+model Accessories {
+  id                    Int      @id @default(autoincrement())
+  repairJobId           Int      @unique @map("repair_job_id")
+  chargerReceived       Boolean  @default(false) @map("charger_received")
+  chargerReturned       Boolean  @default(false) @map("charger_returned")
+  networkCableBarcode   String?  @map("network_cable_barcode") @db.VarChar(120)
+  networkCableReturned  Boolean  @default(false) @map("network_cable_returned")
+  bagReceived           Boolean  @default(false) @map("bag_received")
+  bagReturned           Boolean  @default(false) @map("bag_returned")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @map("updated_at")
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+
+  @@map("accessories")
+}
+
+model StatusHistory {
+  id              Int      @id @default(autoincrement())
+  repairJobId     Int      @map("repair_job_id")
+  previousStatus  String?  @map("previous_status") @db.VarChar(20)
+  newStatus       String   @map("new_status") @db.VarChar(20)
+  changedBy       Int      @map("changed_by")
+  changeNote      String?  @map("change_note")
+  changedAt       DateTime @default(now()) @map("changed_at")
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  changedByUser User  @relation(fields: [changedBy], references: [id])
+
+  @@map("status_history")
+}
+
+model Receipt {
+  id                   Int       @id @default(autoincrement())
+  repairJobId          Int       @map("repair_job_id")
+  receiptType          String    @map("receipt_type") @db.VarChar(20)
+  receiptReference     String    @unique @map("receipt_reference") @db.VarChar(50)
+  manualReceiptNumber  String?   @map("manual_receipt_number") @db.VarChar(50)
+  createdBy            Int?      @map("created_by")
+  generatedAt          DateTime  @default(now()) @map("generated_at")
+  printedAt            DateTime? @map("printed_at")
+  printCount           Int       @default(0) @map("print_count")
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  creator   User?     @relation(fields: [createdBy], references: [id])
+
+  @@map("receipts")
+}
+
+model WhatsappLog {
+  id                Int       @id @default(autoincrement())
+  repairJobId       Int       @map("repair_job_id")
+  messageType       String    @map("message_type") @db.VarChar(20)
+  recipientNumber   String    @map("recipient_number") @db.VarChar(30)
+  generatedMessage  String    @map("generated_message")
+  messageStatus     String    @default("Prepared") @map("message_status") @db.VarChar(20)
+  preparedBy        Int?      @map("prepared_by")
+  preparedAt        DateTime  @default(now()) @map("prepared_at")
+  sentAt            DateTime? @map("sent_at")
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  preparer  User?     @relation(fields: [preparedBy], references: [id])
+
+  @@map("whatsapp_logs")
+}
+
+model AuditLog {
+  id               Int      @id @default(autoincrement())
+  performedBy      Int?     @map("performed_by")
+  actionType       String   @map("action_type") @db.VarChar(50)
+  recordType       String   @map("record_type") @db.VarChar(50)
+  recordId         Int?     @map("record_id")
+  recordReference  String?  @map("record_reference") @db.VarChar(120)
+  actionDetails    Json     @default("{}") @map("action_details")
+  reason           String?
+  ipAddress        String?  @map("ip_address")
+  performedAt      DateTime @default(now()) @map("performed_at")
+
+  performer User? @relation(fields: [performedBy], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id                Int       @id @default(autoincrement())
+  recipientUserId   Int       @map("recipient_user_id")
+  createdBy         Int?      @map("created_by")
+  notificationType  String    @map("notification_type") @db.VarChar(60)
+  title             String    @db.VarChar(180)
+  message           String
+  recordReference   String?   @map("record_reference") @db.VarChar(120)
+  isRead            Boolean   @default(false) @map("is_read")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  readAt            DateTime? @map("read_at")
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  creator   User? @relation("NotificationCreatedBy", fields: [createdBy], references: [id])
+
+  @@map("notifications")
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  token      String   @unique @db.VarChar(64)
+  expiresAt  DateTime @map("expires_at")
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
