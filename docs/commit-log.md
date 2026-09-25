@@ -4,6 +4,88 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (10) — Forgot / reset password flow
+
+**Scope:** Migrated `forgot-password.php`, `forgot-password-sent.php`, and
+`reset-password.php`. `/login`'s "Forgot your password?" link now goes
+somewhere real instead of a dead route.
+
+**Changed:**
+- `src/lib/password-reset.ts` — `checkResetToken()`: shared read-only token
+  validation (well-formed 64-hex-char check, exists, not used, not
+  expired), ported from the inline checks at the top of
+  `reset-password.php`. Used by both the GET (validate) and POST (submit)
+  handlers below so the two can't drift out of sync.
+- `src/app/api/auth/forgot-password/route.ts` — `POST`: case-insensitive
+  username lookup (excludes soft-deleted users, matching the login route's
+  `deletedAt: null` filter), expires any outstanding tokens for that user,
+  generates a new 64-hex-char token good for 1 hour. **Always returns 200**
+  regardless of whether the account exists, so response status can't be
+  used to enumerate usernames — matches the original's "always redirect to
+  the same success page" behavior. Only the response body differs
+  (`found: true` + the link, vs. `found: false`).
+- `src/app/api/auth/reset-password/route.ts` — `GET`: validates a token
+  without changing anything, for the reset page to check on load. `POST`:
+  validates again, checks the new password (reuses
+  `isValidNewPassword()` from `src/lib/user-validation.ts`) and
+  confirmation match, then in one transaction: hashes the password via
+  `hashPassword()` (bcrypt cost 12, same as `src/lib/auth.ts` already
+  uses), updates the user, marks the token used, and writes an audit log
+  entry (`performed_by: NULL`, `action_type: 'password_reset'`, reason
+  `"Self-service password reset via token"`, IP from `x-forwarded-for`) —
+  matches `reset-password.php`'s `audit_logs` insert exactly.
+- `src/app/forgot-password/page.tsx` — form + result, **consolidated into
+  one page** (see deviation below).
+- `src/app/reset-password/page.tsx` — validates the token on load (loading
+  → invalid/expired state, or the set-new-password form), password
+  show/hide toggle, lightweight strength label (text only, no animated
+  bar). Wrapped in `<Suspense>` because it reads the token via
+  `useSearchParams()`.
+- `src/middleware.ts` — added `/reset-password`,
+  `/api/auth/forgot-password`, and `/api/auth/reset-password` to
+  `PUBLIC_PATHS` (`/forgot-password` and `/api/auth/login` were already
+  there). Without this, an unauthenticated user hitting a reset link would
+  get bounced to `/login` before ever seeing the reset form.
+
+**Verified:** Not run through `tsc` — no `node_modules`/network in this
+sandbox (same limitation as every session so far; `npm install` fails
+here with a registry 403). Written to match already-established patterns
+in this codebase (transaction shape from
+`api/users/[id]/reset-password/route.ts`, IP extraction from
+`api/auth/login/route.ts`) rather than anything new. **Run
+`npx tsc --noEmit` locally before trusting this compiles.**
+
+**Not verified:** not run against a live DB, not seen in a browser, no
+Postgres available here to confirm the `password_reset_tokens` round-trip.
+
+**Known deviations, called out explicitly:**
+- **Two original pages merged into one, per side of the flow.** The
+  original has `forgot-password.php` (form) redirect to a separate
+  `forgot-password-sent.php` (result), passing the generated link through
+  PHP session state. This port keeps the form and the result on the same
+  page (`/forgot-password`) using client-side React state instead of a
+  redirect — there's no server session to stash the link in between
+  requests here, and putting the raw reset token in a query string just to
+  redirect would leave it sitting in browser history, which is worse than
+  the original's session-based approach. No behavior is lost: same
+  messaging, same "no account found or inactive" wording, same copy-link
+  button. Same simplification precedent as session 6's inline
+  reset-password modal for admins.
+- **No email delivery — intentional, not a gap.** Confirmed via the
+  original source: this is genuinely a no-email internal system already;
+  the PHP version hands the generated link straight back to whoever
+  submitted the form ("admin shares the link"). This port does the same.
+  If real email delivery is ever wanted, that's a new feature request, not
+  something this migration dropped.
+- Password strength meter is a plain text label ("Too weak" → "Very
+  strong"), not the original's animated colored bar — same scoring logic,
+  lighter UI. Cosmetic only.
+- No CSRF token on either new form — consistent with the CSRF-drop
+  decision already flagged as deviation #3 in `docs/status.md` for the
+  login flow; not a new decision made here.
+
+---
+
 ## 2026-09-25 (9) — Terminology fix: "regional" = "Local", not a separate feature
 
 **Scope:** Docs-only correction. `docs/status.md`'s backlog previously

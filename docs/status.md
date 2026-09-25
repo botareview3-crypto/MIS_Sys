@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-25 (session 6)
+Last updated: 2026-09-25 (session 10)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -38,6 +38,11 @@ exactly what's changed, in order. This file is the current snapshot.
 - [x] Users: manage list, add, edit, activate/deactivate, reset password,
       delete (Technician-only, matching original). See commit-log — profile
       image upload and self-service profile page NOT done.
+- [x] Forgot / reset password flow. See commit-log — consolidated the
+      original's two-page forgot-password flow (form page + separate
+      "sent" page) into one page with client-side state; no functional
+      change, just fewer routes. `/login`'s "Forgot your password?" link
+      now goes somewhere real.
 
 ## In progress / not started
 - [ ] **Local / Intra split** — sidebar groups Register Device / Manage
@@ -78,8 +83,6 @@ exactly what's changed, in order. This file is the current snapshot.
 - [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
       base64-in-DB as-is, or move profile images to filesystem/object
       storage as part of the rewrite (original: `includes/profile-images.php`)
-- [ ] Forgot password / reset password flow
-      (original: `app/pages/auth/forgot-password.php`, `reset-password.php`)
 - [ ] Dashboard (real one — current `/dashboard` is a placeholder)
       (original: `dashboard.php`, `reports.php` for dashboard stats)
 - [ ] Repairs: work queue, assign technician, update repair, repair deadlines
@@ -127,15 +130,31 @@ exactly what's changed, in order. This file is the current snapshot.
    environment before trusting the Prisma layer compiles/works.**
 5. No live Postgres connection was available here — the login flow has
    not been tested against a real database yet.
+6. Forgot/reset password is an **internal, no-email system by design**
+   (matches the original exactly): there's no mail server integration —
+   the reset link is generated and handed straight back to whoever
+   submitted the form, same as the original PHP app showing it on the
+   `forgot-password-sent.php` page. This was not a decision made during
+   the rewrite; it's carried over as-is. Flag if the project owner wants
+   real email delivery added as a *new* feature (out of scope for this
+   port).
+7. Same npm/network restriction as deviation #4 — this session's new
+   `/api/auth/forgot-password`, `/api/auth/reset-password` routes and the
+   `/forgot-password`, `/reset-password` pages were not run through
+   `npx tsc --noEmit` (no `node_modules` in this sandbox). Written to
+   match the exact patterns already verified working elsewhere in this
+   codebase (same Prisma transaction shape as
+   `api/users/[id]/reset-password/route.ts`, same `x-forwarded-for` IP
+   extraction as `api/auth/login/route.ts`). **Run `npx tsc --noEmit`
+   locally before trusting this compiles.**
 
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above) — good remaining candidates: repair-deadline background sync
-   (a real decision needed: cron vs. scheduled API route), manufacturer
-   lookup / reveal-outlook-password, forgot/reset password, or the real
-   dashboard.
+   above) — good remaining candidates: real dashboard, repair-deadline
+   background sync (a real decision needed: cron vs. scheduled API
+   route), or manufacturer lookup / reveal-outlook-password.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.
