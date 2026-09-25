@@ -4,6 +4,30 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (9) — Terminology fix: "regional" = "Local", not a separate feature
+
+**Scope:** Docs-only correction. `docs/status.md`'s backlog previously
+carried "Devices: regional registration" as a still-not-done feature
+(mirroring the old app's `register-regional-device.php`). Project owner
+clarified: "regional" was just the old PHP app's name for what this
+rewrite now calls **Local**. It is not a separate registration flow to
+build — Local already uses the standard registration form (per session 8's
+clarification that Local/Intra registration stays identical for now).
+
+**Changed:**
+- `docs/status.md` — removed "regional registration" as a pending item;
+  reworded the nearby "regional-specific validation not ported" deviation
+  note (session 4) to record that it's moot, not outstanding; manufacturer
+  lookup and reveal-outlook-password remain separate NOT-done items,
+  decoupled from the word "regional"; "To resume" candidate list updated
+  to stop suggesting "regional device registration" as a thing to build.
+
+**No code changes this entry** — earlier commit-log entries (sessions 3–4)
+still say "regional" because that was the accurate term for the old app at
+the time; left as historical record, not rewritten.
+
+---
+
 ## 2026-09-25 (8) — Guide placeholder + Local/Intra meaning clarified
 
 **Scope:** Added a third "Guide" item under both Local and Intra sidebar

@@ -28,7 +28,10 @@ exactly what's changed, in order. This file is the current snapshot.
       pagination. See commit-log for exact deviations (search normalization,
       stopgap `any` types pending real `prisma generate`).
 - [x] Devices: view, edit, delete. See commit-log for deviations (no
-      `FOR UPDATE` row locking; regional-specific validation not ported).
+      `FOR UPDATE` row locking; the old PHP app's separate "regional"
+      registration validation rules were never ported — moot now, see
+      note below: "regional" was just the old name for "Local", which
+      uses the standard registration flow, not a special one).
 - [x] Repairs: work queue, update-repair, assign-technician. See commit-log —
       `syncRepairDeadlines()` (overdue-notification background job) is NOT
       ported, needs a real decision on where scheduled jobs run in this stack.
@@ -64,10 +67,14 @@ exactly what's changed, in order. This file is the current snapshot.
       `includes/repair-deadlines.php`) — decide: cron, scheduled API route,
       or something else. Currently nothing generates "repair overdue"
       notifications in the new stack.
-- [ ] Devices: regional registration, manufacturer lookup,
-      reveal-outlook-password — NOT done, still needed
-      (`register-regional-device.php`, `manufacturer-info.php`,
-      `reveal-outlook-password.php`)
+- [ ] Devices: manufacturer lookup, reveal-outlook-password — NOT done,
+      still needed (`manufacturer-info.php`, `reveal-outlook-password.php`).
+      **Not "regional registration"** — clarified 2026-09-25: "regional" in
+      the old PHP app was just the old name for what this rewrite calls
+      "Local". There is no separate regional registration feature to build;
+      Local already uses the standard registration flow (see Local/Intra
+      item above). `register-regional-device.php` is superseded, not
+      pending.
 - [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
       base64-in-DB as-is, or move profile images to filesystem/object
       storage as part of the rewrite (original: `includes/profile-images.php`)
@@ -127,7 +134,8 @@ exactly what's changed, in order. This file is the current snapshot.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
    above) — good remaining candidates: repair-deadline background sync
-   (a real decision needed: cron vs. scheduled API route), regional device
-   registration, forgot/reset password, or the real dashboard.
+   (a real decision needed: cron vs. scheduled API route), manufacturer
+   lookup / reveal-outlook-password, forgot/reset password, or the real
+   dashboard.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.
