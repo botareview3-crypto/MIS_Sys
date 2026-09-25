@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-24 (session 5)
+Last updated: 2026-09-25 (session 6)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -32,8 +32,18 @@ exactly what's changed, in order. This file is the current snapshot.
 - [x] Repairs: work queue, update-repair, assign-technician. See commit-log —
       `syncRepairDeadlines()` (overdue-notification background job) is NOT
       ported, needs a real decision on where scheduled jobs run in this stack.
+- [x] Users: manage list, add, edit, activate/deactivate, reset password,
+      delete (Technician-only, matching original). See commit-log — profile
+      image upload and self-service profile page NOT done.
 
 ## In progress / not started
+- [ ] Profile image upload (`includes/profile-images.php`,
+      `user_profile_images` table) — blocks add-user/edit-user profile
+      photos. Needs a decision: keep base64-in-DB or move to file/object
+      storage, THEN map `user_profile_images` in Prisma, THEN wire up the
+      upload UI.
+- [ ] Self-service profile page (`profile.php`) — a user editing their own
+      name/password/photo. Different from admin-driven Manage Users.
 - [ ] Repair-deadline background sync (`syncRepairDeadlines()` in
       `includes/repair-deadlines.php`) — decide: cron, scheduled API route,
       or something else. Currently nothing generates "repair overdue"
@@ -99,8 +109,8 @@ exactly what's changed, in order. This file is the current snapshot.
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next —
-   recommend `Users management` next (needed by Admin flows already
-   referenced, like technician assignment), or `Notifications` since
-   the sidebar badge and several features already write to that table.
+   recommend `Notifications` next (the sidebar badge already reads this
+   table and several features already write to it), or the
+   `user_profile_images` decision to unblock profile photos.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

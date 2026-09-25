@@ -4,6 +4,58 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (6) — Users management feature
+
+**Scope:** Manage Users list, add, edit, activate/deactivate, reset password,
+delete (technician-only, matching the original exactly). Profile image
+upload and the self-service `profile.php` page are NOT done.
+
+**Changed:**
+- `src/lib/user-validation.ts` — shared full-name/username/password
+  validators, ported from the regexes in `add-user.php`/`edit-user.php`
+- `src/app/api/users/route.ts` — `POST` create user: Secondary-Admin
+  singleton check, duplicate username check, bcrypt hash via
+  `hashPassword()`, audit log
+- `src/app/api/users/[id]/route.ts` — `PATCH` edit (duplicate check, "last
+  Admin can't be demoted" guard, self-demotion guard, diff-based no-op
+  detection, audit log); `DELETE` — **exactly mirrors the original**: only
+  soft-deletes Technician accounts (`is_active=false`, `deleted_at` set),
+  unassigns their repair jobs first. Admin/Reception/Secondary Admin
+  accounts cannot be deleted through this endpoint, by design, same as
+  `delete-user.php`.
+- `src/app/api/users/[id]/status/route.ts` — activate/deactivate, "last
+  active Admin can't be deactivated" guard, self-deactivation guard
+- `src/app/api/users/[id]/reset-password/route.ts` — Admin-driven password
+  reset, audit log
+- `src/app/(app)/users/page.tsx` — list: role-count badges, search, table
+  ordered Admin → Secondary Admin → Reception → Technician then name
+- `src/components/users/UserRowActions.tsx` — edit link, activate/
+  deactivate, reset-password modal, delete modal (Technician rows only) —
+  **simplification**: original has separate pages for reset-password;
+  this port uses an inline modal from the list instead. Same validation,
+  fewer clicks.
+- `src/app/(app)/users/add/page.tsx` + `src/components/users/AddUserForm.tsx`
+- `src/app/(app)/users/[id]/edit/page.tsx` + `src/components/users/EditUserForm.tsx`
+
+**Verified:** `npx tsc --noEmit` — clean
+
+**Not verified:** not run against a live DB
+
+**Known deviations, called out explicitly:**
+- **Profile image upload is NOT ported** — `add-user.php`/`edit-user.php`
+  both handle a `profile_image` file upload via
+  `includes/profile-images.php`, persisting into the still-unmapped
+  `user_profile_images` table. This needs a decision (see status.md) before
+  it can be built: keep base64-in-DB, or move to real file/object storage.
+- Self-service `profile.php` (a user editing their own name/password) is
+  NOT done — Manage Users only covers Admin-driven user management.
+- Same `FOR UPDATE` row-locking gap as devices/repairs — noted, not
+  re-explained here.
+- Reset-password UX intentionally simplified into a modal rather than a
+  separate page (see above) — functionally equivalent, fewer files.
+
+---
+
 ## 2026-09-24 (5) — Repairs / Work Queue feature
 
 **Scope:** Migrated the technician work queue: list + status filter + search,
