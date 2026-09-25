@@ -4,6 +4,38 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (15) — Render build fix: missing `baseUrl` broke `@/*` alias resolution in production
+
+**Scope:** Render deploy kept failing with `Module not found: Can't resolve
+'@/lib/auth'` (and `@/lib/prisma`, `@/lib/devices`,
+`@/components/devices/EditDeviceForm`) on `src/app/(app)/dashboard/page.tsx`
+and `src/app/(app)/devices/[id]/edit/page.tsx`, every attempt, across a
+brand-new Render service, a pinned Node version (20.18.0, ruling out the
+auto-selected 26.10.0), and a confirmed-clean checkout (`ls -la src/lib`
+run as part of the build command showed all files present with correct
+byte sizes seconds before `next build` ran). Not reproducible locally —
+the exact same commit built cleanly elsewhere.
+
+**Root cause:** `tsconfig.json` had `"paths": { "@/*": ["./src/*"] }` but
+no `"baseUrl"`. TypeScript's own type-checker has supported `paths`
+without `baseUrl` since TS 4.1 (why `npx tsc --noEmit` was clean, see
+deviation #7), but Next.js's webpack alias plugin has long-standing,
+version- and timing-sensitive inconsistent behavior resolving `paths`
+without an explicit `baseUrl` — this matches the observed pattern exactly:
+passed on a fast unconstrained machine, failed deterministically and
+near-instantly on Render's constrained free-tier build, always the first
+1-2 entry points webpack touched.
+
+**Changed:**
+- `tsconfig.json` — added `"baseUrl": "."` to `compilerOptions`, matching
+  Next.js's own documented pattern for `@/*` aliases. No other change.
+
+**Not verified:** not yet re-deployed to Render to confirm the fix lands —
+project owner is pushing this next.
+
+---
+
+
 ## 2026-09-25 (14) — Render deployment prep: health check + self-ping + fixed a build-blocking bug
 
 **Scope:** Get the app deployable on Render, matching the original app's
