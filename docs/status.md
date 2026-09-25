@@ -89,9 +89,9 @@ exactly what's changed, in order. This file is the current snapshot.
       `customers.outlook_password_encrypted`)
 
 ## Known deviations / decisions needed from project owner
-1. `CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders
-   still need real values before the delivery-workflow PowerShell snippets
-   in future turns will actually be correct for this machine.
+1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~
+   — **resolved 2026-09-25**: confirmed as `D:\Chrome_Downloads` and
+   `D:\Chrome_Downloads\MIS_Sys`. `CLAUDE.md` updated accordingly.
 2. `lockDurationSeconds()` lockout tiers in `src/lib/auth.ts` are a
    best-effort guess — only read the first ~80 lines of
    `app/pages/auth/login.php`. **Verify against the full file** before

@@ -12,18 +12,17 @@ the PowerShell commands to unzip it and copy it into the local repo, using
 these fixed paths:
 
 - Downloaded zip lands in: `D:\Chrome_Downloads`
-- Local git clone lives at: `D:\Chrome_Downloads\MIS_Sys` — **assumption**:
-  the repo (https://github.com/zementaye/MIS_Sys) hasn't been cloned locally
-  yet, so I picked this path as a sensible default alongside the downloads
-  folder. Tell me if you want it somewhere else and I'll update this file.
+- Local git clone lives at: `D:\Chrome_Downloads\MIS_Sys` — confirmed by the
+  project owner. GitHub repo: https://github.com/zementaye/MIS_Sys (active,
+  everything delivered so far has been pushed).
 
 Template to reuse (update `$zipPath` if the filename changes):
 
 ```powershell
 # --- Paths ---
-$zipPath    = "<DOWNLOADS_FOLDER>\arp-next-updated.zip"
-$extractTo  = "<DOWNLOADS_FOLDER>\arp-next-updated"
-$repoPath   = "<LOCAL_REPO_PATH>"
+$zipPath    = "D:\Chrome_Downloads\arp-next-updated.zip"
+$extractTo  = "D:\Chrome_Downloads\arp-next-updated"
+$repoPath   = "D:\Chrome_Downloads\MIS_Sys"
 
 # --- 1. Unzip the download (into its own temp folder first) ---
 Expand-Archive -Path $zipPath -DestinationPath $extractTo -Force
@@ -67,7 +66,7 @@ exact filename delivered that turn, or use the "grab the newest zip"
 approach below so the user doesn't have to edit it themselves:
 
 ```powershell
-$zipPath = Get-ChildItem "<DOWNLOADS_FOLDER>\arp-next-*.zip" |
+$zipPath = Get-ChildItem "D:\Chrome_Downloads\arp-next-*.zip" |
   Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
 ```
 
