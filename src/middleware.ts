@@ -12,6 +12,11 @@ const PUBLIC_PATHS = [
   // with CRON_SECRET (Authorization: Bearer / ?secret=) instead of the
   // session cookie. See src/app/api/cron/sync-repair-deadlines/route.ts.
   "/api/cron/sync-repair-deadlines",
+  // Keep-alive target for the self-ping loop (src/instrumentation.ts) and
+  // for Render's own healthCheckPath (see render.yaml) — must respond
+  // without a session cookie, or both of those return a redirect-to-login
+  // instead of a plain 200, defeating the point of a health check.
+  "/api/health",
 ];
 
 export async function middleware(req: NextRequest) {
