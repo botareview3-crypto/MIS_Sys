@@ -13,8 +13,13 @@ these fixed paths:
 
 - Downloaded zip lands in: `D:\Chrome_Downloads`
 - Local git clone lives at: `D:\Chrome_Downloads\MIS_Sys` — confirmed by the
-  project owner. GitHub repo: https://github.com/zementaye/MIS_Sys (active,
-  everything delivered so far has been pushed).
+  project owner. GitHub repo (the one Render actually deploys from):
+  https://github.com/botareview3-crypto/MIS_Sys, remote name `botareview`.
+  `origin` also points at this same repo now, but pushing `origin` has
+  failed with a 403 (credential mismatch) — always push the `botareview`
+  remote explicitly, which has working embedded credentials. The original
+  `zementaye/MIS_Sys` repo is no longer the deploy source; don't push there
+  expecting it to reach production.
 
 Template to reuse (update `$zipPath` if the filename changes):
 
@@ -38,7 +43,9 @@ cd $repoPath
 git status
 git add -A
 git commit -m "Describe the change here"
-git push origin main   # or master - check with: git branch --show-current
+git push botareview main   # or master - check with: git branch --show-current
+# (push botareview, not origin - origin's push has 403'd before; botareview
+# has working embedded credentials and is what Render actually deploys from)
 ```
 
 Notes for Claude to keep in mind:
