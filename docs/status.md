@@ -37,6 +37,14 @@ exactly what's changed, in order. This file is the current snapshot.
       image upload and self-service profile page NOT done.
 
 ## In progress / not started
+- [ ] **Local / Intra split** — sidebar now groups Register Device / Manage
+      Devices under two collapsible parent items, "Local" and "Intra"
+      (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). **Nav-structure-only
+      so far**: both groups currently point at the exact same routes/pages —
+      no separate data, permissions, or backend behavior yet. Project owner
+      intends Local and Intra to eventually be genuinely different
+      configurations; that split (routes? data model? permissions?) is not
+      yet decided and needs a real design conversation before building.
 - [ ] Profile image upload (`includes/profile-images.php`,
       `user_profile_images` table) — blocks add-user/edit-user profile
       photos. Needs a decision: keep base64-in-DB or move to file/object

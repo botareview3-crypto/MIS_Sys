@@ -4,6 +4,50 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (7) — CLAUDE.md paths resolved + Local/Intra sidebar split
+
+**Scope:** Two unrelated small changes bundled in one delivery: (1) filled in
+the `CLAUDE.md` delivery-workflow placeholders with the project owner's
+confirmed paths; (2) restructured the sidebar so Register Device / Manage
+Devices sit under two new collapsible groups, "Local" and "Intra".
+
+**Changed:**
+- `CLAUDE.md` — `<DOWNLOADS_FOLDER>` → `D:\Chrome_Downloads`,
+  `<LOCAL_REPO_PATH>` → `D:\Chrome_Downloads\MIS_Sys`, both PowerShell
+  template snippets updated; GitHub repo URL noted as active.
+- `docs/status.md` — deviation #1 marked resolved; new "Local / Intra split"
+  item added under "In progress / not started".
+- `src/lib/nav.ts` — `NavItem` gained an optional `children?: NavItem[]`
+  (and `href` became optional for parent/group items). `Workspace` group now
+  has two parent items, "Local" (`MapPin` icon) and "Intra" (`Network`
+  icon), each with the same `deviceItems` children (Register Device, Manage
+  Devices) that used to be flat in the group.
+- `src/components/Sidebar.tsx` — added collapsible-group rendering: a
+  `NavItem` with `children` renders as a toggle button (chevron
+  down/right, default expanded) instead of a link; its children render
+  indented underneath. Plain items render exactly as before.
+
+**Verified:** Not run through `tsc` — no `node_modules`/network in this
+session (same sandbox limitation as always). Reviewed by eye; only two
+files touched, both isolated to nav/sidebar. **Run `npx tsc --noEmit`
+locally before trusting this compiles.**
+
+**Not verified:** not run against a live DB, not seen in a browser.
+
+**Known deviations / explicitly not done:**
+- This is a **nav-structure-only** change. Local and Intra currently point
+  at the identical `/devices/register` and `/devices` routes — there is no
+  separate data, permissions, or page behind each group yet. The project
+  owner has said this is deliberate for now ("the rest stays the same, we
+  update it later") but the real split (what makes a device "Local" vs.
+  "Intra" — separate routes? a field on the device? separate permissions?)
+  is an open design question, not yet decided.
+- Scoped to Devices only (Register Device / Manage Devices). Other sidebar
+  sections (Work Queue, Users, Administration group) were left untouched —
+  confirm before assuming they should also move under Local/Intra.
+
+---
+
 ## 2026-09-25 (6) — Users management feature
 
 **Scope:** Manage Users list, add, edit, activate/deactivate, reset password,

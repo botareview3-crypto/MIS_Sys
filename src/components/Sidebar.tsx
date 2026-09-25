@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
-import { getNavGroups } from "@/lib/nav";
+import { LogOut, ChevronDown, ChevronRight } from "lucide-react";
+import { getNavGroups, type NavItem } from "@/lib/nav";
 import type { SessionPayload } from "@/lib/auth";
 
 function initials(fullName: string) {
@@ -25,9 +26,19 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { workspace, administration } = getNavGroups(session.role);
+  // Local/Intra (and any future parent items) default to expanded.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   function isActive(href: string) {
     return href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  }
+
+  function isGroupOpen(label: string) {
+    return openGroups[label] ?? true;
+  }
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => ({ ...prev, [label]: !isGroupOpen(label) }));
   }
 
   async function handleLogout() {
@@ -36,6 +47,33 @@ export function Sidebar({
     router.refresh();
   }
 
+  const renderLink = (item: NavItem, keyPrefix: string, indent: boolean) => {
+    const Icon = item.icon;
+    const active = isActive(item.href!);
+    return (
+      <Link
+        key={keyPrefix}
+        href={item.href!}
+        aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+          indent ? "ml-4" : ""
+        } ${
+          active
+            ? "bg-brand-50 text-brand-700"
+            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        }`}
+      >
+        <Icon size={18} aria-hidden />
+        <span className="flex-1">{item.label}</span>
+        {item.showBadge && unreadNotifications > 0 && (
+          <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+            {unreadNotifications}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
   const renderGroup = (label: string, items: ReturnType<typeof getNavGroups>["workspace"]) => (
     <div className="mb-6">
       <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -43,28 +81,36 @@ export function Sidebar({
       </p>
       <div className="space-y-0.5">
         {items.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href + item.label}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                active
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Icon size={18} aria-hidden />
-              <span className="flex-1">{item.label}</span>
-              {item.showBadge && unreadNotifications > 0 && (
-                <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                  {unreadNotifications}
-                </span>
-              )}
-            </Link>
-          );
+          if (item.children && item.children.length > 0) {
+            const Icon = item.icon;
+            const open = isGroupOpen(item.label);
+            return (
+              <div key={item.label}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(item.label)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-expanded={open}
+                >
+                  <Icon size={18} aria-hidden />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {open ? (
+                    <ChevronDown size={16} aria-hidden />
+                  ) : (
+                    <ChevronRight size={16} aria-hidden />
+                  )}
+                </button>
+                {open && (
+                  <div className="mt-0.5 space-y-0.5">
+                    {item.children.map((child) =>
+                      renderLink(child, `${item.label}-${child.href}`, true)
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          return renderLink(item, item.href! + item.label, false);
         })}
       </div>
     </div>
