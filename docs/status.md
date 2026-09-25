@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-25 (session 11)
+Last updated: 2026-09-25 (session 12)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -32,9 +32,13 @@ exactly what's changed, in order. This file is the current snapshot.
       registration validation rules were never ported — moot now, see
       note below: "regional" was just the old name for "Local", which
       uses the standard registration flow, not a special one).
-- [x] Repairs: work queue, update-repair, assign-technician. See commit-log —
-      `syncRepairDeadlines()` (overdue-notification background job) is NOT
-      ported, needs a real decision on where scheduled jobs run in this stack.
+- [x] Repairs: work queue, update-repair, assign-technician. See commit-log.
+- [x] Repair-deadline background sync — `syncRepairDeadlines()` ported to
+      `src/lib/repair-deadlines.ts`, exposed as a secret-protected scheduled
+      endpoint (`GET`/`POST /api/cron/sync-repair-deadlines`), NOT tied to
+      page loads. **Needs an external scheduler configured** (Railway Cron
+      Job or similar) before it actually runs — see commit-log session 12
+      for the full decision and setup steps.
 - [x] Users: manage list, add, edit, activate/deactivate, reset password,
       delete (Technician-only, matching original). See commit-log — profile
       image upload and self-service profile page NOT done.
@@ -77,10 +81,6 @@ exactly what's changed, in order. This file is the current snapshot.
       upload UI.
 - [ ] Self-service profile page (`profile.php`) — a user editing their own
       name/password/photo. Different from admin-driven Manage Users.
-- [ ] Repair-deadline background sync (`syncRepairDeadlines()` in
-      `includes/repair-deadlines.php`) — decide: cron, scheduled API route,
-      or something else. Currently nothing generates "repair overdue"
-      notifications in the new stack.
 - [ ] Devices: manufacturer lookup, reveal-outlook-password — NOT done,
       still needed (`manufacturer-info.php`, `reveal-outlook-password.php`).
       **Not "regional registration"** — clarified 2026-09-25: "regional" in
@@ -162,14 +162,23 @@ exactly what's changed, in order. This file is the current snapshot.
    not-yet-built Audit History page), this inconsistency will surface
    there too. Worth a deliberate decision — and a one-time
    find-and-replace — rather than leaving it to drift further.
+9. **Repair-deadline sync needs a scheduler wired up before it does
+   anything.** `syncRepairDeadlines()` is ported and exposed at
+   `/api/cron/sync-repair-deadlines`, but nothing calls it yet — no
+   overdue notifications will be generated until `CRON_SECRET` is set in
+   the deployment env and an external scheduler (Railway Cron Job,
+   GitHub Actions cron, cron-job.org, etc.) is pointed at that URL on a
+   recurring basis (daily is probably enough, since deadlines are dates
+   not times). See commit-log session 12 for the full reasoning on why
+   this is a standalone endpoint rather than tied to page loads.
 
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above) — good remaining candidates: repair-deadline background sync
-   (a real decision needed: cron vs. scheduled API route), or
-   manufacturer lookup / reveal-outlook-password.
+   above) — good remaining candidates: manufacturer lookup /
+   reveal-outlook-password. (Repair-deadline sync is built — see deviation
+   #9 above for the one remaining infra step: wiring up a scheduler.)
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

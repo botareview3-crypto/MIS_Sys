@@ -4,6 +4,130 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (12) — Repair-deadline background sync
+
+**Scope:** Ported `syncRepairDeadlines()` from
+`includes/repair-deadlines.php` (read in full before porting anything, per
+instructions). Nothing in the new stack generated "repair overdue"
+notifications before this session.
+
+**Architecture decision — scheduled API route, not tied to page loads:**
+The original ran this synchronously inside `includes/auth.php` on every
+authenticated page load. This port instead exposes it as a standalone,
+secret-protected endpoint (`GET`/`POST /api/cron/sync-repair-deadlines`)
+meant to be triggered on a schedule. Reasoning, in short:
+- `CLAUDE.md` already flags that this app's Docker/Railway deployment
+  config doesn't exist yet. Railway's native Cron Job feature is a
+  separate service that would need that config to model itself on —
+  nothing to attach it to yet, so reaching for it now means building on a
+  foundation that isn't there.
+- An HTTP endpoint has zero deployment dependencies. It works today and
+  will slot into whatever scheduler eventually gets set up (a Railway Cron
+  Job hitting this URL with curl, a scheduled GitHub Actions workflow,
+  cron-job.org, anything) without the route itself changing.
+- Mirroring the original exactly (call it on every page load) was
+  considered and rejected: it would add a notifications-table read/write
+  to every authenticated request indefinitely, for a check that only needs
+  to run occasionally — and it still wouldn't fire on days nobody logs in,
+  which is exactly when an unattended overdue job is most likely to go
+  unnoticed.
+
+**This is a real, load-bearing caveat, not a formality: the endpoint does
+nothing until a scheduler is pointed at it.** That's an infra step outside
+this codebase — set `CRON_SECRET` in the deployment environment, then
+configure a scheduler to hit
+`GET https://<deployment>/api/cron/sync-repair-deadlines` with
+`Authorization: Bearer <CRON_SECRET>` (or `?secret=<CRON_SECRET>` as a
+fallback for schedulers that can't set custom headers), on some recurring
+cadence — daily is almost certainly enough, since deadlines are dates, not
+times.
+
+**Changed:**
+- `src/lib/repair-deadlines.ts` — added `syncRepairDeadlines()` next to the
+  existing `validExpectedCompletionDate()`. Same recipient set as the
+  original's `CROSS JOIN LATERAL ... UNION` (job's assigned technician +
+  assigned secondary admin + every active Admin), same dedup intent (one
+  notification per recipient per job, via a pre-fetch of existing
+  `repair_overdue` notifications for the overdue job IDs rather than the
+  original's single atomic `INSERT ... SELECT ... WHERE NOT EXISTS` — see
+  deviations below), same message text (`"<job_id> was expected by <DD Mon
+  YYYY> and is still <status>."`), same `notification_type` value
+  (`repair_overdue`) and `created_by: NULL`. Does **not** write an
+  audit_log entry, matching the original (this function only ever touches
+  `notifications`) — so this doesn't touch the `audit_logs.action_type`
+  naming question from deviation #8.
+- `prisma/schema.prisma` — added `@@index([expectedCompletionDate])` to
+  `RepairJob`, matching the original's partial index
+  (`idx_repair_jobs_expected_completion`). The original's schema-guard
+  (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`) was **not** ported —
+  `expected_completion_date` is already a real Prisma-managed column here,
+  that guard only existed for pre-deadline-feature deployments of the old
+  app.
+- `src/app/api/cron/sync-repair-deadlines/route.ts` — new route, `GET` and
+  `POST` both do the same thing (some schedulers only offer one or the
+  other). Checks `CRON_SECRET` via `Authorization: Bearer` or `?secret=`
+  before calling `syncRepairDeadlines()`. On failure, returns a 500 with
+  the error — a deliberate deviation from the original (which catches and
+  only `error_log()`s, never failing the page load it rode along on); since
+  this route *is* the whole operation now, a failure should be visible to
+  whatever's calling it on a schedule.
+- `src/middleware.ts` — added `/api/cron/sync-repair-deadlines` to
+  `PUBLIC_PATHS`. There's no logged-in user for a scheduled trigger, so it
+  can't go through the session-cookie check like other routes; it guards
+  itself with `CRON_SECRET` instead.
+- `.env.example` — added `CRON_SECRET` with a short explanation.
+- `docs/status.md` — moved repair-deadline sync from "not started" to
+  "done, but needs a scheduler wired up" (new deviation #9); updated the
+  "To resume" candidate list accordingly.
+
+**Verified:** `npx tsc --noEmit` — clean. Unlike every prior session, `npm
+install` actually succeeded in this sandbox this time (registry reachable),
+so this was checked against a real `node_modules`/TypeScript, not just
+reviewed by eye. **However**, `npx prisma generate` / `npx prisma validate`
+still failed the same way as every prior session (`binaries.prisma.sh`
+unreachable — `schema-engine.gz.sha256 - 403 Forbidden`), so `tsc` ran
+against the same stub `.prisma/client` types as before, not a real
+generated client for this schema. Two implicit-`any` errors from that stub
+(on `.map()` callbacks over Prisma query results) were fixed with the same
+explicit-inline-type stopgap already used elsewhere in this codebase (e.g.
+`src/app/api/repairs/[id]/route.ts`'s `admins.map((a: { id: number }) =>
+...)`). **Run `npx prisma generate` and `npx tsc --noEmit` again in a real
+environment before trusting this fully compiles against the real client**,
+and revisit those stopgap types once it does (same standing note as every
+earlier session's `any`-typing caveat).
+
+**Not verified:** not run against a live DB, endpoint not actually hit
+end-to-end (no Postgres available here), and — see above — no scheduler is
+configured anywhere yet, so even once deployed this generates zero
+notifications until that's set up.
+
+**Known deviations, called out explicitly:**
+- **No scheduler wired up yet** — the load-bearing caveat above, repeated
+  here because it's the main thing to act on: this feature is inert until
+  an external cron trigger is configured.
+- **Dedup is no longer a single atomic SQL statement.** The original's
+  `INSERT ... SELECT ... WHERE NOT EXISTS` guarantees no duplicate
+  (recipient, job) notification even under concurrent triggers. This port
+  reads existing notifications, then writes — two overlapping calls to the
+  endpoint (e.g. someone manually re-triggering it while the scheduled run
+  is still in flight) could theoretically both pass the "not already
+  there" check and create a duplicate. Not expected to matter given the
+  intended daily-ish cadence, and a duplicate overdue notification is
+  cosmetic, not data-corrupting — but flagged rather than silently assumed
+  safe. No unique constraint was added to `notifications` to close this
+  gap: doing so blind, without knowing whether the live table already has
+  colliding rows (the original has run in production without one), risks a
+  migration that fails outright — that's a call for the project owner, not
+  something to guess at here.
+- **Message/date formatting reimplemented, not reused.** The original
+  builds the message string in SQL (`TO_CHAR(..., 'DD Mon YYYY')` and
+  string concatenation); this port does it in TypeScript
+  (`formatOverdueDate()`). Same output format, different mechanism —
+  flagging since a formatting bug here wouldn't be caught by comparing
+  against the original's SQL directly.
+
+---
+
 ## 2026-09-25 (11) — Real dashboard
 
 **Scope:** Replaced the `/dashboard` placeholder with a real one. Ported

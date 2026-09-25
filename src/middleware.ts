@@ -8,6 +8,10 @@ const PUBLIC_PATHS = [
   "/api/auth/login",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
+  // No logged-in user for a scheduled trigger — this route guards itself
+  // with CRON_SECRET (Authorization: Bearer / ?secret=) instead of the
+  // session cookie. See src/app/api/cron/sync-repair-deadlines/route.ts.
+  "/api/cron/sync-repair-deadlines",
 ];
 
 export async function middleware(req: NextRequest) {

@@ -101,6 +101,7 @@ model RepairJob {
   receipts               Receipt[]
   whatsappLogs           WhatsappLog[]
 
+  @@index([expectedCompletionDate])
   @@map("repair_jobs")
 }
 
