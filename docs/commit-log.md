@@ -4,6 +4,85 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (13) — Devices: manufacturer lookup + reveal Outlook password
+
+**Scope:** Ported the two remaining Devices sub-features flagged since
+session 4: `manufacturer-info.php` (+ `includes/device-manufacturer.php`)
+and `reveal-outlook-password.php`. Both read in full before porting.
+
+**Changed:**
+- `src/lib/device-manufacturer.ts` — `manufacturerLookup()`, ported from
+  `includes/device-manufacturer.php`: splits a composite identifier label
+  on `,`/`;`/`|` into serial/product-number/warranty-code, detects HP by
+  serial prefix or product-number pattern, builds a manufacturer support
+  URL (HP's own identify page, or a Google search of serial + product
+  number for anything else). Pure function, same logic and regexes as the
+  original translated to JS equivalents.
+- `src/app/(app)/devices/[id]/manufacturer/page.tsx` — new page, ported
+  from `manufacturer-info.php`: identifiers panel (serial, product number,
+  warranty label, AUC asset barcode) + official support actions (identify
+  product / check warranty / find parts), with the HP-specific official
+  URLs substituted in exactly as the original does. **Simplified UI**: uses
+  this app's existing card/Tailwind design system instead of the original's
+  bespoke gradient-hero CSS, and drops the copy-to-clipboard buttons (same
+  info, less UI to maintain — same precedent as other ported pages'
+  "simplification, no functional loss" deviations).
+- `src/app/api/devices/[id]/reveal-outlook-password/route.ts` — new `POST`
+  route, ported from `reveal-outlook-password.php`: role-gated (Admin,
+  Reception, Technician — Secondary Admin NOT included, see deviation
+  below), decrypts `customers.outlook_password_encrypted` via the already-
+  ported `decryptCredential()` (`src/lib/credentials.ts`, in place since
+  session 3 but never actually called until now), writes an audit log
+  (`action_type: 'credential_viewed'`, `record_type: 'repair_job'`,
+  `action_details: { credential: 'outlook_password' }`) whose failure is
+  caught separately so it can't block returning the password — matches the
+  original's nested try/catch exactly. No CSRF token: the original
+  protected this one endpoint with a session CSRF token, but this port
+  follows the CSRF-drop decision already made for the whole codebase
+  (`docs/status.md` deviation #3) rather than reintroducing it for a single
+  route.
+- `src/components/devices/RevealOutlookPasswordButton.tsx` — new client
+  component, ported from the `.credential-reveal` handler in
+  `assets/js/app.js`: "Show" always re-fetches (and re-audit-logs) the
+  password; "Hide" is a pure client-side toggle back to bullets, no
+  re-fetch; a failed reveal shows the error message in place of the
+  password and leaves the button retryable. Same behavior, React instead
+  of vanilla JS DOM manipulation.
+- `src/app/(app)/devices/[id]/page.tsx` — wired both features in: an
+  "Outlook password" row (Customer panel) using the new reveal button, and
+  a "Manufacturer" row (Device panel) showing manufacturer + product number
+  with a "Find more" link to the new `/devices/[id]/manufacturer` page —
+  same placement as the original's view-device.php.
+
+**Verified:** `npx tsc --noEmit` — clean, against a real installed
+`node_modules` (see session 12's note — `npm install` worked in this
+sandbox this time). Same stub-`.prisma/client`-types caveat as session 12
+still applies (`prisma generate` still can't reach its binaries here), but
+none of this session's Prisma usage needed the stopgap `any` typing that
+session 12's did.
+
+**Not verified:** not run against a live DB or a browser — in particular,
+the HP-detection regexes and the composite-identifier splitting are
+unverified against real scanned-label data, and the reveal endpoint's
+decrypt path is unverified against a real `CREDENTIAL_KEY` /
+`outlook_password_encrypted` value.
+
+**Known deviations, called out explicitly:**
+- **Role-visibility inconsistency carried over as-is, not fixed.** The
+  "Show" button is visible to Secondary Admin (page-level role gate is all
+  four roles), but the reveal endpoint denies Secondary Admin (matches the
+  original's own `requireRoles(['Admin','Reception','Technician'])` on
+  `reveal-outlook-password.php` exactly). Per CLAUDE.md, a role-visibility
+  rule is never silently dropped when porting — so this port keeps the
+  exact original behavior, inconsistency included, rather than guessing
+  which side to "fix." See `docs/status.md` deviation #10.
+- No CSRF token on the reveal endpoint (see above) — consistent with, not
+  a new instance of, deviation #3.
+- Copy-to-clipboard buttons on the manufacturer page were dropped —
+  cosmetic simplification only, not a data/behavior change.
+
+---
+
 ## 2026-09-25 (12) — Repair-deadline background sync
 
 **Scope:** Ported `syncRepairDeadlines()` from

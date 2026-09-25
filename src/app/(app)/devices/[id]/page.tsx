@@ -2,7 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { loadDeviceForRole } from "@/lib/devices";
+import { manufacturerLookup } from "@/lib/device-manufacturer";
 import { DeleteDeviceButton } from "@/components/devices/DeleteDeviceButton";
+import { RevealOutlookPasswordButton } from "@/components/devices/RevealOutlookPasswordButton";
 
 function fmt(d: Date | null) {
   if (!d) return "—";
@@ -19,6 +21,8 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
   const device = await loadDeviceForRole(deviceId, session);
   if (!device) notFound();
+
+  const lookup = manufacturerLookup(device.serialNumber);
 
   const canEdit = ["Admin", "Reception", "Technician"].includes(session.role);
   const canDelete = ["Admin", "Technician"].includes(session.role);
@@ -51,6 +55,12 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
               <Row label="Name" value={`${device.customer.title ?? ""} ${device.customer.fullName}`.trim()} />
               <Row label="Phone" value={device.customer.phoneNumber} />
               <Row label="Outlook email" value={device.customer.outlookEmail} />
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-400">Outlook password</dt>
+                <dd className="text-right">
+                  <RevealOutlookPasswordButton deviceId={device.id} />
+                </dd>
+              </div>
               {device.customer.regionalOffice && <Row label="Regional office" value={device.customer.regionalOffice} />}
             </dl>
           </section>
@@ -60,6 +70,16 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             <dl className="mt-3 space-y-2 text-sm">
               <Row label="AUC barcode" value={device.aucAssetBarcode} />
               <Row label="Serial number" value={device.serialNumber} />
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-400">Manufacturer</dt>
+                <dd className="text-right text-slate-700">
+                  {lookup.manufacturer}
+                  {lookup.productNumber && ` · ${lookup.productNumber}`}{" "}
+                  <Link href={`/devices/${device.id}/manufacturer`} className="text-brand-600 hover:underline">
+                    Find more
+                  </Link>
+                </dd>
+              </div>
               <Row label="MAC address" value={device.macAddress ?? "—"} />
               <Row label="Hostname" value={device.hostname ?? "—"} />
               <Row label="Given by" value={device.givenByName} />

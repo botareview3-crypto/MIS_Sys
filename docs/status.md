@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-25 (session 12)
+Last updated: 2026-09-25 (session 13)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -39,6 +39,9 @@ exactly what's changed, in order. This file is the current snapshot.
       page loads. **Needs an external scheduler configured** (Railway Cron
       Job or similar) before it actually runs — see commit-log session 12
       for the full decision and setup steps.
+- [x] Devices: manufacturer lookup, reveal-outlook-password. See commit-log
+      session 13 for the one carried-over inconsistency (reveal button
+      visible to Secondary Admin, endpoint denies them — matches original).
 - [x] Users: manage list, add, edit, activate/deactivate, reset password,
       delete (Technician-only, matching original). See commit-log — profile
       image upload and self-service profile page NOT done.
@@ -81,14 +84,6 @@ exactly what's changed, in order. This file is the current snapshot.
       upload UI.
 - [ ] Self-service profile page (`profile.php`) — a user editing their own
       name/password/photo. Different from admin-driven Manage Users.
-- [ ] Devices: manufacturer lookup, reveal-outlook-password — NOT done,
-      still needed (`manufacturer-info.php`, `reveal-outlook-password.php`).
-      **Not "regional registration"** — clarified 2026-09-25: "regional" in
-      the old PHP app was just the old name for what this rewrite calls
-      "Local". There is no separate regional registration feature to build;
-      Local already uses the standard registration flow (see Local/Intra
-      item above). `register-regional-device.php` is superseded, not
-      pending.
 - [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
       base64-in-DB as-is, or move profile images to filesystem/object
       storage as part of the rewrite (original: `includes/profile-images.php`)
@@ -107,10 +102,12 @@ exactly what's changed, in order. This file is the current snapshot.
 - [ ] Sidebar/nav → modern layout shell, role-aware
       (original: `includes/sidebar.php`, 20KB — defines the full nav/role
       visibility rules, read this before building the new layout shell)
-- [ ] Decide replacement for `whatsapp-message.php` / `credentials.php`
-      (original stores an encrypted Outlook password per customer — check
-      `includes/credentials.php` for the encryption scheme before touching
-      `customers.outlook_password_encrypted`)
+- [ ] Decide replacement for `whatsapp-message.php` (original stores an
+      encrypted Outlook password per customer via `includes/credentials.php`
+      — that encryption scheme is already ported and in active use, see
+      `src/lib/credentials.ts` — `encryptCredential()` at device
+      registration, `decryptCredential()` at reveal, session 13. This item
+      is now just about the WhatsApp message-prep feature itself.)
 
 ## Known deviations / decisions needed from project owner
 1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~
@@ -171,14 +168,29 @@ exactly what's changed, in order. This file is the current snapshot.
    recurring basis (daily is probably enough, since deadlines are dates
    not times). See commit-log session 12 for the full reasoning on why
    this is a standalone endpoint rather than tied to page loads.
+10. **A role-visibility inconsistency in the original was carried over
+    deliberately, not fixed.** On the device detail page, the "Show"
+    button for the Outlook password is visible to all four roles that can
+    view the page (Admin, Secondary Admin, Reception, Technician) — same
+    as the original. But the reveal endpoint itself only allows Admin,
+    Reception, Technician (also matching the original exactly) — so a
+    Secondary Admin sees the button but gets a 403 if they click it. Per
+    CLAUDE.md ("never silently drop a role-visibility rule when porting a
+    page"), this port keeps that exact behavior rather than guessing
+    which side was the "real" intent. Flag if the project owner wants it
+    resolved one way or the other.
 
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above) — good remaining candidates: manufacturer lookup /
-   reveal-outlook-password. (Repair-deadline sync is built — see deviation
-   #9 above for the one remaining infra step: wiring up a scheduler.)
+   above). Repair-deadline sync and manufacturer lookup / reveal-outlook-
+   password are both built — see deviations #9 and #10 above for what's
+   still open on each. Good next candidates: Receipts (preview/printed/
+   PDF export), WhatsApp message prep, or Reports + audit history (the
+   latter should probably wait on deciding deviation #8's audit_logs
+   naming drift first, since it's the first feature that would actually
+   query by `action_type`).
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.
