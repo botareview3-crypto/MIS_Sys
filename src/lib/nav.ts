@@ -11,6 +11,7 @@ import {
   HardDriveDownload,
   MapPin,
   Network,
+  BookOpen,
 } from "lucide-react";
 import type { SessionPayload } from "@/lib/auth";
 
@@ -33,9 +34,14 @@ export type NavItem = {
  * "Local" / "Intra" split (added 2026-09-25): the existing device
  * register/manage items now live under two collapsible groups instead of
  * flat in Workspace. Both groups currently point at the SAME routes/pages
- * — this is a nav-structure-only change for now. The project owner intends
- * to split Local vs. Intra into genuinely different configurations
- * (routes/data/behavior) later; do not invent that split yet.
+ * — this is a nav-structure-only change for now. Registration and
+ * management stay identical between Local and Intra for now (project
+ * owner: "the registering system is going to be the same for now, we'll
+ * update them later to make them quicker"). The real-world difference is
+ * in how the computers themselves get configured, not in this app yet —
+ * do not invent per-group fields/logic without a real design conversation.
+ * A third child, "Guide", was added under both groups on 2026-09-25 as an
+ * intentionally blank placeholder (`/guide`) — content to be written later.
  */
 export function getNavGroups(role: SessionPayload["role"]) {
   const isAdmin = role === "Admin";
@@ -47,6 +53,7 @@ export function getNavGroups(role: SessionPayload["role"]) {
       ? [{ href: "/devices/register", label: "Register Device", icon: PlusSquare }]
       : []),
     { href: "/devices", label: "Manage Devices", icon: HardDrive },
+    { href: "/guide", label: "Guide", icon: BookOpen },
   ];
 
   const workspace: NavItem[] = [

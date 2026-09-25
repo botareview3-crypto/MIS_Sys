@@ -37,14 +37,22 @@ exactly what's changed, in order. This file is the current snapshot.
       image upload and self-service profile page NOT done.
 
 ## In progress / not started
-- [ ] **Local / Intra split** — sidebar now groups Register Device / Manage
-      Devices under two collapsible parent items, "Local" and "Intra"
-      (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). **Nav-structure-only
-      so far**: both groups currently point at the exact same routes/pages —
-      no separate data, permissions, or backend behavior yet. Project owner
-      intends Local and Intra to eventually be genuinely different
-      configurations; that split (routes? data model? permissions?) is not
-      yet decided and needs a real design conversation before building.
+- [ ] **Local / Intra split** — sidebar groups Register Device / Manage
+      Devices / Guide under two collapsible parent items, "Local" and
+      "Intra" (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). Clarified
+      2026-09-25: the real-world difference is in how the computers
+      themselves get *configured* (different for Local vs. Intra setups) —
+      **not** in how they're registered or managed in this app, which stay
+      identical for now ("we'll update them later to make them quicker").
+      So this is still nav-structure-only: both groups point at the exact
+      same `/devices/register` and `/devices` routes, no separate data or
+      permissions yet. A third child, **Guide** (`/guide`), was added under
+      both groups as an intentionally blank placeholder — content to be
+      written later, no design decision needed yet.
+- [ ] **Deprioritized by project owner (2026-09-25):** Profile image upload
+      and Notifications (list, mark read) — profile photos aren't actually
+      used in practice, and notifications aren't a current priority. Left in
+      this list for completeness but not next up.
 - [ ] Profile image upload (`includes/profile-images.php`,
       `user_profile_images` table) — blocks add-user/edit-user profile
       photos. Needs a decision: keep base64-in-DB or move to file/object
@@ -116,9 +124,10 @@ exactly what's changed, in order. This file is the current snapshot.
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
-3. Say which item from "In progress / not started" to pick up next —
-   recommend `Notifications` next (the sidebar badge already reads this
-   table and several features already write to it), or the
-   `user_profile_images` decision to unblock profile photos.
+3. Say which item from "In progress / not started" to pick up next.
+   Notifications and profile images are explicitly deprioritized (see
+   above) — good remaining candidates: repair-deadline background sync
+   (a real decision needed: cron vs. scheduled API route), regional device
+   registration, forgot/reset password, or the real dashboard.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

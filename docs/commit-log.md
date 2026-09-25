@@ -4,6 +4,43 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (8) — Guide placeholder + Local/Intra meaning clarified
+
+**Scope:** Added a third "Guide" item under both Local and Intra sidebar
+groups (blank placeholder page). Clarified in docs what Local vs. Intra
+actually means, per project owner: the difference is in how computers get
+*configured* in real life, not in how they're registered/managed in this
+app — registration and management stay identical between the two groups
+for now.
+
+**Changed:**
+- `src/app/(app)/guide/page.tsx` — new blank placeholder page ("Content
+  coming later"), shared route (`/guide`) linked from both Local and Intra.
+- `src/lib/nav.ts` — `deviceItems` (shared children of both Local and
+  Intra) gained a third entry, "Guide" → `/guide`, `BookOpen` icon. Doc
+  comment above `getNavGroups` rewritten to record the clarified Local/
+  Intra meaning so a future session doesn't have to re-derive it.
+- `docs/status.md` — Local/Intra item rewritten with the clarification and
+  the Guide addition.
+
+**Verified:** Not run through `tsc` — no `node_modules`/network in this
+session (same sandbox limitation as always). Reviewed by eye; changes are
+additive and isolated to nav/guide. **Run `npx tsc --noEmit` locally before
+trusting this compiles.**
+
+**Not verified:** not run against a live DB, not seen in a browser.
+
+**Known deviations / explicitly not done:**
+- Still nav-structure-only: Local and Intra point at the identical
+  `/devices/register`, `/devices`, and now `/guide` routes. No field or
+  logic exists anywhere to actually distinguish a "Local" device from an
+  "Intra" device — that's explicitly deferred ("we'll update them later to
+  make them quicker").
+- `/guide` content is intentionally empty — project owner said to leave it
+  blank and finish it at the end.
+
+---
+
 ## 2026-09-25 (7) — CLAUDE.md paths resolved + Local/Intra sidebar split
 
 **Scope:** Two unrelated small changes bundled in one delivery: (1) filled in
