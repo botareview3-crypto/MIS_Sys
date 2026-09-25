@@ -102,8 +102,18 @@ $zipPath = Get-ChildItem "D:\Chrome_Downloads\arp-next-*.zip" |
   must be checked against that file.
 - Original app (`Arp-main/`) is the behavior reference only — do not run it,
   do not edit it, just read it before reimplementing a feature.
-- Deployment target: same as original — Railway, Docker-based (original
-  `Dockerfile`/`railway.json` need a Node equivalent, not yet written).
+- Deployment target: **Render**, not Railway. Correction made 2026-09-25:
+  `Arp-main/railway.json` exists, but `Arp-main/docker-entrypoint.sh` and
+  `Arp-main/health.php` both explicitly reference "Render's free tier"
+  spin-down behavior in their comments — the original app is actually
+  deployed on Render (the `railway.json` looks like a leftover from an
+  earlier or abandoned Railway attempt). This rewrite targets Render
+  accordingly: native Node runtime via `render.yaml` (no Dockerfile needed
+  — see that file's comment for why), plus a self-ping loop
+  (`src/instrumentation.ts` + `GET /api/health`) ported from the
+  original's `docker-entrypoint.sh` background loop, to stop the free
+  tier's 15-minute idle spin-down. See commit-log session 14 for the full
+  deploy steps.
 
 ## Things Claude should never do here
 

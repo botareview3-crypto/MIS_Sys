@@ -4,6 +4,84 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (14) — Render deployment prep: health check + self-ping + fixed a build-blocking bug
+
+**Scope:** Get the app deployable on Render, matching the original app's
+actual host (see deviation #11 below — not Railway, despite `CLAUDE.md`
+and `railway.json` saying so). Read `Arp-main/Dockerfile`,
+`docker-entrypoint.sh`, `health.php`, and `railway.json` in full first.
+
+**Changed:**
+- `src/app/api/health/route.ts` — new route, ported from `health.php`:
+  plain `200 ok`, `text/plain`, `Cache-Control: no-store`, no DB work.
+- `src/instrumentation.ts` — new file, ported from `docker-entrypoint.sh`'s
+  `APP_BASE_URL` background loop: self-pings `/api/health` every 10
+  minutes (same interval as the original's `sleep 600`) so Render's free
+  tier doesn't spin the service down after 15 minutes idle. Uses Next.js's
+  `register()` instrumentation hook instead of a shell background job;
+  guarded to the Node runtime only (`register()` also fires in the Edge
+  runtime, which the original's shell-loop approach has no equivalent
+  concern for). Defaults to Render's auto-set `RENDER_EXTERNAL_URL`; an
+  `APP_BASE_URL` env var overrides it (custom domain, non-Render host, or
+  local testing). No-ops with neither set, e.g. local dev.
+- `next.config.js` — **replaces `next.config.ts`**, see deviation #12: the
+  `.ts` variant isn't valid until Next.js 15 and was silently failing
+  `next build` since the original scaffold. New file also adds
+  `experimental.instrumentationHook = true`, required on 14.x for
+  `src/instrumentation.ts` to run at all (stable without the flag from 15
+  on).
+- `render.yaml` — new Render Blueprint: native Node runtime (`env: node`),
+  not Docker — this app only needs `npm install && npm run build` /
+  `npm start`, so there's nothing for a Dockerfile to add here, unlike the
+  original PHP app's Docker-based setup (which exists to run PHP migration
+  scripts and a custom built-in-server invocation). `healthCheckPath:
+  /api/health`. Secrets (`DATABASE_URL`, `AUTH_SECRET`, `CREDENTIAL_KEY`,
+  `CRON_SECRET`) are `sync: false` — set by hand in the Render dashboard,
+  never committed.
+- `package.json` — added `postinstall: prisma generate` (Render runs
+  `npm install` before the build command; without a `postinstall` hook the
+  Prisma client would never get generated on a fresh deploy) and an
+  `engines.node` floor (`>=18.18.0`).
+- `.env.example` — documented `APP_BASE_URL` as the self-ping override.
+- `CLAUDE.md` — corrected the deployment-target note (Railway → Render,
+  see deviation #11) and pointed at this session for the deploy steps.
+
+**Verified, in this sandbox:**
+- `npx tsc --noEmit` — clean (real `node_modules`, `npm install` reached
+  the npm registry fine this session).
+- `npx next build` — compiles and typechecks successfully, gets all the
+  way to "Collecting page data" before failing **solely** on the
+  pre-existing, already-documented inability to fetch Prisma's engine
+  binary from this sandbox (deviation #4, unrelated to this session's
+  changes — confirmed by also trying
+  `PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1`, which didn't help either;
+  `binaries.prisma.sh` isn't reachable here at all). **Run `npm run
+  build` in a real environment (or let Render's own build run it) to
+  confirm it completes end-to-end.**
+
+**Not verified:** not deployed to an actual Render service — no live
+sanity check that the self-ping loop round-trips or that the free tier
+actually stays warm. Deploy steps are in the reply, not repeated here.
+
+**Known deviations, called out explicitly:**
+- **Deployment target corrected: Render, not Railway** — see
+  `docs/status.md` deviation #11. `CLAUDE.md` and this file's own session
+  1 and session 12 entries said Railway; `Arp-main/docker-entrypoint.sh`
+  and `Arp-main/health.php` say otherwise in their own comments. Flagging
+  loudly in case that reading is wrong.
+- **Found and fixed a pre-existing, build-blocking bug unrelated to this
+  session's actual task** — see `docs/status.md` deviation #12.
+  `next.config.ts` has been invalid on this app's Next.js 14 since the
+  original scaffold; nothing caught it because `next build` had never
+  actually been run before (every prior session's sandbox lacked the
+  network access to get that far).
+- `render.yaml`'s `region: oregon` and `branch: main` are placeholders —
+  confirm the real Postgres region and default branch name before
+  deploying (see reply for the `git branch --show-current` check already
+  called out in `CLAUDE.md`'s delivery workflow).
+
+---
+
 ## 2026-09-25 (13) — Devices: manufacturer lookup + reveal Outlook password
 
 **Scope:** Ported the two remaining Devices sub-features flagged since

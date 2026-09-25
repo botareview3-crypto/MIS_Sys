@@ -1,0 +1,39 @@
+# Render Blueprint for this app. Lets Render provision the web service
+# from this file instead of manually clicking through the dashboard
+# (New -> Blueprint -> pick this repo). You can also skip this file
+# entirely and create the service by hand in the dashboard — see the
+# deploy steps for both paths.
+#
+# Native Node runtime, not Docker: unlike the original PHP app (whose
+# Dockerfile/docker-entrypoint.sh exist to run migration scripts and a
+# custom PHP built-in server), this Next.js app only needs `npm install`
+# + `npm run build` + `npm start`, which Render's native Node runtime
+# handles directly — no Dockerfile needed for this rewrite.
+services:
+  - type: web
+    name: arp-next
+    runtime: node
+    plan: free
+    region: oregon # change to whatever region your Postgres instance is in
+    branch: main # confirm with: git branch --show-current
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      # --- Secrets: set these in the Render dashboard, not here ---
+      # (sync: false means "Render will prompt for this value, never
+      # store or generate it in this file")
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: CREDENTIAL_KEY
+        sync: false # MUST equal the original PHP app's CREDENTIAL_KEY, see .env.example
+      - key: CRON_SECRET
+        sync: false
+      # --- Not a secret: Render sets this automatically, listed here
+      # only so instrumentation.ts's reference to it is self-documenting.
+      # Do not set this by hand.
+      # - RENDER_EXTERNAL_URL (auto)
+      - key: NODE_ENV
+        value: production

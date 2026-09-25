@@ -60,6 +60,17 @@ exactly what's changed, in order. This file is the current snapshot.
       everyone, but that role gets redirected away from the page anyway —
       this closes a dead-end click, not a dropped permission).
 
+- [x] Render deployment prep — `render.yaml` blueprint (native Node
+      runtime, no Dockerfile needed), `GET /api/health` (ported from
+      `health.php`), and a self-ping loop (`src/instrumentation.ts`,
+      ported from `docker-entrypoint.sh`'s background loop) to stop
+      Render's free tier from spinning the service down after 15 minutes
+      idle. See commit-log session 14 — also fixes a pre-existing bug
+      (`next.config.ts` isn't valid until Next.js 15; this app is on 14.x)
+      that would have failed `next build` regardless of hosting target.
+      **Not yet actually deployed** — see commit-log session 14 for the
+      manual steps still needed (create the Render service, set secrets).
+
 ## In progress / not started
 - [ ] **Local / Intra split** — sidebar groups Register Device / Manage
       Devices / Guide under two collapsible parent items, "Local" and
@@ -179,6 +190,32 @@ exactly what's changed, in order. This file is the current snapshot.
     page"), this port keeps that exact behavior rather than guessing
     which side was the "real" intent. Flag if the project owner wants it
     resolved one way or the other.
+
+11. **Deployment target corrected from Railway to Render, 2026-09-25.**
+    `CLAUDE.md` and earlier commit-log entries (sessions 1 and 12) said
+    Railway, following `Arp-main/railway.json`. Building the actual
+    deploy config surfaced that `Arp-main/docker-entrypoint.sh` and
+    `Arp-main/health.php` explicitly reference "Render's free tier" in
+    their own comments — the original app is really deployed on Render;
+    `railway.json` looks like a leftover from an earlier/abandoned
+    attempt. `CLAUDE.md`'s "Tech stack / architecture" section is updated
+    accordingly. Flag if this reading is wrong — i.e. if Railway actually
+    is (or is going to be) the real target.
+12. **Pre-existing bug found and fixed while building deploy config:**
+    `next.config.ts` is not valid on Next.js 14 (TypeScript config files
+    were only added in Next.js 15) — `next build` failed immediately with
+    `Configuring Next.js via 'next.config.ts' is not supported`, before
+    ever reaching any application code. This has been present since the
+    original scaffold (session 1) and would have blocked deployment to
+    *any* host, not just Render — it was never caught because `next
+    build` had never actually been run (every prior session's sandbox
+    lacked network access to even get that far, per deviation #4).
+    Replaced with `next.config.js` (session 14). **This sandbox still
+    can't reach `binaries.prisma.sh`** (deviation #4, still open), so
+    `next build` here gets as far as "Collecting page data" — past
+    typecheck and compile — before failing solely on the missing Prisma
+    engine binary. Run `npm run build` in a real environment to confirm
+    it completes end-to-end.
 
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
