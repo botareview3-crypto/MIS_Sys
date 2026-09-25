@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-25 (session 10)
+Last updated: 2026-09-25 (session 11)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -43,6 +43,15 @@ exactly what's changed, in order. This file is the current snapshot.
       "sent" page) into one page with client-side state; no functional
       change, just fewer routes. `/login`'s "Forgot your password?" link
       now goes somewhere real.
+- [x] Real dashboard (replaces the `/dashboard` placeholder). See
+      commit-log for exact deviations: notification bell/popover
+      intentionally left out (tied to the already-deprioritized
+      Notifications feature, see below); "Recent activity" panel shows
+      exactly one item, matching the original's `LIMIT 1` — flag if that
+      was actually meant to be a longer feed; "Register Device" quick
+      action is hidden for Secondary Admin (the original showed it to
+      everyone, but that role gets redirected away from the page anyway —
+      this closes a dead-end click, not a dropped permission).
 
 ## In progress / not started
 - [ ] **Local / Intra split** — sidebar groups Register Device / Manage
@@ -83,18 +92,7 @@ exactly what's changed, in order. This file is the current snapshot.
 - [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
       base64-in-DB as-is, or move profile images to filesystem/object
       storage as part of the rewrite (original: `includes/profile-images.php`)
-- [ ] Dashboard (real one — current `/dashboard` is a placeholder)
-      (original: `dashboard.php`, `reports.php` for dashboard stats)
-- [ ] Repairs: work queue, assign technician, update repair, repair deadlines
-      (original: `work-queue.php`, `assign-technician.php`,
-      `update-repair.php`, `includes/repair-deadlines.php`,
-      `includes/reported-problems.php`)
-- [ ] Users: manage-users, add/edit/delete user, roles, profile,
-      change-user-status, reset-user-password
-      (original: `manage-users.php`, `add-user.php`, `edit-user.php`,
-      `delete-user.php`, `profile.php`, `change-user-status.php`,
-      `reset-user-password.php`)
-- [ ] Notifications (list, mark read/all read)
+- [ ] Notifications (list, mark read/all read) — deprioritized, see above
       (original: `notifications.php`, `mark-notification-read.php`,
       `mark-all-notifications-read.php`,
       `includes/device-change-notifications.php`)
@@ -147,14 +145,31 @@ exactly what's changed, in order. This file is the current snapshot.
    `api/users/[id]/reset-password/route.ts`, same `x-forwarded-for` IP
    extraction as `api/auth/login/route.ts`). **Run `npx tsc --noEmit`
    locally before trusting this compiles.**
+8. **`audit_logs.action_type` naming has drifted from the original PHP
+   app**, discovered while building the dashboard's recent-activity feed.
+   The original writes `CREATE`, `UPDATE`, `STATUS_CHANGE`,
+   `REPAIR_UPDATE`, `ASSIGN_TECHNICIAN`, `device_deleted`,
+   `password_reset`. This rewrite (across earlier sessions) instead
+   writes `CREATE` (device register only), `device_edited`,
+   `device_deleted`, `repair_updated`, `technician_assigned`,
+   `technician_reassigned`, `user_created`, `user_edited`,
+   `user_reactivated`, `user_deactivated`, `password_reset` — a mix of
+   old and new names, not consistent either with the original or within
+   itself. Nothing broke (the dashboard's activity labels are keyed to
+   what's actually written, with a title-cased fallback for anything
+   unmapped, same as the original's own fallback), but if `audit_logs` is
+   ever queried or reported on by raw `action_type` value (e.g. the
+   not-yet-built Audit History page), this inconsistency will surface
+   there too. Worth a deliberate decision — and a one-time
+   find-and-replace — rather than leaving it to drift further.
 
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above) — good remaining candidates: real dashboard, repair-deadline
-   background sync (a real decision needed: cron vs. scheduled API
-   route), or manufacturer lookup / reveal-outlook-password.
+   above) — good remaining candidates: repair-deadline background sync
+   (a real decision needed: cron vs. scheduled API route), or
+   manufacturer lookup / reveal-outlook-password.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

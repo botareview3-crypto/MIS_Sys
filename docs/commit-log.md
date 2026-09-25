@@ -4,6 +4,85 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-25 (11) — Real dashboard
+
+**Scope:** Replaced the `/dashboard` placeholder with a real one. Ported
+from `app/pages/reports/dashboard.php`: greeting header, repair-status
+strip, repair-flow lifecycle view, most-recent-activity panel, and an
+"Operations Pulse" summary. `reports.php` was read too, but the dashboard
+doesn't call into it — the original's dashboard stats are self-contained
+in `dashboard.php`'s own queries.
+
+**Changed:**
+- `src/app/(app)/dashboard/page.tsx` — full rewrite (was a placeholder).
+  Server component: status counts via `prisma.repairJob.count()` per
+  status (five parallel counts, same shape as the original's
+  `COUNT(*) FILTER (WHERE status = ...)`), most recent `audit_logs` row
+  (`ORDER BY performed_at DESC, id DESC LIMIT 1`, matching the original's
+  `LIMIT 1` exactly) with a resolved device link and actor name, time-of-
+  day greeting, and a repair-flow strip linking into `/devices?status=X`
+  (matches `manage-devices.php`'s existing query-param handling).
+- `docs/status.md` — moved dashboard to Done; recorded three deviations
+  (below); also cleaned up two stale duplicate entries in "In progress"
+  (Repairs and Users were both re-listed as if not started, even though
+  session 6/8 already shipped them — only their genuinely-still-open
+  sub-items, already tracked as their own bullets, remain).
+
+**Verified:** Not run through `tsc` — no `node_modules`/network in this
+sandbox (`npm install` returns a registry 403, same as every session so
+far). Written to match already-verified patterns in this codebase
+(`prisma.repairJob.count()` / `findUnique` shapes already used in
+`src/lib/devices.ts` and the devices API routes). Deliberately avoided
+`prisma.repairJob.groupBy()` for the status counts — functionally
+equivalent, but `groupBy`'s generic typing is more sensitive to having a
+real generated Prisma Client on hand to check against, which isn't
+possible here. **Run `npx tsc --noEmit` locally before trusting this
+compiles.**
+
+**Not verified:** not run against a live DB, not seen in a browser — in
+particular the `audit_logs` join (resolving a `repair_job` record from
+`record_id`) and the status counts are unverified against real data.
+
+**Known deviations, called out explicitly:**
+- **Notification bell/popover NOT ported.** The original's dashboard
+  header has an admin-only bell with a live unread-notification popover
+  (auto-pops on a new notification, tracked via a session flag). This
+  ties directly into the Notifications feature, which the project owner
+  already deprioritized (2026-09-25, see `docs/status.md`) — building the
+  popover here would mean building notification-fetching logic for a
+  feature that isn't a current priority. The sidebar's existing unread
+  badge (`src/app/(app)/layout.tsx`, already querying
+  `prisma.notification.count()`) is untouched and still works.
+- **Recent activity shows exactly one item**, matching the original's
+  `LIMIT 1` literally. This reads like it might have been an oversight in
+  the original rather than an intentional design choice — a "recent
+  activity" panel with room for a short list would show more than one
+  row. Kept faithful to the source rather than guessing; easy to bump to
+  `LIMIT 5` (or similar) if the project owner confirms that's what they
+  actually want.
+- **"Register Device" quick-action button is hidden for Secondary
+  Admin.** The original shows this button to every role unconditionally.
+  But `/devices/register` (session 3) already redirects Secondary Admin
+  straight back to `/dashboard` — same restriction the sidebar nav
+  already encodes (`src/lib/nav.ts`: "Register Device: Admin, Reception,
+  Technician (NOT Secondary Admin)"). Showing the button to a role that
+  can't use the destination is a dead-end click, not a real permission
+  the original intended to grant, so this port hides it. Flag if the
+  project owner disagrees and wants literal parity instead.
+- **Discovered, not introduced, by this session:** `audit_logs.action_type`
+  values written elsewhere in this codebase have already drifted from the
+  original PHP app's naming (`CREATE`/`UPDATE`/`STATUS_CHANGE`/etc. vs.
+  this rewrite's `device_edited`/`repair_updated`/`technician_assigned`/
+  etc.) — see `docs/status.md` deviation #8 for the full list. The
+  dashboard's activity-label map is keyed to the values actually written,
+  with a title-cased fallback for anything unmapped (same fallback
+  behavior as the original), so nothing is broken by this — but it's
+  worth a deliberate decision before the Audit History page is built, so
+  that page isn't the one that has to first discover and paper over the
+  inconsistency.
+
+---
+
 ## 2026-09-25 (10) — Forgot / reset password flow
 
 **Scope:** Migrated `forgot-password.php`, `forgot-password-sent.php`, and
