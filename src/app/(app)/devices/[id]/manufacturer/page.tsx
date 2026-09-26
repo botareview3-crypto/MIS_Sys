@@ -57,7 +57,7 @@ export default async function ManufacturerInfoPage({ params }: { params: Promise
             <Row label="Serial number" value={lookup.serial} />
             {lookup.productNumber !== "" && <Row label="Product number" value={lookup.productNumber} />}
             {lookup.warrantyCode !== "" && <Row label="Warranty label" value={lookup.warrantyCode} />}
-            {device.aucAssetBarcode && <Row label="AUC asset barcode" value={device.aucAssetBarcode} />}
+            {device.aucAssetBarcode && <Row label="PC barcode" value={device.aucAssetBarcode} />}
           </dl>
         </section>
 

@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
           ],
         },
       });
-      if (duplicate) throw new Error("Another device already uses this AUC barcode or serial number.");
+      if (duplicate) throw new Error("Another device already uses this PC barcode or serial number.");
 
       const changedFields: string[] = [];
       if (job.customer.title !== (data.title || null)) changedFields.push("title");

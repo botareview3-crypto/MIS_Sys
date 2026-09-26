@@ -17,13 +17,13 @@ const RegisterDeviceSchema = z.object({
   aucAssetBarcode: z.string().trim().min(1),
   serialNumber: z.string().trim().min(1),
   macAddress: z.string().trim().max(50).optional().default(""),
-  hostname: z.string().trim().max(255).optional().default(""),
+  hostname: z.string().trim().min(1).max(255),
   reportedProblemType: z.string().default(""),
   reportedProblemCustom: z.string().default(""),
   assignedTechnicianId: z.string().default(""),
   expectedCompletionDate: z.string().default(""), // "" or YYYY-MM-DD
   chargerReceived: z.boolean().default(false),
-  networkCableBarcode: z.string().trim().default(""),
+  networkCableBarcode: z.string().trim().min(1),
   bagReceived: z.boolean().default(false),
 });
 
@@ -73,6 +73,8 @@ export async function POST(req: NextRequest) {
     data.givenByName === "" ||
     data.aucAssetBarcode === "" ||
     data.serialNumber === "" ||
+    data.hostname === "" ||
+    data.networkCableBarcode === "" ||
     reportedProblem === ""
   ) {
     return NextResponse.json({ error: "Please complete every required field." }, { status: 400 });
@@ -112,8 +114,8 @@ export async function POST(req: NextRequest) {
     let error = "This manufacturer serial number is already registered.";
     if (macMatch) error = "This MAC address is already registered.";
     else if (hostnameMatch) error = "This hostname is already registered.";
-    else if (barcodeMatch && serialMatch) error = "The AUC barcode and serial number are already registered.";
-    else if (barcodeMatch) error = "This AUC asset barcode is already registered.";
+    else if (barcodeMatch && serialMatch) error = "The PC barcode and serial number are already registered.";
+    else if (barcodeMatch) error = "This PC barcode is already registered.";
 
     return NextResponse.json({ error, duplicate: true }, { status: 409 });
   }

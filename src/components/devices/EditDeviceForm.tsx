@@ -141,7 +141,7 @@ export function EditDeviceForm({
         <div className="grid grid-cols-2 gap-3">
           <input
             className="input"
-            placeholder="AUC asset barcode"
+            placeholder="PC barcode"
             value={form.aucAssetBarcode}
             onChange={(e) => set("aucAssetBarcode", e.target.value)}
             required

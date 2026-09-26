@@ -104,7 +104,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-slate-900">Device</h2>
             <dl className="mt-3 space-y-2 text-sm">
-              <Row label="AUC barcode" value={device.aucAssetBarcode} />
+              <Row label="PC barcode" value={device.aucAssetBarcode} />
               <Row label="Serial number" value={device.serialNumber} />
               <div>
                 <dt className="text-xs text-slate-400">Manufacturer</dt>

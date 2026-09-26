@@ -2,8 +2,46 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, Trash2 } from "lucide-react";
+import { BarcodeScanButton } from "./BarcodeScanButton";
 
 type Technician = { id: number; fullName: string; role: string };
+
+type DeviceEntry = {
+  givenByName: string;
+  aucAssetBarcode: string; // shown to the user as "PC barcode"
+  serialNumber: string;
+  macAddress: string;
+  hostname: string;
+  reportedProblemType: string;
+  reportedProblemCustom: string;
+  assignedTechnicianId: string;
+  expectedCompletionDate: string;
+  chargerReceived: boolean;
+  networkCableBarcode: string;
+  bagReceived: boolean;
+};
+
+// A new device block starts blank except for "given by" and the assigned
+// technician, which carry over from the previous entry — for a multi-PC
+// intake it's usually the same person dropping off / same tech for every
+// device in the batch.
+function emptyDevice(previous?: DeviceEntry): DeviceEntry {
+  return {
+    givenByName: previous?.givenByName ?? "",
+    aucAssetBarcode: "",
+    serialNumber: "",
+    macAddress: "",
+    hostname: "",
+    reportedProblemType: "",
+    reportedProblemCustom: "",
+    assignedTechnicianId: previous?.assignedTechnicianId ?? "",
+    expectedCompletionDate: "",
+    chargerReceived: false,
+    networkCableBarcode: "",
+    bagReceived: false,
+  };
+}
 
 export function RegisterDeviceForm({
   technicians,
@@ -13,69 +51,44 @@ export function RegisterDeviceForm({
   isTechnician: boolean;
 }) {
   const router = useRouter();
-  const [form, setForm] = useState({
+  const [customer, setCustomer] = useState({
     title: "",
     customerFullName: "",
     phoneNumber: "",
     outlookEmail: "",
     outlookPassword: "",
     regionalOffice: "",
-    givenByName: "",
-    aucAssetBarcode: "",
-    serialNumber: "",
-    macAddress: "",
-    hostname: "",
-    reportedProblemType: "",
-    reportedProblemCustom: "",
-    assignedTechnicianId: "",
-    expectedCompletionDate: "",
-    chargerReceived: false,
-    networkCableBarcode: "",
-    bagReceived: false,
   });
+  const [devices, setDevices] = useState<DeviceEntry[]>([emptyDevice()]);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
+  function setCustomerField<K extends keyof typeof customer>(key: K, value: (typeof customer)[K]) {
+    setCustomer((c) => ({ ...c, [key]: value }));
   }
 
-  // Only the device-specific fields reset after a successful registration —
-  // the customer fields (name, phone, outlook login) are deliberately left
-  // filled in so the same person's next PC doesn't need them retyped. Added
-  // 2026-09-26: previously the whole form cleared, so registering N devices
-  // for one customer meant entering their details N times.
-  function resetDeviceFields() {
-    setForm((f) => ({
-      ...f,
-      aucAssetBarcode: "",
-      serialNumber: "",
-      macAddress: "",
-      hostname: "",
-      reportedProblemType: "",
-      reportedProblemCustom: "",
-      expectedCompletionDate: "",
-      chargerReceived: false,
-      networkCableBarcode: "",
-      bagReceived: false,
-      // givenByName and assignedTechnicianId are left as-is too — for a
-      // multi-PC intake they're usually the same person/tech for every
-      // device in the batch. Cleared explicitly via "New customer" below.
-    }));
+  function setDeviceField<K extends keyof DeviceEntry>(index: number, key: K, value: DeviceEntry[K]) {
+    setDevices((ds) => ds.map((d, i) => (i === index ? { ...d, [key]: value } : d)));
+  }
+
+  function addDevice() {
+    setDevices((ds) => [...ds, emptyDevice(ds[ds.length - 1])]);
+  }
+
+  function removeDevice(index: number) {
+    setDevices((ds) => (ds.length <= 1 ? ds : ds.filter((_, i) => i !== index)));
   }
 
   function resetCustomerFields() {
-    setForm((f) => ({
-      ...f,
+    setCustomer({
       title: "",
       customerFullName: "",
       phoneNumber: "",
       outlookEmail: "",
       outlookPassword: "",
       regionalOffice: "",
-      givenByName: "",
-      assignedTechnicianId: "",
-    }));
+    });
+    setDevices([emptyDevice()]);
     setMessage(null);
   }
 
@@ -83,23 +96,38 @@ export function RegisterDeviceForm({
     e.preventDefault();
     setMessage(null);
     setLoading(true);
+
+    const registered: { jobId: string; receiptNumber: string }[] = [];
     try {
-      const res = await fetch("/api/devices/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Device registration failed." });
-        return;
+      for (let i = 0; i < devices.length; i++) {
+        const payload = { ...customer, ...devices[i] };
+        const res = await fetch("/api/devices/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const doneCount = registered.length;
+          const prefix =
+            doneCount > 0
+              ? `${doneCount} of ${devices.length} device(s) were registered before this error, on device ${i + 1}: `
+              : "";
+          setMessage({ type: "error", text: `${prefix}${data.error ?? "Device registration failed."}` });
+          // Drop the devices that already registered so resubmitting doesn't duplicate them.
+          if (doneCount > 0) setDevices((ds) => ds.slice(doneCount));
+          return;
+        }
+        registered.push({ jobId: data.jobId, receiptNumber: data.receiptNumber });
       }
+
+      const summary = registered.map((r) => `${r.jobId} (${r.receiptNumber})`).join(", ");
       setMessage({
         type: "success",
-        text: `Device registered successfully. Job ID: ${data.jobId} · Receipt: ${data.receiptNumber}. Customer details below are kept for their next device — click "New customer" if the next one is someone else.`,
+        text: `${registered.length} device${registered.length > 1 ? "s" : ""} registered successfully: ${summary}. Customer details below are kept for their next device — click "New customer" if the next one is someone else.`,
       });
       router.refresh();
-      resetDeviceFields();
+      setDevices((ds) => [emptyDevice(ds[ds.length - 1])]);
     } catch {
       setMessage({ type: "error", text: "Could not reach the server. Please try again." });
     } finally {
@@ -131,11 +159,11 @@ export function RegisterDeviceForm({
           </button>
         </div>
         <p className="text-xs text-stone-500">
-          Registering another PC for the same person? Leave these filled in and just fill out the Device
-          section below. Click &ldquo;New customer&rdquo; to clear them for someone else.
+          Registering more PCs for the same person? Leave these filled in, use &ldquo;Add device&rdquo; below for
+          each additional PC. Click &ldquo;New customer&rdquo; to clear everything for someone else.
         </p>
         <div className="grid grid-cols-[100px_1fr] gap-3">
-          <select className="input" value={form.title} onChange={(e) => set("title", e.target.value)}>
+          <select className="input" value={customer.title} onChange={(e) => setCustomerField("title", e.target.value)}>
             <option value="">Title</option>
             <option value="Mr">Mr</option>
             <option value="Ms">Ms</option>
@@ -143,16 +171,16 @@ export function RegisterDeviceForm({
           <input
             className="input"
             placeholder="Customer full name"
-            value={form.customerFullName}
-            onChange={(e) => set("customerFullName", e.target.value)}
+            value={customer.customerFullName}
+            onChange={(e) => setCustomerField("customerFullName", e.target.value)}
             required
           />
         </div>
         <input
           className="input"
           placeholder="Phone number"
-          value={form.phoneNumber}
-          onChange={(e) => set("phoneNumber", e.target.value)}
+          value={customer.phoneNumber}
+          onChange={(e) => setCustomerField("phoneNumber", e.target.value)}
           required
         />
         <div>
@@ -160,8 +188,8 @@ export function RegisterDeviceForm({
             <input
               className="input rounded-r-none"
               placeholder="Outlook username"
-              value={form.outlookEmail}
-              onChange={(e) => set("outlookEmail", e.target.value)}
+              value={customer.outlookEmail}
+              onChange={(e) => setCustomerField("outlookEmail", e.target.value)}
               required
             />
             <span className="flex items-center rounded-r-lg border border-l-0 border-stone-300 bg-stone-50 px-3 text-sm text-stone-500">
@@ -173,128 +201,177 @@ export function RegisterDeviceForm({
           type="password"
           className="input"
           placeholder="Outlook password (stored encrypted)"
-          value={form.outlookPassword}
-          onChange={(e) => set("outlookPassword", e.target.value)}
+          value={customer.outlookPassword}
+          onChange={(e) => setCustomerField("outlookPassword", e.target.value)}
         />
         <input
           className="input"
           placeholder="Regional office / location (optional, e.g. for Intra devices)"
-          value={form.regionalOffice}
-          onChange={(e) => set("regionalOffice", e.target.value)}
+          value={customer.regionalOffice}
+          onChange={(e) => setCustomerField("regionalOffice", e.target.value)}
         />
       </fieldset>
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-stone-900">Device</legend>
-        <input
-          className="input"
-          placeholder="Given by (name of person dropping off)"
-          value={form.givenByName}
-          onChange={(e) => set("givenByName", e.target.value)}
-          required
-        />
-        <div className="grid grid-cols-2 gap-3">
+      {devices.map((device, index) => (
+        <fieldset key={index} className="space-y-4 rounded-2xl border border-stone-200 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <legend className="text-sm font-semibold text-stone-900">
+              Device{devices.length > 1 ? ` ${index + 1}` : ""}
+            </legend>
+            {devices.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeDevice(index)}
+                className="flex items-center gap-1 text-xs font-medium text-red-600 hover:underline"
+              >
+                <Trash2 size={14} />
+                Remove
+              </button>
+            )}
+          </div>
           <input
             className="input"
-            placeholder="AUC asset barcode"
-            value={form.aucAssetBarcode}
-            onChange={(e) => set("aucAssetBarcode", e.target.value)}
+            placeholder="Given by (name of person dropping off)"
+            value={device.givenByName}
+            onChange={(e) => setDeviceField(index, "givenByName", e.target.value)}
             required
           />
-          <input
-            className="input"
-            placeholder="Serial number"
-            value={form.serialNumber}
-            onChange={(e) => set("serialNumber", e.target.value)}
-            required
-          />
-          <input
-            className="input"
-            placeholder="MAC address (optional)"
-            value={form.macAddress}
-            onChange={(e) => set("macAddress", e.target.value)}
-          />
-          <input
-            className="input"
-            placeholder="Hostname (optional)"
-            value={form.hostname}
-            onChange={(e) => set("hostname", e.target.value)}
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-stretch gap-2">
+              <input
+                className="input flex-1"
+                placeholder="PC barcode"
+                value={device.aucAssetBarcode}
+                onChange={(e) => setDeviceField(index, "aucAssetBarcode", e.target.value)}
+                required
+              />
+              <BarcodeScanButton
+                label="Scan PC barcode"
+                onScan={(value) => setDeviceField(index, "aucAssetBarcode", value)}
+              />
+            </div>
+            <div className="flex items-stretch gap-2">
+              <input
+                className="input flex-1"
+                placeholder="Serial number"
+                value={device.serialNumber}
+                onChange={(e) => setDeviceField(index, "serialNumber", e.target.value)}
+                required
+              />
+              <BarcodeScanButton
+                label="Scan serial number"
+                onScan={(value) => setDeviceField(index, "serialNumber", value)}
+              />
+            </div>
+            <input
+              className="input"
+              placeholder="MAC address (optional)"
+              value={device.macAddress}
+              onChange={(e) => setDeviceField(index, "macAddress", e.target.value)}
+            />
+            <input
+              className="input"
+              placeholder="Hostname"
+              value={device.hostname}
+              onChange={(e) => setDeviceField(index, "hostname", e.target.value)}
+              required
+            />
+          </div>
 
-        <select
-          className="input"
-          value={form.reportedProblemType}
-          onChange={(e) => set("reportedProblemType", e.target.value)}
-          required
-        >
-          <option value="">Reported problem…</option>
-          <option value="pc_configuration_sap_cisco">PC Configuration, SAP and CISCO Installation</option>
-          <option value="other">Other (describe below)</option>
-        </select>
-        {form.reportedProblemType === "other" && (
-          <textarea
-            className="input"
-            rows={3}
-            placeholder="Describe the reported problem"
-            value={form.reportedProblemCustom}
-            onChange={(e) => set("reportedProblemCustom", e.target.value)}
-            required
-          />
-        )}
-
-        {!isTechnician && (
           <select
             className="input"
-            value={form.assignedTechnicianId}
-            onChange={(e) => set("assignedTechnicianId", e.target.value)}
+            value={device.reportedProblemType}
+            onChange={(e) => setDeviceField(index, "reportedProblemType", e.target.value)}
+            required
           >
-            <option value="">Assign technician (optional)</option>
-            {technicians.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.fullName} ({t.role})
-              </option>
-            ))}
+            <option value="">Reported problem…</option>
+            <option value="pc_configuration_sap_cisco">PC Configuration, SAP and CISCO Installation</option>
+            <option value="other">Other (describe below)</option>
           </select>
-        )}
+          {device.reportedProblemType === "other" && (
+            <textarea
+              className="input"
+              rows={3}
+              placeholder="Describe the reported problem"
+              value={device.reportedProblemCustom}
+              onChange={(e) => setDeviceField(index, "reportedProblemCustom", e.target.value)}
+              required
+            />
+          )}
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-stone-700">
-            Expected completion date (optional)
-          </label>
-          <input
-            type="date"
-            className="input"
-            value={form.expectedCompletionDate}
-            onChange={(e) => set("expectedCompletionDate", e.target.value)}
-          />
-        </div>
-      </fieldset>
+          {!isTechnician && (
+            <select
+              className="input"
+              value={device.assignedTechnicianId}
+              onChange={(e) => setDeviceField(index, "assignedTechnicianId", e.target.value)}
+            >
+              <option value="">Assign technician (optional)</option>
+              {technicians.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.fullName} ({t.role})
+                </option>
+              ))}
+            </select>
+          )}
 
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-stone-900">Accessories</legend>
-        <label className="flex items-center gap-2 text-sm text-stone-700">
-          <input
-            type="checkbox"
-            checked={form.chargerReceived}
-            onChange={(e) => set("chargerReceived", e.target.checked)}
-          />
-          Charger received
-        </label>
-        <input
-          className="input"
-          placeholder="Network cable barcode (optional)"
-          value={form.networkCableBarcode}
-          onChange={(e) => set("networkCableBarcode", e.target.value)}
-        />
-        <label className="flex items-center gap-2 text-sm text-stone-700">
-          <input type="checkbox" checked={form.bagReceived} onChange={(e) => set("bagReceived", e.target.checked)} />
-          Bag received
-        </label>
-      </fieldset>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-stone-700">
+              Expected completion date (optional)
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={device.expectedCompletionDate}
+              onChange={(e) => setDeviceField(index, "expectedCompletionDate", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-3 border-t border-stone-100 pt-3">
+            <p className="text-sm font-semibold text-stone-900">Accessories</p>
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={device.chargerReceived}
+                onChange={(e) => setDeviceField(index, "chargerReceived", e.target.checked)}
+              />
+              Charger received
+            </label>
+            <div className="flex items-stretch gap-2">
+              <input
+                className="input flex-1"
+                placeholder="Network cable barcode"
+                value={device.networkCableBarcode}
+                onChange={(e) => setDeviceField(index, "networkCableBarcode", e.target.value)}
+                required
+              />
+              <BarcodeScanButton
+                label="Scan network cable barcode"
+                onScan={(value) => setDeviceField(index, "networkCableBarcode", value)}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-stone-700">
+              <input
+                type="checkbox"
+                checked={device.bagReceived}
+                onChange={(e) => setDeviceField(index, "bagReceived", e.target.checked)}
+              />
+              Bag received
+            </label>
+          </div>
+        </fieldset>
+      ))}
+
+      <button
+        type="button"
+        onClick={addDevice}
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-stone-300 py-2.5 text-sm font-medium text-brand-600 transition hover:border-brand-400 hover:bg-brand-50"
+      >
+        <Plus size={16} />
+        Add device
+      </button>
 
       <button type="submit" disabled={loading} className="btn-primary w-full">
-        {loading ? "Registering…" : "Register device"}
+        {loading ? "Registering…" : "Register devices"}
       </button>
     </form>
   );

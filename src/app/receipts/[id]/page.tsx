@@ -121,7 +121,7 @@ export default async function ReceiptPreviewPage({ params }: { params: Promise<{
             <div>
               <h2 className="text-sm font-semibold text-slate-900">Device Information</h2>
               <dl className="mt-3 space-y-2 text-sm">
-                <Row label="AUC Asset Barcode" value={job.aucAssetBarcode} />
+                <Row label="PC Barcode" value={job.aucAssetBarcode} />
                 <Row label="Serial Number" value={job.serialNumber} />
                 <Row label="MAC Address" value={job.macAddress || "Not provided"} />
                 <Row label="Hostname" value={job.hostname || "Not provided"} />
