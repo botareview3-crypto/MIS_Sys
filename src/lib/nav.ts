@@ -41,25 +41,34 @@ export type NavItem = {
  * in how the computers themselves get configured, not in this app yet —
  * do not invent per-group fields/logic without a real design conversation.
  * A third child, "Guide", was added under both groups on 2026-09-25 as an
- * intentionally blank placeholder (`/guide`) — content to be written later.
+ * intentionally blank placeholder. Register/Manage stay identical between
+ * Local and Intra (still true) — but the Guide content itself is meant to
+ * differ per group, so it now points at /guide/local and /guide/intra
+ * instead of one shared /guide route.
+ *
+ * Regional office (2026-09-26): the "regional office" location captured
+ * during registration (Customer.regionalOffice) is the one Intra-specific
+ * addition to the shared Register Device form — the form/route are still
+ * the same component for both groups, just with that one extra optional
+ * field now wired up.
  */
 export function getNavGroups(role: SessionPayload["role"]) {
   const isAdmin = role === "Admin";
   const isReception = role === "Reception";
   const isTechnician = role === "Technician";
 
-  const deviceItems: NavItem[] = [
+  const deviceItems = (guideHref: string): NavItem[] => [
     ...(isAdmin || isReception || isTechnician
       ? [{ href: "/devices/register", label: "Register Device", icon: PlusSquare }]
       : []),
     { href: "/devices", label: "Manage Devices", icon: HardDrive },
-    { href: "/guide", label: "Guide", icon: BookOpen },
+    { href: guideHref, label: "Guide", icon: BookOpen },
   ];
 
   const workspace: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { label: "Local", icon: MapPin, children: deviceItems },
-    { label: "Intra", icon: Network, children: deviceItems },
+    { label: "Local", icon: MapPin, children: deviceItems("/guide/local") },
+    { label: "Intra", icon: Network, children: deviceItems("/guide/intra") },
     { href: "/work-queue", label: "Work Queue", icon: ClipboardList },
     ...(!isAdmin
       ? [{ href: "/notifications", label: "Notifications", icon: Bell, showBadge: true }]

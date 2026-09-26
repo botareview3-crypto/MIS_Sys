@@ -12,6 +12,7 @@ const RegisterDeviceSchema = z.object({
   phoneNumber: z.string().trim().min(1).max(30),
   outlookEmail: z.string().trim().min(1), // local part or full address; normalized below
   outlookPassword: z.string().default(""),
+  regionalOffice: z.string().trim().max(150).optional().default(""),
   givenByName: z.string().trim().min(1).max(150),
   aucAssetBarcode: z.string().trim().min(1),
   serialNumber: z.string().trim().min(1),
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest) {
           phoneNumber: data.phoneNumber,
           outlookEmail: normalizedEmail,
           outlookPasswordEncrypted: encryptedOutlookPassword,
+          regionalOffice: data.regionalOffice || null,
           createdBy: session.userId,
         },
       });

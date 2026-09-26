@@ -19,6 +19,7 @@ export function RegisterDeviceForm({
     phoneNumber: "",
     outlookEmail: "",
     outlookPassword: "",
+    regionalOffice: "",
     givenByName: "",
     aucAssetBarcode: "",
     serialNumber: "",
@@ -66,6 +67,7 @@ export function RegisterDeviceForm({
         phoneNumber: "",
         outlookEmail: "",
         outlookPassword: "",
+        regionalOffice: "",
         givenByName: "",
         aucAssetBarcode: "",
         serialNumber: "",
@@ -140,6 +142,12 @@ export function RegisterDeviceForm({
           placeholder="Outlook password (stored encrypted)"
           value={form.outlookPassword}
           onChange={(e) => set("outlookPassword", e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="Regional office / location (optional, e.g. for Intra devices)"
+          value={form.regionalOffice}
+          onChange={(e) => set("regionalOffice", e.target.value)}
         />
       </fieldset>
 
