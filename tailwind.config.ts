@@ -16,6 +16,22 @@ const config: Config = {
       borderRadius: {
         xl: "0.875rem",
       },
+      keyframes: {
+        "bell-shake": {
+          "0%, 100%": { transform: "rotate(0deg)" },
+          "10%": { transform: "rotate(-14deg)" },
+          "20%": { transform: "rotate(12deg)" },
+          "30%": { transform: "rotate(-10deg)" },
+          "40%": { transform: "rotate(8deg)" },
+          "50%": { transform: "rotate(-6deg)" },
+          "60%": { transform: "rotate(4deg)" },
+          "70%": { transform: "rotate(-2deg)" },
+          "80%, 100%": { transform: "rotate(0deg)" },
+        },
+      },
+      animation: {
+        "bell-shake": "bell-shake 1.6s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
