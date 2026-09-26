@@ -4,6 +4,42 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (25) — Abandon whatsapp-web.js auto-send; replace with manual click-to-send
+
+**Scope:** After session 24's Puppeteer cache-path fix, a real QR scan on a
+live Render deploy still failed — the phone reported "couldn't link" every
+attempt. This is WhatsApp's own server-side handshake refusal, not a
+Puppeteer/Chrome/memory problem: Meta actively detects and blocks unofficial
+clients like `whatsapp-web.js`, and no amount of launch-arg or environment
+tuning on our end changes that. Decision: stop pursuing automated
+auto-send and go back to the always-available manual `wa.me` flow instead
+(the one built session 17, never actually broken, just underused).
+
+**Removed:** `src/lib/whatsapp-client.ts`, `src/lib/whatsapp-auto-send.ts`,
+`src/components/settings/WhatsappStatusPanel.tsx`,
+`src/app/(app)/settings/whatsapp/`, `src/app/api/whatsapp/`,
+`.puppeteerrc.cjs`, the `WhatsApp Setup` nav entry, the two
+`autoSendWhatsappMessage(...)` call sites (device registration and
+repair-status-update routes), the `whatsapp-web.js`/`qrcode`/`@types/qrcode`
+package.json entries, the `npx puppeteer browsers install chrome` build
+step in `render.yaml`, and the `WhatsappSession` Prisma model (see that
+model's old location in `schema.prisma` for the flagged note — the
+`whatsapp_sessions` table itself is NOT auto-dropped in production; that
+needs a manual `DROP TABLE IF EXISTS whatsapp_sessions;` if wanted, same
+convention as every other schema change here).
+
+**Added:** `UpdateRepairForm` now accepts a `canSendWhatsapp` prop (role
+check: Admin/Reception/Technician, matching the existing "Prepare Message"
+button's access — Secondary Admin deliberately excluded per deviation #14's
+established pattern) and, right after a successful status save to
+Received/Ready/Delivered, shows a "Send {Status} WhatsApp message" button
+inline in the success banner. It links to the same
+`/devices/[id]/whatsapp?type=...` page/flow session 17 already built — no
+new backend logic, just a more visible entry point at the moment staff
+actually need it.
+
+---
+
 ## 2026-09-26 (24) — Fix: Puppeteer Chrome cache lands outside Render's deployed project folder
 
 **Scope:** Session 23's fix (`npx puppeteer browsers install chrome` in

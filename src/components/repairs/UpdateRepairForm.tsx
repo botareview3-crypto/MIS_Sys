@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
@@ -18,7 +19,15 @@ type Initial = {
   bagReturned: boolean;
 };
 
-export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; initial: Initial }) {
+export function UpdateRepairForm({
+  deviceId,
+  initial,
+  canSendWhatsapp,
+}: {
+  deviceId: number;
+  initial: Initial;
+  canSendWhatsapp: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     technicianDiagnosis: initial.technicianDiagnosis,
@@ -31,6 +40,7 @@ export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; init
     bagReturned: initial.bagReturned,
   });
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [whatsappPromptStatus, setWhatsappPromptStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -40,6 +50,7 @@ export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; init
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
+    setWhatsappPromptStatus(null);
     setLoading(true);
     try {
       const res = await fetch(`/api/repairs/${deviceId}`, {
@@ -57,6 +68,13 @@ export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; init
         text += ` ${data.workflowReceiptType} receipt available: ${data.workflowReceiptReference}.`;
       }
       setMessage({ type: "success", text });
+      // The status actually just changed (not "no changes"), and it's one
+      // of the statuses that has a WhatsApp message template — surface the
+      // "send it" button right here instead of making the technician
+      // scroll down to the WhatsApp messages section to find it.
+      if (!data.noChanges && canSendWhatsapp && ["Received", "Ready", "Delivered"].includes(form.status)) {
+        setWhatsappPromptStatus(form.status);
+      }
       router.refresh();
     } catch {
       setMessage({ type: "error", text: "Could not reach the server. Please try again." });
@@ -69,11 +87,19 @@ export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; init
     <form onSubmit={handleSubmit} className="space-y-5">
       {message && (
         <div
-          className={`rounded-lg px-3 py-2 text-sm ${
+          className={`flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ${
             message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
           }`}
         >
-          {message.text}
+          <span>{message.text}</span>
+          {whatsappPromptStatus && (
+            <Link
+              href={`/devices/${deviceId}/whatsapp?type=${whatsappPromptStatus}`}
+              className="btn-primary shrink-0 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
+            >
+              Send {whatsappPromptStatus} WhatsApp message
+            </Link>
+          )}
         </div>
       )}
 

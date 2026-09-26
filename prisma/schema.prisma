@@ -172,20 +172,19 @@ model WhatsappLog {
   @@map("whatsapp_logs")
 }
 
-// FLAGGED SCHEMA CHANGE (2026-09-26): new table, additive only — no
-// existing table, column, or CHECK constraint touched. Stores the
-// whatsapp-web.js RemoteAuth session (a zip blob) so the paired WhatsApp
-// login survives Render free-tier restarts/deploys, which wipe local disk
-// (see PrismaWhatsappStore in src/lib/whatsapp-client.ts). Single row,
-// fixed id "mis-whatsapp". Unrelated to Arp-main/database/schema.sql — the
-// old PHP app has no concept of this and simply won't see this table.
-model WhatsappSession {
-  id        String   @id
-  data      Bytes
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("whatsapp_sessions")
-}
+// FLAGGED SCHEMA CHANGE (2026-09-26, session 25): the WhatsappSession
+// model (table whatsapp_sessions) that used to live here has been
+// REMOVED from the schema. It stored the whatsapp-web.js RemoteAuth
+// session blob for an auto-send approach that was abandoned the same
+// day — WhatsApp refused to link the device on every pairing attempt.
+// Removing this model from schema.prisma does NOT drop the actual
+// `whatsapp_sessions` table in production — per CLAUDE.md, schema
+// changes here are never auto-applied (no `prisma migrate`/`db push` in
+// the deploy pipeline). If you want the now-unused table gone from the
+// database too, run manually against production:
+//   DROP TABLE IF EXISTS whatsapp_sessions;
+// It's harmless to leave in place if you'd rather not touch prod for
+// this — nothing in the app references it anymore either way.
 
 model AuditLog {
   id               Int      @id @default(autoincrement())

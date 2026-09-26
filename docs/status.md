@@ -104,16 +104,22 @@ exactly what's changed, in order. This file is the current snapshot.
       wired to the previously-unused `Customer.regionalOffice` column.
 
 ## In progress / not started
-- [ ] **WhatsApp auto-send needs a real deploy + QR scan to verify.** Built
-      session 19 (see commit-log): Received/Ready messages now auto-send via
-      `whatsapp-web.js`, session persisted to the new `whatsapp_sessions`
-      table. Nothing here was tested against a live WhatsApp session or a
-      live Render deploy — go to Administration → WhatsApp Setup, scan the
-      QR with the dedicated second number, then register a test device /
-      move one to Ready and confirm both the message arrives and
-      `whatsapp_logs` shows `Sent`. If the paired number gets flagged/banned
-      by WhatsApp (a real risk with this approach), the manual wa.me flow on
-      the other number is unaffected.
+- [x] **WhatsApp auto-send (`whatsapp-web.js`) — attempted session 19,
+      ABANDONED session 25.** Live-tested against a real Render deploy and
+      a real phone: WhatsApp refused to link the device ("couldn't link")
+      on every pairing attempt, regardless of Puppeteer/Chrome setup on
+      Render's free tier. Rather than keep fighting an unofficial client
+      Meta is actively blocking, this was fully removed — `whatsapp-client.ts`,
+      `whatsapp-auto-send.ts`, `WhatsappStatusPanel.tsx`, the
+      `/settings/whatsapp` page, the `whatsapp_sessions` Prisma model, and
+      the Puppeteer/Chrome build step in `render.yaml` are all gone (see
+      commit-log session 25). Replaced with a manual click-to-send flow:
+      the existing "Prepare {Status} Message" `wa.me` button (session 17)
+      now also surfaces directly in `UpdateRepairForm`'s success message
+      right after a status is saved, so staff can send the Received/Ready
+      message with one extra click instead of needing to find it further
+      down the device page. No ban risk, no headless browser, no Render
+      free-tier memory pressure.
 - [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
       search across the admin UI. Not the same as the per-page search boxes
       already ported on Audit History / Reports. Genuinely not started;

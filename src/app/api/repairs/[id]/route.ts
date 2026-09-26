@@ -4,7 +4,6 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { validExpectedCompletionDate } from "@/lib/repair-deadlines";
-import { autoSendWhatsappMessage } from "@/lib/whatsapp-auto-send";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
@@ -198,11 +197,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     });
 
     // Fire-and-forget: auto-send the "Ready" WhatsApp notification, only
-    // when status just changed TO Ready (not on every edit while it stays
-    // Ready). Same non-blocking, never-throws pattern as registration.
-    if (!result.noChanges && result.statusChanged && result.newStatus === "Ready") {
-      void autoSendWhatsappMessage({ repairJobId: deviceId, messageType: "Ready" });
-    }
+    // Auto-send via whatsapp-web.js was removed 2026-09-26 (WhatsApp
+    // itself refused the device link — "couldn't link" on every pairing
+    // attempt). Replaced with the manual click-to-send flow: staff now get
+    // a "Send Ready WhatsApp message" button right in the save response
+    // (see UpdateRepairForm.tsx), which opens wa.me with the message
+    // pre-filled and they tap Send themselves — same flow as the existing
+    // "Prepare Message" button on the device page.
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

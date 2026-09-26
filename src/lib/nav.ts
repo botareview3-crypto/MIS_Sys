@@ -11,7 +11,6 @@ import {
   MapPin,
   Network,
   BookOpen,
-  MessageCircle,
 } from "lucide-react";
 import type { SessionPayload } from "@/lib/auth";
 
@@ -79,7 +78,6 @@ export function getNavGroups(role: SessionPayload["role"]) {
         { href: "/reports", label: "Reports & History", icon: BarChart3 },
         { href: "/audit-history", label: "Audit History", icon: ShieldCheck },
         { href: "/system-backups", label: "Database Backup", icon: HardDriveDownload },
-        { href: "/settings/whatsapp", label: "WhatsApp Setup", icon: MessageCircle },
       ]
     : [];
 

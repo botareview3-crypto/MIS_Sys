@@ -5,7 +5,6 @@ import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { encryptCredential } from "@/lib/credentials";
 import { resolveReportedProblem } from "@/lib/reported-problems";
 import { generateUniqueReference } from "@/lib/reference";
-import { autoSendWhatsappMessage } from "@/lib/whatsapp-auto-send";
 
 const RegisterDeviceSchema = z.object({
   title: z.enum(["Mr", "Ms", ""]).optional().default(""),
@@ -246,10 +245,10 @@ export async function POST(req: NextRequest) {
       return { jobId, receiptNumber, repairJobId: repairJob.id };
     });
 
-    // Fire-and-forget: auto-send the "Received" WhatsApp confirmation.
-    // `void` deliberately does not await this — registration must respond
-    // immediately and must not fail if WhatsApp is disconnected or slow.
-    void autoSendWhatsappMessage({ repairJobId: result.repairJobId, messageType: "Received" });
+    // Auto-send via whatsapp-web.js was removed 2026-09-26 — see the
+    // matching comment in src/app/api/repairs/[id]/route.ts. Staff use the
+    // existing manual "Prepare Received Message" button on the device page
+    // instead (src/components/devices/WhatsappMessageForm.tsx).
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

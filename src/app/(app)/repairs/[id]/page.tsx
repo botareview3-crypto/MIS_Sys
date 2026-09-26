@@ -27,6 +27,7 @@ export default async function UpdateRepairPage({ params }: { params: Promise<{ i
         <div className="card mt-6 p-6">
           <UpdateRepairForm
             deviceId={device.id}
+            canSendWhatsapp={["Admin", "Reception", "Technician"].includes(session.role)}
             initial={{
               technicianDiagnosis: device.technicianDiagnosis ?? "",
               repairNotes: device.repairNotes ?? "",

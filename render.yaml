@@ -43,30 +43,17 @@ services:
     # additive schema change needs to be applied via manual, reviewed SQL
     # against production instead, same as `whatsapp_sessions` was.
     #
-    # `npx puppeteer browsers install chrome` added 2026-09-26 (session
-    # 23): whatsapp-web.js's Puppeteer needs an actual Chrome binary on
-    # disk, which normally downloads via a `postinstall` script - but
-    # Render caches `node_modules` between builds, so once npm considers
-    # everything "up to date" it skips re-running postinstall, and the
-    # Chrome binary (which lives outside node_modules, in
-    # /opt/render/.cache/puppeteer) never actually gets onto a fresh
-    # build's disk. Calling this explicitly guarantees it every build,
-    # independent of npm's install-skip decision. Adds real build time
-    # (~200MB Chrome download) on top of the ~300MB Puppeteer/Chromium
-    # weight session 19 already flagged - accepted cost of the free-tier
-    # whatsapp-web.js approach.
-    #
-    # ALSO NOTE (session 24): the download above still wasn't enough by
-    # itself - it landed in $HOME/.cache/puppeteer (/opt/render/.cache),
-    # which is OUTSIDE the project directory Render actually carries from
-    # the build step into the running instance ("Uploading build..." only
-    # packages the project folder). See `.puppeteerrc.cjs` at the repo
-    # root, which redirects Puppeteer's cache into the project directory
-    # itself so build-time download and runtime `puppeteer.launch()` agree
-    # on where to find it. This buildCommand didn't need to change for
-    # that fix - `.puppeteerrc.cjs` is picked up automatically by both the
-    # CLI install step here and the runtime client.
-    buildCommand: npm install --include=dev && npx puppeteer browsers install chrome && npm run build
+    # `npx puppeteer browsers install chrome` (added session 23 for
+    # whatsapp-web.js's headless-Chrome auto-send) was REMOVED again
+    # 2026-09-26 (session 25): WhatsApp itself refused to link the device
+    # ("couldn't link" on every pairing attempt) regardless of the
+    # Chrome/Puppeteer setup, so the whole whatsapp-web.js approach was
+    # dropped in favor of a manual click-to-send wa.me flow (no browser
+    # automation, no ban risk, no ~300-500MB of build weight). See
+    # docs/commit-log.md session 25 and CLAUDE.md if either gets
+    # rewritten with these details. `.puppeteerrc.cjs` was removed too —
+    # nothing in this app uses Puppeteer anymore.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
