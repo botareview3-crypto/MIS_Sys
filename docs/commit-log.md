@@ -4,6 +4,64 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (23) — Fix: Puppeteer can't find Chrome on Render
+
+**Scope:** After session 22's revert unblocked deploys, the WhatsApp Setup
+page moved past the missing-table error and reached the actual pairing
+flow — then failed with Puppeteer's own error: `Could not find Chrome
+(ver. 146.0.7680.31)`, pointing at `/opt/render/.cache/puppeteer` and
+suggesting `npx puppeteer browsers install chrome`.
+
+**Diagnosis:** Puppeteer (a transitive dependency of whatsapp-web.js, not
+listed directly in `package.json`) downloads its Chrome binary via a
+`postinstall` script the first time it's installed. That binary lands
+outside `node_modules` (default: `~/.cache/puppeteer`, i.e.
+`/opt/render/.cache/puppeteer` on Render). Render caches `node_modules`
+between builds for speed — every build log since session 19 has shown
+`up to date, audited 360 packages`, meaning npm considers the dependency
+tree already satisfied and skips re-running `postinstall` scripts
+entirely. So the Chrome download likely only ever ran (if at all) on
+whichever build first added `whatsapp-web.js`/`puppeteer` to
+`package.json`, and that cache directory isn't part of what carries
+forward — so by the time any later build's instance actually runs, Chrome
+isn't there. Same underlying ephemeral-storage issue session 19 already
+solved for the WhatsApp session blob itself (RemoteAuth + Postgres instead
+of local disk); this is the same problem hitting a different unmanaged
+directory.
+
+**Fix:** added `npx puppeteer browsers install chrome` as its own explicit
+build step, between `npm install` and `npm run build`, so it always runs
+regardless of npm's install-skip decision — not reliant on `postinstall`
+at all.
+
+**Changed:**
+- `render.yaml` — `buildCommand` updated to
+  `npm install --include=dev && npx puppeteer browsers install chrome && npm run build`.
+  Comment also documents the session-22 `db push` removal for continuity
+  (both changes touch the same line's history).
+- Project owner needs to make the matching edit in the Render dashboard's
+  Build Command field directly (confirmed in session 21 that this field
+  does not auto-sync from `render.yaml`).
+
+**Not verified:** no way to confirm the Chrome download actually
+succeeds and the pairing QR renders without a real Render deploy — this
+sandbox has no network access to test `npx puppeteer browsers install
+chrome` locally either. Watch the next build log for the download step
+and re-check the WhatsApp Setup page after deploy.
+
+**Flagged, not addressed here:** this adds a real, recurring cost to every
+future build (a ~200MB Chrome download that previously silently wasn't
+happening at all) — on top of the ~300MB Puppeteer/Chromium weight already
+flagged in session 19. Worth watching Render's free-tier build-minute
+budget in practice. Also still open: `package-lock.json` was never
+regenerated after session 19 added `whatsapp-web.js` (no network in that
+session's sandbox), so `puppeteer`'s exact resolved version isn't pinned
+anywhere visible — not the cause of this bug, but worth fixing whenever
+`npm install` next runs somewhere with real registry access
+(`npm install` locally would refresh the lockfile).
+
+---
+
 ## 2026-09-26 (22) — Build command reverted; WhatsApp auto-send no longer logs to DB
 
 **Scope:** Two changes, both in response to what session 21's Build

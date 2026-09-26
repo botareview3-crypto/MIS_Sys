@@ -34,15 +34,28 @@ services:
     # aliases (@/*) when building the webpack config, even though the
     # aliases are configured correctly. --include=dev forces them in
     # for the build; they aren't needed at runtime (npm start).
-    # `prisma db push` added to the build 2026-09-26 (session 19, WhatsApp
-    # auto-send): applies any additive schema changes (new tables/columns)
-    # to the DB on every deploy, since Render's build never touched the DB
-    # before this and the free plan has no Shell access to run it by hand.
-    # Safe to leave here — it's a no-op when the schema already matches.
-    # Would prompt/fail on a genuinely destructive change (dropped column,
-    # changed type) instead of applying it, which is the correct behavior:
-    # never add --accept-data-loss here without a human reading the diff.
-    buildCommand: npm install --include=dev && npx prisma db push && npm run build
+    # `prisma db push` was added to the build 2026-09-26 (session 19,
+    # WhatsApp auto-send), then REMOVED again the same day (session 22)
+    # after it hit a data-loss guard on `users`/`notifications`/
+    # `user_profile_images` (Int vs bigint drift, unrelated to WhatsApp —
+    # see docs/status.md deviation #15). Do NOT re-add `npx prisma db
+    # push` here until that drift is deliberately resolved — any new
+    # additive schema change needs to be applied via manual, reviewed SQL
+    # against production instead, same as `whatsapp_sessions` was.
+    #
+    # `npx puppeteer browsers install chrome` added 2026-09-26 (session
+    # 23): whatsapp-web.js's Puppeteer needs an actual Chrome binary on
+    # disk, which normally downloads via a `postinstall` script - but
+    # Render caches `node_modules` between builds, so once npm considers
+    # everything "up to date" it skips re-running postinstall, and the
+    # Chrome binary (which lives outside node_modules, in
+    # /opt/render/.cache/puppeteer) never actually gets onto a fresh
+    # build's disk. Calling this explicitly guarantees it every build,
+    # independent of npm's install-skip decision. Adds real build time
+    # (~200MB Chrome download) on top of the ~300MB Puppeteer/Chromium
+    # weight session 19 already flagged - accepted cost of the free-tier
+    # whatsapp-web.js approach.
+    buildCommand: npm install --include=dev && npx puppeteer browsers install chrome && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
