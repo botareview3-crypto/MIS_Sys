@@ -4,6 +4,52 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (18) — Export PDF, System Backups, Local/Intra guide split
+
+**Scope:** Closed out the two remaining "In progress / not started" items
+(Export PDF, System backups UI) plus the Local/Intra guide split and its
+regional-office field. All original PHP pages are now ported.
+
+**Changed:**
+- `src/lib/reports/generate-report-pdf.ts`, `src/app/api/reports/export-pdf/route.ts`
+  — real server-generated PDF (pdfkit) for the Reports page, replacing the
+  original's browser-print approach. Admin only. Button added to
+  `src/app/(app)/reports/page.tsx`.
+- `src/lib/backups/generate-backup.ts`, `src/app/api/system/backup/route.ts`,
+  `src/app/(app)/system-backups/page.tsx` — on-demand DB backup: dumps every
+  table as SQL inserts + a manifest, zipped in memory (jszip), streamed
+  straight to the browser. **Deliberately does not write to local disk**
+  like the original `backup-engine.php` did — Render's free-tier filesystem
+  is ephemeral with no persistent disk, so anything saved there would be
+  lost on the next deploy/restart. No backup history list as a result
+  (decision: acceptable since Neon runs its own independent automated
+  backups/PITR — this is a convenience export, not the only safeguard).
+  Logs an `backup_created` audit entry per download.
+- `src/lib/nav.ts` — Guide now points Local → `/guide/local`, Intra →
+  `/guide/intra` instead of one shared `/guide` route (Register/Manage
+  stay identical between the two groups, unchanged).
+- `src/app/(app)/guide/local/page.tsx`, `src/app/(app)/guide/intra/page.tsx`
+  — new placeholder pages (still "content coming later" — project owner
+  will supply the actual guide content in a future session before this is
+  built out for real). Old `src/app/(app)/guide/page.tsx` now just
+  redirects to `/guide/local` so no old link 404s.
+- `src/components/devices/RegisterDeviceForm.tsx`,
+  `src/app/api/devices/register/route.ts` — added one optional field,
+  Regional Office / location, wired to the existing (previously unused)
+  `Customer.regionalOffice` column. This is the one Intra-specific addition
+  to the still-shared Register Device form — no separate Intra form.
+
+**Verified:** not run against a live DB/browser this session (chat-only
+delivery, see CLAUDE.md workflow) — click through Export PDF, Download
+Backup, and a registration with Regional Office filled in on a real
+deployment before trusting end to end.
+
+**Decisions made, not yet fully closed:**
+- Guide content itself is still empty for both Local and Intra — waiting on
+  the project owner to bring the actual content in a later session.
+
+---
+
 ## 2026-09-26 (17) — WhatsApp message prep
 
 **Scope:** Second of the three not-started items (Receipts done last

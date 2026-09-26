@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-26 (session 17)
+Last updated: 2026-09-26 (session 18)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -79,50 +79,39 @@ exactly what's changed, in order. This file is the current snapshot.
       carried-over inconsistency (deviation #14): the "Prepare Message"
       button is visible to Secondary Admin on the device page but the
       page/endpoint both deny that role, same pattern as deviation #10.
+- [x] Notifications (list, mark-read, mark-all-read) — `src/app/(app)/notifications`,
+      `src/app/api/notifications`. Previously listed as deprioritized; done.
+- [x] Reports overview + Audit History (filters + pagination) —
+      `src/app/(app)/reports`, `src/app/(app)/audit-history`.
+- [x] Self-service profile page + profile photo upload/remove —
+      `src/app/(app)/profile`, `src/app/api/profile`. `user_profile_images`
+      mapped in Prisma (base64-in-DB, decided rather than moving to object
+      storage).
+- [x] Reports: real server-generated PDF export (session 18, replaces the
+      original's browser-print approach) — `src/lib/reports/generate-report-pdf.ts`,
+      `GET /api/reports/export-pdf` (pdfkit). See commit-log.
+- [x] System backups UI (session 18) — on-demand, stream-only (no local
+      disk — Render free tier has no persistent disk). `src/lib/backups/generate-backup.ts`,
+      `GET /api/system/backup`, `src/app/(app)/system-backups`. No backup
+      history list (decision: Neon's own automated backups cover that
+      need). See commit-log.
+- [x] Local / Intra split (session 18) — Register/Manage remain identical
+      shared routes between the two groups (unchanged decision from
+      2026-09-25). What now differs: Guide content points at separate
+      `/guide/local` / `/guide/intra` routes (still placeholder — **waiting
+      on project owner to bring the actual content**), and the shared
+      Register Device form gained one optional field, Regional Office,
+      wired to the previously-unused `Customer.regionalOffice` column.
 
 ## In progress / not started
-- [ ] Receipts: PDF export (`export-report-pdf.php` covers the Reports page,
-      not receipts — receipts only ever printed via the browser print
-      dialog in the original, there's no separate receipt-PDF endpoint to
-      port. Flag if the project owner actually wants a server-generated PDF
-      download in addition to browser print.)
-- [ ] **Local / Intra split** — sidebar groups Register Device / Manage
-      Devices / Guide under two collapsible parent items, "Local" and
-      "Intra" (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). Clarified
-      2026-09-25: the real-world difference is in how the computers
-      themselves get *configured* (different for Local vs. Intra setups) —
-      **not** in how they're registered or managed in this app, which stay
-      identical for now ("we'll update them later to make them quicker").
-      So this is still nav-structure-only: both groups point at the exact
-      same `/devices/register` and `/devices` routes, no separate data or
-      permissions yet. A third child, **Guide** (`/guide`), was added under
-      both groups as an intentionally blank placeholder — content to be
-      written later, no design decision needed yet.
-- [ ] **Deprioritized by project owner (2026-09-25):** Profile image upload
-      and Notifications (list, mark read) — profile photos aren't actually
-      used in practice, and notifications aren't a current priority. Left in
-      this list for completeness but not next up.
-- [ ] Profile image upload (`includes/profile-images.php`,
-      `user_profile_images` table) — blocks add-user/edit-user profile
-      photos. Needs a decision: keep base64-in-DB or move to file/object
-      storage, THEN map `user_profile_images` in Prisma, THEN wire up the
-      upload UI.
-- [ ] Self-service profile page (`profile.php`) — a user editing their own
-      name/password/photo. Different from admin-driven Manage Users.
-- [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
-      base64-in-DB as-is, or move profile images to filesystem/object
-      storage as part of the rewrite (original: `includes/profile-images.php`)
-- [ ] Notifications (list, mark read/all read) — deprioritized, see above
-      (original: `notifications.php`, `mark-notification-read.php`,
-      `mark-all-notifications-read.php`,
-      `includes/device-change-notifications.php`)
-- [ ] Reports + audit history (`reports.php`, `audit-history.php`)
-- [ ] Admin search (`includes/admin-search*.php`)
-- [ ] System backups UI (`system-backups.php`, `includes/backup-engine.php`
-      — this one is 24KB, review carefully before touching)
-- [ ] Sidebar/nav → modern layout shell, role-aware
-      (original: `includes/sidebar.php`, 20KB — defines the full nav/role
-      visibility rules, read this before building the new layout shell)
+- [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
+      search across the admin UI. Not the same as the per-page search boxes
+      already ported on Audit History / Reports. Genuinely not started;
+      flagging rather than silently dropping it.
+- Everything else from the original PHP page list has a ported equivalent
+  as of session 18. What's left otherwise is content, not code: the
+  Local/Intra Guide pages are empty placeholders until the project owner
+  supplies the actual guide content.
 
 ## Known deviations / decisions needed from project owner
 1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~
