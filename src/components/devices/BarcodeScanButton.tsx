@@ -3,16 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 
-// Uses the browser's native BarcodeDetector API (no extra dependency).
-// Supported in Chromium-based browsers (Chrome, Edge, Android WebView);
-// unsupported browsers get a friendly fallback message and can still type
-// the barcode in by hand.
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    BarcodeDetector?: any;
-  }
-}
+// Uses @zxing/browser (pure-JS decoding over a <video> frame via canvas),
+// not the native BarcodeDetector API — BarcodeDetector only ships in
+// Chromium browsers, so Safari and Firefox always hit the "unsupported"
+// fallback. zxing works the same way across all modern browsers, including
+// iOS/macOS Safari and Firefox, which is what actually gets carried around
+// on phones for intake. Both packages are lazy-loaded on first open so they
+// don't add weight to the initial page bundle.
+type ScannerControls = { stop: () => void };
 
 export function BarcodeScanButton({
   onScan,
@@ -25,24 +23,15 @@ export function BarcodeScanButton({
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const detectorRef = useRef<any>(null);
+  const controlsRef = useRef<ScannerControls | null>(null);
 
-  function stopStream() {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
+  function stopScan() {
+    controlsRef.current?.stop();
+    controlsRef.current = null;
   }
 
   function close() {
-    stopStream();
+    stopScan();
     setOpen(false);
     setError(null);
     setStarting(false);
@@ -50,60 +39,64 @@ export function BarcodeScanButton({
 
   useEffect(() => {
     if (!open) return;
-    if (typeof window === "undefined" || !("BarcodeDetector" in window)) {
-      setError("Barcode scanning isn't supported in this browser. Please type the barcode instead.");
-      return;
-    }
-
     let cancelled = false;
     setStarting(true);
-    detectorRef.current = new window.BarcodeDetector({
-      formats: ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "qr_code"],
-    });
 
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
+    (async () => {
+      try {
+        const [{ BrowserMultiFormatReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+          import("@zxing/browser"),
+          import("@zxing/library"),
+        ]);
+        if (cancelled) return;
+
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.CODE_93,
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.ITF,
+          BarcodeFormat.QR_CODE,
+        ]);
+        const reader = new BrowserMultiFormatReader(hints);
+
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: "environment" } },
+          videoRef.current ?? undefined,
+          (result, _err, ctrls) => {
+            if (cancelled || !result) return; // no barcode in this frame yet — keep scanning
+            ctrls.stop();
+            controlsRef.current = null;
+            onScan(result.getText());
+            setOpen(false);
+            setError(null);
+            setStarting(false);
+          },
+        );
+
         if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+          controls.stop();
           return;
         }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
-        }
+        controlsRef.current = controls;
         setStarting(false);
-
-        const scan = async () => {
-          if (!videoRef.current || !detectorRef.current) return;
-          try {
-            const codes = await detectorRef.current.detect(videoRef.current);
-            if (codes && codes.length > 0 && codes[0].rawValue) {
-              onScan(codes[0].rawValue);
-              close();
-              return;
-            }
-          } catch {
-            // Keep trying on transient detection errors (e.g. blurry frame).
-          }
-          rafRef.current = requestAnimationFrame(scan);
-        };
-        rafRef.current = requestAnimationFrame(scan);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setStarting(false);
           setError("Couldn't access the camera. Check permissions and try again, or type the barcode instead.");
         }
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
-      stopStream();
+      stopScan();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, onScan]);
 
   return (
     <>
