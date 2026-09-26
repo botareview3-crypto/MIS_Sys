@@ -1,6 +1,14 @@
 export type GuideStep = {
   title: string;
   description: string;
+  /**
+   * Path under /public (e.g. "/guide/local-step-1.png") or a full URL.
+   * Optional — a step with no image just shows title + description, same
+   * as before this field existed.
+   */
+  image?: string;
+  /** Alt text for the image. Falls back to the step title if omitted. */
+  imageAlt?: string;
 };
 
 export function GuideSteps({
@@ -26,9 +34,20 @@ export function GuideSteps({
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
               {i + 1}
             </span>
-            <div>
+            <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-slate-900">{step.title}</h2>
               <p className="mt-1 text-sm text-slate-500">{step.description}</p>
+              {step.image && (
+                // eslint-disable-next-line @next/next/no-img-element -- plain
+                // <img> deliberately: these are static files under /public
+                // authored per-step in guide-content.ts, not user uploads,
+                // so next/image's remote-domain config isn't relevant here.
+                <img
+                  src={step.image}
+                  alt={step.imageAlt ?? step.title}
+                  className="mt-3 w-full max-w-md rounded-lg border border-slate-200"
+                />
+              )}
             </div>
           </li>
         ))}
