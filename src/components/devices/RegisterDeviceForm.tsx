@@ -40,6 +40,45 @@ export function RegisterDeviceForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // Only the device-specific fields reset after a successful registration —
+  // the customer fields (name, phone, outlook login) are deliberately left
+  // filled in so the same person's next PC doesn't need them retyped. Added
+  // 2026-09-26: previously the whole form cleared, so registering N devices
+  // for one customer meant entering their details N times.
+  function resetDeviceFields() {
+    setForm((f) => ({
+      ...f,
+      aucAssetBarcode: "",
+      serialNumber: "",
+      macAddress: "",
+      hostname: "",
+      reportedProblemType: "",
+      reportedProblemCustom: "",
+      expectedCompletionDate: "",
+      chargerReceived: false,
+      networkCableBarcode: "",
+      bagReceived: false,
+      // givenByName and assignedTechnicianId are left as-is too — for a
+      // multi-PC intake they're usually the same person/tech for every
+      // device in the batch. Cleared explicitly via "New customer" below.
+    }));
+  }
+
+  function resetCustomerFields() {
+    setForm((f) => ({
+      ...f,
+      title: "",
+      customerFullName: "",
+      phoneNumber: "",
+      outlookEmail: "",
+      outlookPassword: "",
+      regionalOffice: "",
+      givenByName: "",
+      assignedTechnicianId: "",
+    }));
+    setMessage(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
@@ -57,29 +96,10 @@ export function RegisterDeviceForm({
       }
       setMessage({
         type: "success",
-        text: `Device registered successfully. Job ID: ${data.jobId} · Receipt: ${data.receiptNumber}`,
+        text: `Device registered successfully. Job ID: ${data.jobId} · Receipt: ${data.receiptNumber}. Customer details below are kept for their next device — click "New customer" if the next one is someone else.`,
       });
       router.refresh();
-      setForm((f) => ({
-        ...f,
-        title: "",
-        customerFullName: "",
-        phoneNumber: "",
-        outlookEmail: "",
-        outlookPassword: "",
-        regionalOffice: "",
-        givenByName: "",
-        aucAssetBarcode: "",
-        serialNumber: "",
-        macAddress: "",
-        hostname: "",
-        reportedProblemType: "",
-        reportedProblemCustom: "",
-        expectedCompletionDate: "",
-        chargerReceived: false,
-        networkCableBarcode: "",
-        bagReceived: false,
-      }));
+      resetDeviceFields();
     } catch {
       setMessage({ type: "error", text: "Could not reach the server. Please try again." });
     } finally {
@@ -100,7 +120,20 @@ export function RegisterDeviceForm({
       )}
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-slate-900">Customer</legend>
+        <div className="flex items-center justify-between gap-3">
+          <legend className="text-sm font-semibold text-slate-900">Customer</legend>
+          <button
+            type="button"
+            onClick={resetCustomerFields}
+            className="text-xs font-medium text-brand-600 hover:underline"
+          >
+            New customer
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">
+          Registering another PC for the same person? Leave these filled in and just fill out the Device
+          section below. Click &ldquo;New customer&rdquo; to clear them for someone else.
+        </p>
         <div className="grid grid-cols-[100px_1fr] gap-3">
           <select className="input" value={form.title} onChange={(e) => set("title", e.target.value)}>
             <option value="">Title</option>

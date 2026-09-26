@@ -52,7 +52,7 @@ export function MyDevicesSection({
               <li key={job.id}>
                 <Link
                   href={`/devices/${job.id}`}
-                  className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-slate-50"
+                  className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 hover:bg-slate-50"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                     <ClipboardList className="h-4 w-4" />
