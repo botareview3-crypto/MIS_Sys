@@ -35,6 +35,7 @@ model User {
   notificationsRecv    Notification[]     @relation("NotificationRecipient")
   notificationsCreated Notification[]     @relation("NotificationCreatedBy")
   passwordResetTokens  PasswordResetToken[]
+  profileImage         UserProfileImage?
 
   @@map("users")
 }
@@ -204,6 +205,18 @@ model Notification {
   creator   User? @relation("NotificationCreatedBy", fields: [createdBy], references: [id])
 
   @@map("notifications")
+}
+
+model UserProfileImage {
+  userId     Int      @id @map("user_id")
+  mimeType   String   @map("mime_type") @db.VarChar(50)
+  imageData  String   @map("image_data")
+  checksum   String   @db.Char(64)
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profile_images")
 }
 
 model PasswordResetToken {
