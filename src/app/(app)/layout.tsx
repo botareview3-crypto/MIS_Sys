@@ -13,9 +13,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar session={session} />
-      <div className="flex-1 overflow-x-hidden">
+      <div className="flex h-full flex-1 flex-col overflow-y-auto overflow-x-hidden">
         <TopBar unreadNotifications={unreadNotifications} />
         {children}
       </div>
