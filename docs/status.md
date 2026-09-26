@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-25 (session 13)
+Last updated: 2026-09-26 (session 16)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -71,7 +71,16 @@ exactly what's changed, in order. This file is the current snapshot.
       **Not yet actually deployed** — see commit-log session 14 for the
       manual steps still needed (create the Render service, set secrets).
 
+- [x] Receipts: preview page + printed tracking (session 16). See
+      commit-log for exact deviations (Tailwind layout instead of pixel-for-
+      pixel `receipt.css` port; PDF export not included, see below).
+
 ## In progress / not started
+- [ ] Receipts: PDF export (`export-report-pdf.php` covers the Reports page,
+      not receipts — receipts only ever printed via the browser print
+      dialog in the original, there's no separate receipt-PDF endpoint to
+      port. Flag if the project owner actually wants a server-generated PDF
+      download in addition to browser print.)
 - [ ] **Local / Intra split** — sidebar groups Register Device / Manage
       Devices / Guide under two collapsible parent items, "Local" and
       "Intra" (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). Clarified
@@ -102,9 +111,6 @@ exactly what's changed, in order. This file is the current snapshot.
       (original: `notifications.php`, `mark-notification-read.php`,
       `mark-all-notifications-read.php`,
       `includes/device-change-notifications.php`)
-- [ ] Receipts: preview, printed tracking, PDF export
-      (original: `receipt-preview.php`, `mark-receipt-printed.php`,
-      `export-report-pdf.php`)
 - [ ] WhatsApp message prep (`whatsapp-message.php`)
 - [ ] Reports + audit history (`reports.php`, `audit-history.php`)
 - [ ] Admin search (`includes/admin-search*.php`)
@@ -217,17 +223,37 @@ exactly what's changed, in order. This file is the current snapshot.
     engine binary. Run `npm run build` in a real environment to confirm
     it completes end-to-end.
 
+13. **Receipts preview (session 16) is a Tailwind re-layout, not a pixel
+    port of `assets/css/receipt.css`.** All the same fields, sections, and
+    role/scoping rules are there (Admin/Reception/Technician only, a
+    Technician further scoped to their own assigned jobs — Secondary Admin
+    gets no link and no route access at all, unlike the Outlook-password
+    button's carried-over inconsistency in deviation #10), and it still
+    prints cleanly via the browser (`window.print()`), but the exact visual
+    styling (gradients, spacing, the specific `official-receipt` CSS
+    classes) was rebuilt with Tailwind utilities to match the rest of this
+    app rather than copied line-for-line from the old CSS file. Flag if
+    pixel-identical output is actually required (e.g. printed receipts are
+    compared side-by-side with old ones, or a fixed paper size/margins
+    matters). Also note: the original status-doc line for this item
+    bundled in "PDF export" via `export-report-pdf.php` — that file is
+    actually part of the **Reports** page (`requireRoles(['Admin'])`,
+    builds a full system report, not a single receipt), not a receipts
+    feature. There is no separate receipt-to-PDF endpoint in the original;
+    receipts were only ever printed via the browser dialog. PDF export has
+    been moved to the Reports item accordingly.
+
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above). Repair-deadline sync and manufacturer lookup / reveal-outlook-
-   password are both built — see deviations #9 and #10 above for what's
-   still open on each. Good next candidates: Receipts (preview/printed/
-   PDF export), WhatsApp message prep, or Reports + audit history (the
-   latter should probably wait on deciding deviation #8's audit_logs
-   naming drift first, since it's the first feature that would actually
-   query by `action_type`).
+   above). Repair-deadline sync, manufacturer lookup / reveal-outlook-
+   password, and Receipts preview/print are all built — see deviations #9,
+   #10, and #13 above for what's still open on each. Good next candidates:
+   WhatsApp message prep, or Reports + audit history (the latter should
+   probably wait on deciding deviation #8's audit_logs naming drift first,
+   since it's the first feature that would actually query by
+   `action_type`).
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

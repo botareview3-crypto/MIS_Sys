@@ -4,6 +4,68 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (16) — Receipts: preview page + printed tracking
+
+**Scope:** First of the three not-started items to be picked up (Receipts,
+WhatsApp message prep, Reports). Ported the receipt preview screen and its
+print-tracking endpoint; PDF export was re-scoped to the Reports item (see
+below).
+
+**Changed:**
+- `src/app/receipts/[id]/page.tsx` — new standalone receipt preview page,
+  ported from `app/pages/receipts/receipt-preview.php`. Deliberately placed
+  outside the `(app)` route group (no sidebar), matching the original's
+  standalone/printable page. Role gate: Admin, Reception, Technician only
+  (Secondary Admin gets a plain redirect to `/dashboard` — the original
+  never linked this page for that role, so unlike deviation #10 there's no
+  partial-visibility inconsistency to preserve here). A Technician is
+  further scoped to receipts belonging to jobs assigned to them
+  (`assignedTechnicianId`), matching the original's conditional SQL.
+- `src/components/receipts/PrintReceiptButton.tsx` — new client component,
+  ported from the inline `<script>` on `receipt-preview.php`. POSTs to the
+  print-tracking endpoint first, then calls `window.print()`, and updates
+  its own label with the returned print count — same sequencing as the
+  original.
+- `src/app/api/receipts/[id]/print/route.ts` — new API route, ported from
+  `app/pages/receipts/mark-receipt-printed.php`. Same role gate and
+  Technician scoping as the preview page; increments `print_count` +
+  stamps `printed_at` in a transaction, then writes an `audit_logs` row
+  (`action_type: "receipt_printed"`) — an audit-log failure does not fail
+  the request, matching the original's own try/catch around that part.
+  No CSRF token (same established decision as every other mutating route
+  in this codebase — see status.md deviation #3).
+- `src/app/(app)/devices/[id]/page.tsx` — the existing Receipts list now
+  shows the print count when > 0, and links each receipt to its new
+  `/receipts/[id]` preview page (link only shown for the three roles that
+  can actually open it).
+
+**Verified:**
+- `npx tsc --noEmit` — clean
+- `npm run build` — compiles and typechecks successfully; fails only at
+  "Collecting page data" on the pre-existing, already-documented sandbox
+  limitation (no network access to `binaries.prisma.sh` to fetch the Prisma
+  query-engine binary — see status.md deviation #4). Same failure point as
+  every prior session's build attempt in this sandbox; not a regression.
+
+**Not verified:** not run against a live DB/browser (same sandbox network
+limitation as always) — please click through Preview → Print on a real
+repair job's receipt before trusting the visual layout and the print
+dialog behavior.
+
+**Deviations — see status.md deviation #13 for the full writeup:**
+- The receipt preview's visual design is a Tailwind rebuild, not a
+  pixel-for-pixel port of `assets/css/receipt.css`. Same data, same
+  sections, same print behavior — different exact styling.
+- "PDF export" was dropped from the Receipts item in status.md's
+  "In progress" list — `export-report-pdf.php` is actually part of the
+  **Reports** page (`requireRoles(['Admin'])`, a full system report), not a
+  per-receipt PDF. There is no receipt-to-PDF endpoint in the original at
+  all; receipts are only ever printed via the browser dialog. Moved that
+  line item to Reports accordingly so it isn't lost, and isn't double-
+  counted as "still needed" here.
+
+---
+
 ## 2026-09-25 (15) — Render build fix: missing `baseUrl` broke `@/*` alias resolution in production
 
 **Scope:** Render deploy kept failing with `Module not found: Can't resolve

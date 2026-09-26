@@ -154,11 +154,21 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             ) : (
               <ul className="mt-3 space-y-1 text-sm">
                 {device.receipts.map((r: (typeof device.receipts)[number]) => (
-                  <li key={r.id} className="flex justify-between border-b border-slate-100 py-1.5 last:border-0">
+                  <li key={r.id} className="flex items-center justify-between gap-4 border-b border-slate-100 py-1.5 last:border-0">
                     <span>
                       {r.receiptType} · {r.receiptReference}
+                      {r.printCount > 0 && (
+                        <span className="ml-2 text-xs text-slate-400">(printed {r.printCount}×)</span>
+                      )}
                     </span>
-                    <span className="text-slate-400">{fmt(r.generatedAt)}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-slate-400">{fmt(r.generatedAt)}</span>
+                      {["Admin", "Reception", "Technician"].includes(session.role) && (
+                        <Link href={`/receipts/${r.id}`} className="text-brand-600 hover:underline">
+                          Preview
+                        </Link>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
