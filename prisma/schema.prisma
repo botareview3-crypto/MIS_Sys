@@ -35,22 +35,8 @@ model User {
   notificationsRecv    Notification[]     @relation("NotificationRecipient")
   notificationsCreated Notification[]     @relation("NotificationCreatedBy")
   passwordResetTokens  PasswordResetToken[]
-  profileImage         UserProfileImage?
 
   @@map("users")
-}
-
-/** Mirrors the user_profile_images table created by ensureProfileImageStorage() in includes/profile-images.php. */
-model UserProfileImage {
-  userId    Int      @id @map("user_id")
-  mimeType  String   @map("mime_type") @db.VarChar(50)
-  imageData String   @map("image_data")
-  checksum  String   @db.Char(64)
-  updatedAt DateTime @default(now()) @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_profile_images")
 }
 
 model LoginAttempt {

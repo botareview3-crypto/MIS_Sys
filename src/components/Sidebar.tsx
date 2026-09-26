@@ -19,11 +19,9 @@ function initials(fullName: string) {
 export function Sidebar({
   session,
   unreadNotifications,
-  profileImagePath,
 }: {
   session: SessionPayload;
   unreadNotifications: number;
-  profileImagePath?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -134,20 +132,13 @@ export function Sidebar({
 
       <div className="border-t border-slate-200 p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <Link href="/profile" aria-label="Open your profile" className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-              {profileImagePath ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profileImagePath} alt="" className="h-full w-full object-cover" />
-              ) : (
-                initials(session.fullName)
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{session.fullName}</p>
-              <p className="truncate text-xs text-slate-500">{session.role}</p>
-            </div>
-          </Link>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+            {initials(session.fullName)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-slate-900">{session.fullName}</p>
+            <p className="truncate text-xs text-slate-500">{session.role}</p>
+          </div>
           <button
             type="button"
             onClick={handleLogout}
