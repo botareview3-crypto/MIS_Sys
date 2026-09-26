@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { loadDeviceForRole } from "@/lib/devices";
+import { isMyJob } from "@/lib/my-jobs";
 import { manufacturerLookup } from "@/lib/device-manufacturer";
 import { DeleteDeviceButton } from "@/components/devices/DeleteDeviceButton";
 import { RevealOutlookPasswordButton } from "@/components/devices/RevealOutlookPasswordButton";
@@ -27,6 +28,17 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
   const canEdit = ["Admin", "Reception", "Technician"].includes(session.role);
   const canDelete = ["Admin", "Technician"].includes(session.role);
+  // Matches the role + ownership check enforced server-side by
+  // PATCH /api/repairs/[id]: Admin can always update a device's status.
+  // Secondary Admin already only reaches this page for devices assigned
+  // to them (loadDeviceForRole scopes the query), so no extra check is
+  // needed here. Technician is scoped to their own jobs — registered by
+  // them (acceptedBy) or assigned to them — same definition as "My Jobs"
+  // on the dashboard. Reception has no status-update access, same as today.
+  const canUpdateStatus =
+    session.role === "Admin" ||
+    session.role === "Secondary Admin" ||
+    (session.role === "Technician" && isMyJob(device, session.userId));
 
   return (
     <main className="p-8">
@@ -45,6 +57,11 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </span>
           </div>
           <div className="flex gap-2">
+            {canUpdateStatus && (
+              <Link href={`/repairs/${device.id}`} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+                Update Status
+              </Link>
+            )}
             {canEdit && (
               <Link href={`/devices/${device.id}/edit`} className="btn-primary">
                 Edit

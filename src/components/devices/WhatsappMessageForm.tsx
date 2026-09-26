@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { WhatsappMessageType } from "@/lib/whatsapp";
 
 /**
@@ -24,13 +25,16 @@ export function WhatsappMessageForm({
   initialMessage: string;
   disabled: boolean;
 }) {
+  const router = useRouter();
   const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNotice("");
     setLoading(true);
     try {
       const res = await fetch(`/api/devices/${deviceId}/whatsapp`, {
@@ -43,6 +47,10 @@ export function WhatsappMessageForm({
         throw new Error(data.message || "The WhatsApp message could not be prepared.");
       }
       window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+      if (data.statusAutoAdvancedToRepairing) {
+        setNotice("Message saved — status was automatically updated to Repairing.");
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "The WhatsApp message could not be prepared.");
     } finally {
@@ -53,6 +61,7 @@ export function WhatsappMessageForm({
   return (
     <form onSubmit={handleSubmit} className="card space-y-4 p-5">
       {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {notice && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>}
 
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700">Recipient Number</label>

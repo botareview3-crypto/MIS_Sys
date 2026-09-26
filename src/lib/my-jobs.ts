@@ -15,6 +15,19 @@ export function myJobsWhere(userId: number) {
   };
 }
 
+/**
+ * Same "mine" definition as `myJobsWhere`, applied in memory to a job
+ * that's already been loaded (device detail page, WhatsApp send route) so
+ * those callers don't need a second query. Kept in sync with
+ * `myJobsWhere` — update both together.
+ */
+export function isMyJob(
+  job: { acceptedBy: number; assignedTechnicianId: number | null; assignedSecondaryAdminId: number | null },
+  userId: number,
+): boolean {
+  return job.acceptedBy === userId || job.assignedTechnicianId === userId || job.assignedSecondaryAdminId === userId;
+}
+
 export const STATUS_KEYS = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 export async function getMyDashboardData(userId: number) {
