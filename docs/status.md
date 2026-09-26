@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-26 (session 16)
+Last updated: 2026-09-26 (session 17)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -74,6 +74,11 @@ exactly what's changed, in order. This file is the current snapshot.
 - [x] Receipts: preview page + printed tracking (session 16). See
       commit-log for exact deviations (Tailwind layout instead of pixel-for-
       pixel `receipt.css` port; PDF export not included, see below).
+- [x] WhatsApp message prep (session 17) — `/devices/[id]/whatsapp?type=`,
+      `POST /api/devices/[id]/whatsapp`. See commit-log for the one
+      carried-over inconsistency (deviation #14): the "Prepare Message"
+      button is visible to Secondary Admin on the device page but the
+      page/endpoint both deny that role, same pattern as deviation #10.
 
 ## In progress / not started
 - [ ] Receipts: PDF export (`export-report-pdf.php` covers the Reports page,
@@ -111,7 +116,6 @@ exactly what's changed, in order. This file is the current snapshot.
       (original: `notifications.php`, `mark-notification-read.php`,
       `mark-all-notifications-read.php`,
       `includes/device-change-notifications.php`)
-- [ ] WhatsApp message prep (`whatsapp-message.php`)
 - [ ] Reports + audit history (`reports.php`, `audit-history.php`)
 - [ ] Admin search (`includes/admin-search*.php`)
 - [ ] System backups UI (`system-backups.php`, `includes/backup-engine.php`
@@ -119,12 +123,6 @@ exactly what's changed, in order. This file is the current snapshot.
 - [ ] Sidebar/nav → modern layout shell, role-aware
       (original: `includes/sidebar.php`, 20KB — defines the full nav/role
       visibility rules, read this before building the new layout shell)
-- [ ] Decide replacement for `whatsapp-message.php` (original stores an
-      encrypted Outlook password per customer via `includes/credentials.php`
-      — that encryption scheme is already ported and in active use, see
-      `src/lib/credentials.ts` — `encryptCredential()` at device
-      registration, `decryptCredential()` at reveal, session 13. This item
-      is now just about the WhatsApp message-prep feature itself.)
 
 ## Known deviations / decisions needed from project owner
 1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~
@@ -243,17 +241,30 @@ exactly what's changed, in order. This file is the current snapshot.
     receipts were only ever printed via the browser dialog. PDF export has
     been moved to the Reports item accordingly.
 
+14. **WhatsApp message prep (session 17) carries over a Secondary-Admin
+    button/endpoint visibility gap, same pattern as deviation #10.**
+    `view-device.php` allows Secondary Admin (`requireRoles(['Admin',
+    'Secondary Admin', 'Reception', 'Technician'])`) and unconditionally
+    shows the "Prepare Message" action bar when the job's status is
+    Received/Ready/Delivered, but `whatsapp-message.php` itself only allows
+    Admin/Reception/Technician. So a Secondary Admin sees the button on the
+    device page and gets denied on click (page redirect / 403 from the API
+    route) — carried over exactly, not fixed, per CLAUDE.md. Also note: the
+    original's SQL for this feature has **no** Technician-scoping clause
+    (unlike receipts, which does restrict a Technician to their own
+    assigned jobs) — any Technician can prepare a WhatsApp message for any
+    repair job. That's intentional-as-found, not an omission in this port.
+
 ## To resume in a new chat
 1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
    above). Repair-deadline sync, manufacturer lookup / reveal-outlook-
-   password, and Receipts preview/print are all built — see deviations #9,
-   #10, and #13 above for what's still open on each. Good next candidates:
-   WhatsApp message prep, or Reports + audit history (the latter should
-   probably wait on deciding deviation #8's audit_logs naming drift first,
-   since it's the first feature that would actually query by
-   `action_type`).
+   password, Receipts preview/print, and WhatsApp message prep are all
+   built — see deviations #9, #10, #13, and #14 above for what's still open
+   on each. Good next candidate: Reports + audit history — decide
+   deviation #8's `audit_logs` naming drift first, since that page is the
+   first thing that would actually query by `action_type`.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

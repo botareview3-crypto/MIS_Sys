@@ -176,7 +176,17 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
           </section>
 
           <section className="card col-span-2 p-5">
-            <h2 className="text-sm font-semibold text-slate-900">WhatsApp messages</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">WhatsApp messages</h2>
+              {["Received", "Ready", "Delivered"].includes(device.status) && (
+                <Link
+                  href={`/devices/${device.id}/whatsapp?type=${device.status}`}
+                  className="btn-primary bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
+                >
+                  Prepare {device.status} Message
+                </Link>
+              )}
+            </div>
             {device.whatsappLogs.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">No WhatsApp messages prepared yet.</p>
             ) : (

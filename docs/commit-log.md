@@ -4,6 +4,73 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (17) — WhatsApp message prep
+
+**Scope:** Second of the three not-started items (Receipts done last
+session). Ported the WhatsApp message-prep screen and its logging endpoint.
+
+**Changed:**
+- `src/lib/whatsapp.ts` — new shared helpers ported from
+  `app/pages/receipts/whatsapp-message.php`: Ethiopia-oriented phone
+  normalization (`normalizePhoneForWhatsapp`), the three message templates
+  (`buildDefaultWhatsappMessage`), accessory-list text builders, the
+  workflow-availability check (`getWhatsappWorkflowError` — Ready needs
+  status Ready/Delivered, Delivered needs status Delivered), and the
+  credential-leak content guard (`WHATSAPP_FORBIDDEN_CONTENT`). Split out
+  as shared helpers because the page (initial render) and the API route
+  (server-side re-validation on submit) both need identical logic — the
+  original computed both in one PHP request.
+- `src/app/(app)/devices/[id]/whatsapp/page.tsx` — new page,
+  `?type=Received|Ready|Delivered`. Lives inside the `(app)` route group
+  (shared sidebar) since the original includes `includes/sidebar.php` here
+  — unlike the receipt preview page, this one is a normal in-app screen.
+  Role gate: Admin, Reception, Technician (Secondary Admin redirected to
+  `/dashboard`). Deliberately **not** scoped to a Technician's own assigned
+  jobs — the original's SQL has no such clause for this feature (unlike
+  receipts) — see status.md deviation #14.
+- `src/components/devices/WhatsappMessageForm.tsx` — new client component:
+  editable message textarea with a live preview panel (mirrors the
+  original's `oninput` handler), submits to the API route, then navigates
+  the browser to the returned `wa.me` URL (replacing the original's
+  server-side `header('Location: ...')` redirect).
+- `src/app/api/devices/[id]/whatsapp/route.ts` — new API route, ported from
+  the POST branch of `whatsapp-message.php`. Re-validates message type,
+  workflow state, phone number, length (10–2000 chars), and the
+  credential-leak regex server-side; inserts into `whatsapp_logs`
+  (`message_status: "Prepared"`), writes an audit log
+  (`action_type: "whatsapp_message_prepared"`, failure here doesn't fail
+  the request, matching the original's own try/catch), and returns the
+  `wa.me` URL. No CSRF token (established codebase decision, status.md
+  deviation #3).
+- `src/app/(app)/devices/[id]/page.tsx` — added a "Prepare {status} Message"
+  button next to the WhatsApp messages panel, shown when status is
+  Received/Ready/Delivered — matches the original's action-bar condition.
+  Rendered for all four roles the device page is visible to (including
+  Secondary Admin), same as the original; see deviation #14 for why that's
+  a knowingly carried-over gap, not new.
+
+**Verified:**
+- `npx tsc --noEmit` — clean
+- `npm run build` — compiles and typechecks fully; fails only at
+  "Collecting page data" on the same pre-existing sandbox limitation as
+  every prior session (no network access to fetch the Prisma query-engine
+  binary — status.md deviation #4). Not a regression.
+
+**Not verified:** not run against a live DB/browser — please click through
+Prepare Message → Save & Open WhatsApp on a real job in each of the three
+message types before trusting the phone-normalization and template output
+end to end (Ethiopian numbers especially — the 09xxxxxxxx / 07xxxxxxxx /
++2519xxxxxxxx / 2519xxxxxxxx variants).
+
+**Deviations — see status.md deviation #14 for the full writeup:**
+- Secondary Admin sees the "Prepare Message" button (device page allows
+  that role) but is denied by the page/endpoint (this feature doesn't) —
+  carried over exactly from the original, not fixed.
+- No per-Technician job scoping on this feature, unlike Receipts — also
+  carried over exactly, not an oversight.
+
+---
+
 ## 2026-09-26 (16) — Receipts: preview page + printed tracking
 
 **Scope:** First of the three not-started items to be picked up (Receipts,
