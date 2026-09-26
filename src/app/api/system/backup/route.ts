@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { generateDatabaseBackup } from "@/lib/backups/generate-backup";
 
+// Always dynamic: reads the live session cookie and generates a fresh
+// backup per request. Without this, Next tries to statically prerender
+// the route at build time, which trips over the cookies() call inside
+// getSession() with no real request/DB available.
+export const dynamic = "force-dynamic";
+
 /**
  * On-demand DB backup download. Admin only, matching the original
  * system-backups.php. No file is written to disk — Render's free tier has
