@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { validExpectedCompletionDate } from "@/lib/repair-deadlines";
+import { autoSendWhatsappMessage } from "@/lib/whatsapp-auto-send";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
@@ -193,8 +194,15 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         }
       }
 
-      return { noChanges: false, workflowReceiptType, workflowReceiptReference };
+      return { noChanges: false, workflowReceiptType, workflowReceiptReference, statusChanged, newStatus: data.status };
     });
+
+    // Fire-and-forget: auto-send the "Ready" WhatsApp notification, only
+    // when status just changed TO Ready (not on every edit while it stays
+    // Ready). Same non-blocking, never-throws pattern as registration.
+    if (!result.noChanges && result.statusChanged && result.newStatus === "Ready") {
+      void autoSendWhatsappMessage({ repairJobId: deviceId, messageType: "Ready" });
+    }
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

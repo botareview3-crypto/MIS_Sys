@@ -104,6 +104,16 @@ exactly what's changed, in order. This file is the current snapshot.
       wired to the previously-unused `Customer.regionalOffice` column.
 
 ## In progress / not started
+- [ ] **WhatsApp auto-send needs a real deploy + QR scan to verify.** Built
+      session 19 (see commit-log): Received/Ready messages now auto-send via
+      `whatsapp-web.js`, session persisted to the new `whatsapp_sessions`
+      table. Nothing here was tested against a live WhatsApp session or a
+      live Render deploy — go to Administration → WhatsApp Setup, scan the
+      QR with the dedicated second number, then register a test device /
+      move one to Ready and confirm both the message arrives and
+      `whatsapp_logs` shows `Sent`. If the paired number gets flagged/banned
+      by WhatsApp (a real risk with this approach), the manual wa.me flow on
+      the other number is unaffected.
 - [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
       search across the admin UI. Not the same as the per-page search boxes
       already ported on Audit History / Reports. Genuinely not started;

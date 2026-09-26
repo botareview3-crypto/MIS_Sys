@@ -4,6 +4,71 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (19) — Automatic WhatsApp sending (Received/Ready)
+
+**Scope:** The WhatsApp messages section on a device's detail page used to be
+100% manual (button → wa.me link → staff taps Send in WhatsApp). Owner
+wanted Received/Ready messages sent with no button click, and free only.
+
+**Decision (owner-confirmed):** Meta's Cloud API is not free for
+business-initiated messages under its current per-message pricing, and
+needs template approval + a dedicated Business number regardless. The only
+free path is `whatsapp-web.js` (unofficial — automates a real WhatsApp
+account via headless Chrome). Owner explicitly accepted the ToS/ban-risk
+tradeoff and asked to pair a second number (+251941135836) for this, not
+the number used for existing manual messages. Also explicitly declined
+message-randomization/evasion tricks aimed at avoiding detection — none
+were built; the only mitigations are low volume and keeping the manual
+wa.me flow intact as a fallback.
+
+**Changed:**
+- `prisma/schema.prisma` — **flagged schema change**: added `WhatsappSession`
+  (`whatsapp_sessions` table), additive only, no existing table/column/CHECK
+  constraint touched. Single-row blob store for the paired WhatsApp session.
+- `src/lib/whatsapp-client.ts` (new) — whatsapp-web.js `Client` singleton
+  (kept on `globalThis`). Uses `RemoteAuth` with a custom Prisma-backed
+  store (`PrismaWhatsappStore`) instead of the default `LocalAuth`, because
+  Render's free-tier filesystem is ephemeral (same constraint already
+  documented in `system-backups/page.tsx`) — a local session folder would
+  be wiped on every deploy/restart. Exposes `getWhatsappStatus()` (for the
+  pairing page) and `sendWhatsappTextMessage()`.
+- `src/lib/whatsapp-auto-send.ts` (new) — `autoSendWhatsappMessage()`:
+  looks up the job, builds the message with the existing
+  `buildDefaultWhatsappMessage()` template logic, sends it, and always logs
+  to `whatsapp_logs` (`messageStatus`: `"Sent"` or `"Failed"`) — including
+  when the customer has no valid WhatsApp number on file. Never throws.
+- `src/app/api/devices/register/route.ts` — fires (`void`, non-blocking)
+  `autoSendWhatsappMessage({ messageType: "Received" })` after a device is
+  registered.
+- `src/app/api/repairs/[id]/route.ts` — fires the same for `"Ready"`, only
+  when status just changed *to* Ready (not on every edit while already
+  Ready); transaction result now also returns `statusChanged`/`newStatus`.
+- `src/app/api/whatsapp/status/route.ts` (new), `src/app/(app)/settings/whatsapp/page.tsx`
+  (new), `src/components/settings/WhatsappStatusPanel.tsx` (new) — Admin-only
+  pairing page: shows a live QR code (polls every 4s) to link the phone,
+  then shows connected/error state. This is the one-time (or re-pairing)
+  setup step; no credentials or .env changes needed since everything is
+  stored in the existing Postgres DB.
+- `src/lib/nav.ts` — added "WhatsApp Setup" under Administration (Admin only).
+- `package.json` — added `whatsapp-web.js`, `qrcode` (+ `@types/qrcode`).
+
+**Known operational risks (flagged to owner, not silently absorbed):**
+- Unofficial automation — real risk of the paired number getting banned by
+  WhatsApp; if it happens, the existing manual wa.me flow on the *other*
+  number is unaffected.
+- Headless Chrome is heavy for Render's free-tier RAM/CPU; if the process
+  gets OOM-killed or restarted, the QR pairing page may need a rescan even
+  with the DB-backed session (RemoteAuth's periodic backup means anything
+  since the last 5-minute sync could be lost) — worth watching in practice,
+  not something that can be fully verified without a real deploy.
+- `npm install` will now also download Puppeteer's bundled Chromium
+  (~300MB), so first build after this change will take noticeably longer.
+
+**Not done / still manual:** the "Delivered" message (button-triggered
+prepare flow, untouched) — owner only asked for Received and Ready to
+auto-send.
+
+
 ## 2026-09-26 (18) — Export PDF, System Backups, Local/Intra guide split
 
 **Scope:** Closed out the two remaining "In progress / not started" items
