@@ -5,6 +5,7 @@ import { STATUS_KEYS } from "@/lib/my-jobs";
 type MyJob = {
   id: number;
   jobId: string;
+  hostname: string | null;
   status: string;
   receivedAt: Date;
   customer: { fullName: string };
@@ -47,18 +48,18 @@ export function MyDevicesSection({
             Nothing assigned to you yet. Devices you register or that get assigned to you will show up here.
           </p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="space-y-3">
             {jobs.map((job) => (
-              <li key={job.id} className="px-1">
+              <li key={job.id}>
                 <Link
                   href={`/devices/${job.id}`}
-                  className="flex items-center gap-3 rounded-lg px-2 py-5 first:pt-2 last:pb-2 hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-4 hover:bg-slate-50 hover:border-slate-200"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                     <ClipboardList className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-900">{job.jobId}</p>
+                    <p className="truncate text-sm font-medium text-slate-900">{job.hostname || "Unnamed device"}</p>
                     <p className="truncate text-xs text-slate-500">
                       {job.customer.fullName} · {formatDate(job.receivedAt)}
                     </p>
