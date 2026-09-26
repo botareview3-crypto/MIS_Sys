@@ -53,14 +53,17 @@ export function Sidebar({
         key={keyPrefix}
         href={item.href!}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+        className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
           indent ? "ml-4" : ""
         } ${
           active
-            ? "bg-brand-50 text-brand-700"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            ? "bg-white/[0.07] text-white"
+            : "text-ink-muted hover:bg-white/[0.04] hover:text-white"
         }`}
       >
+        {active && (
+          <span className="absolute -left-3 top-1/2 h-4 w-0.5 -transtone-y-1/2 rounded-full bg-brand-500" aria-hidden />
+        )}
         <Icon size={18} aria-hidden />
         <span className="flex-1">{item.label}</span>
       </Link>
@@ -69,7 +72,7 @@ export function Sidebar({
 
   const renderGroup = (label: string, items: ReturnType<typeof getNavGroups>["workspace"]) => (
     <div className="mb-6">
-      <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <p className="mb-2 px-3 text-xs font-medium tracking-wide text-ink-muted/70">
         {label}
       </p>
       <div className="space-y-0.5">
@@ -82,7 +85,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.label)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-white/[0.04] hover:text-white"
                   aria-expanded={open}
                 >
                   <Icon size={18} aria-hidden />
@@ -110,12 +113,12 @@ export function Sidebar({
   );
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
-      <div className="flex items-center gap-2 px-4 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-sm font-semibold text-white">
+    <aside className="flex h-screen w-64 shrink-0 flex-col bg-ink">
+      <div className="flex items-center gap-2.5 px-4 py-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-500 font-display text-sm font-bold text-white">
           A
         </div>
-        <strong className="text-sm font-semibold text-slate-900">MIS Repair</strong>
+        <strong className="font-display text-sm font-semibold text-white">MIS Repair</strong>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2">
@@ -123,20 +126,20 @@ export function Sidebar({
         {administration.length > 0 && renderGroup("Administration", administration)}
       </nav>
 
-      <div className="border-t border-slate-200 p-3">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+      <div className="border-t border-white/[0.06] p-3">
+        <div className="flex items-center gap-3 rounded-md px-2 py-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.08] text-xs font-semibold text-white">
             {initials(session.fullName)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-slate-900">{session.fullName}</p>
-            <p className="truncate text-xs text-slate-500">{session.role}</p>
+            <p className="truncate text-sm font-medium text-white">{session.fullName}</p>
+            <p className="truncate text-xs text-ink-muted">{session.role}</p>
           </div>
           <button
             type="button"
             onClick={handleLogout}
             aria-label="Log out"
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-white/[0.06] hover:text-white"
           >
             <LogOut size={16} aria-hidden />
           </button>

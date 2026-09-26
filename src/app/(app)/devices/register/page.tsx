@@ -25,8 +25,8 @@ export default async function RegisterDevicePage() {
   return (
     <main className="p-8">
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-lg font-semibold text-slate-900">Register Device</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-lg font-semibold text-stone-900">Register Device</h1>
+        <p className="mt-1 text-sm text-stone-500">
           Intake a device, create or reuse the customer record, and open a repair job.
         </p>
         <div className="card mt-6 p-6">

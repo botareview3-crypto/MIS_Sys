@@ -92,13 +92,13 @@ export function ProfilePhotoForm({
         </div>
 
         <div className="flex-1 min-w-[220px]">
-          <p className="text-sm font-semibold text-slate-900">Photo shown across AUC MIS</p>
-          <p className="mt-0.5 text-xs text-slate-500">JPG, PNG, or WebP. Maximum file size: 5 MB.</p>
+          <p className="text-sm font-semibold text-stone-900">Photo shown across AUC MIS</p>
+          <p className="mt-0.5 text-xs text-stone-500">JPG, PNG, or WebP. Maximum file size: 5 MB.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => fileInput.current?.click()}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               <Camera size={16} aria-hidden /> Choose Photo
             </button>
@@ -120,7 +120,7 @@ export function ProfilePhotoForm({
             hidden
             onChange={(e) => pickFile(e.target.files?.[0])}
           />
-          <p className="mt-2 text-xs text-slate-400">{fileName}</p>
+          <p className="mt-2 text-xs text-stone-400">{fileName}</p>
         </div>
       </div>
 

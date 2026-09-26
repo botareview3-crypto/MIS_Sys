@@ -34,7 +34,7 @@ export function SelfAssignButton({ deviceId }: { deviceId: number }) {
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="btn-primary bg-slate-700 hover:bg-slate-800 disabled:opacity-60"
+        className="btn-primary bg-stone-700 hover:bg-stone-800 disabled:opacity-60"
       >
         {loading ? "Assigning…" : "Assign to Me"}
       </button>

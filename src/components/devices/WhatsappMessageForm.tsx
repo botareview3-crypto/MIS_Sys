@@ -55,12 +55,12 @@ export function WhatsappMessageForm({
       {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Recipient Number</label>
-        <input className="input bg-slate-50" value={normalizedPhone} readOnly />
+        <label className="mb-1 block text-sm font-medium text-stone-700">Recipient Number</label>
+        <input className="input bg-stone-50" value={normalizedPhone} readOnly />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">WhatsApp Message</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">WhatsApp Message</label>
         <textarea
           className="input"
           rows={9}
@@ -69,18 +69,18 @@ export function WhatsappMessageForm({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-stone-400">
           Outlook passwords and other credentials must never be included in this message.
         </p>
       </div>
 
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4">
         <p className="mb-2 text-xs font-bold uppercase tracking-wide text-emerald-700">Message Preview</p>
-        <p className="whitespace-pre-wrap text-sm text-slate-800">{message}</p>
+        <p className="whitespace-pre-wrap text-sm text-stone-800">{message}</p>
       </div>
 
-      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-        <span className="text-xs text-slate-400">Message will be logged after opening WhatsApp.</span>
+      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
+        <span className="text-xs text-stone-400">Message will be logged after opening WhatsApp.</span>
         <button
           type="submit"
           disabled={disabled || loading || !normalizedPhone}

@@ -28,17 +28,17 @@ export default async function SystemBackupsPage() {
     <main className="p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
             System Maintenance
           </p>
-          <h1 className="mt-1 text-lg font-semibold text-slate-900">Database Backup</h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">Database Backup</h1>
+          <p className="mt-1 max-w-xl text-sm text-stone-500">
             Generate an on-demand export of every table in the database as SQL insert
             statements, zipped with a manifest. Nothing is stored on the server — the
             file is built fresh and downloaded directly to your browser.
           </p>
         </div>
-        <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Admin Access Only</span>
+        <span className="text-xs font-bold uppercase tracking-wide text-stone-400">Admin Access Only</span>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -48,8 +48,8 @@ export default async function SystemBackupsPage() {
           { label: "Customers", value: customerCount },
         ].map((s) => (
           <div key={s.label} className="card p-4">
-            <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-            <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+            <p className="text-2xl font-bold text-stone-900">{s.value}</p>
+            <p className="mt-1 text-xs font-medium text-stone-500">{s.label}</p>
           </div>
         ))}
       </div>
@@ -58,8 +58,8 @@ export default async function SystemBackupsPage() {
         <div className="flex items-center gap-3">
           <HardDriveDownload className="text-brand-600" size={28} aria-hidden />
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Create &amp; Download Backup</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-stone-900">Create &amp; Download Backup</h2>
+            <p className="mt-1 text-xs text-stone-500">
               Every table, in dependency-safe order, as a single .zip. Takes a few
               seconds for larger tables.
             </p>
@@ -71,8 +71,8 @@ export default async function SystemBackupsPage() {
       </div>
 
       <div className="card mt-6 flex items-start gap-3 p-5">
-        <ShieldCheck className="mt-0.5 shrink-0 text-slate-300" size={22} aria-hidden />
-        <p className="text-xs text-slate-500">
+        <ShieldCheck className="mt-0.5 shrink-0 text-stone-300" size={22} aria-hidden />
+        <p className="text-xs text-stone-500">
           Neon (the database host) also runs its own automated backups and
           point-in-time recovery independently of this page — this export is a
           convenience for the admin team, not the only safeguard.

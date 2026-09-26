@@ -53,9 +53,9 @@ export default async function NotificationsPage({
 
       <div className="mt-2 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Administration</p>
-          <h1 className="mt-1 text-lg font-semibold text-slate-900">Notifications</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Administration</p>
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">Notifications</h1>
+          <p className="mt-1 text-sm text-stone-500">
             Review important system activity requiring administrative awareness.
           </p>
         </div>
@@ -77,22 +77,22 @@ export default async function NotificationsPage({
 
       {notifications.length === 0 ? (
         <div className="card mt-4 flex flex-col items-center gap-2 p-12 text-center">
-          <p className="text-sm font-semibold text-slate-900">
+          <p className="text-sm font-semibold text-stone-900">
             {search !== "" ? "No matching notifications" : "No notifications yet"}
           </p>
-          <p className="max-w-sm text-sm text-slate-500">
+          <p className="max-w-sm text-sm text-stone-500">
             Important system activity, including device records deleted by technicians, will appear here.
           </p>
         </div>
       ) : (
         <div className="card mt-4">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">All Notifications</h2>
-            <p className="text-xs text-slate-500">
+          <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4">
+            <h2 className="text-sm font-semibold text-stone-900">All Notifications</h2>
+            <p className="text-xs text-stone-500">
               {unreadCount} unread · {notifications.length} total
             </p>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-stone-100">
             {notifications.map((n) => (
               <NotificationItem
                 key={n.id}

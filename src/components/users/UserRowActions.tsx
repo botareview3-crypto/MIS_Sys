@@ -110,7 +110,7 @@ export function UserRowActions({
           <div className="card w-full max-w-sm p-5">
             {modal === "reset" ? (
               <>
-                <h3 className="text-sm font-semibold text-slate-900">Reset password for {fullName}</h3>
+                <h3 className="text-sm font-semibold text-stone-900">Reset password for {fullName}</h3>
                 {error && <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
                 <input
                   type="password"
@@ -130,7 +130,7 @@ export function UserRowActions({
                   <button
                     type="button"
                     onClick={() => setModal(null)}
-                    className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                    className="rounded-lg px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
                   >
                     Cancel
                   </button>
@@ -141,8 +141,8 @@ export function UserRowActions({
               </>
             ) : (
               <>
-                <h3 className="text-sm font-semibold text-slate-900">Delete {fullName}?</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <h3 className="text-sm font-semibold text-stone-900">Delete {fullName}?</h3>
+                <p className="mt-1 text-sm text-stone-500">
                   This deactivates the technician account and unassigns them from any devices. This mirrors the
                   original system: only Technician accounts can be deleted this way.
                 </p>
@@ -151,7 +151,7 @@ export function UserRowActions({
                   <button
                     type="button"
                     onClick={() => setModal(null)}
-                    className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                    className="rounded-lg px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
                   >
                     Cancel
                   </button>

@@ -47,21 +47,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-lg font-semibold text-white">
             A
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">AUC MIS Repair Management</h1>
-          <p className="mt-1 text-sm text-slate-500">Account recovery</p>
+          <h1 className="text-xl font-semibold text-stone-900">AUC MIS Repair Management</h1>
+          <p className="mt-1 text-sm text-stone-500">Account recovery</p>
         </div>
 
         {!result ? (
           <form onSubmit={handleSubmit} className="card space-y-4 p-6">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Forgot password?</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-stone-900">Forgot password?</h2>
+              <p className="mt-1 text-sm text-stone-500">
                 Enter your username and a secure reset link will be generated for an administrator to share with you.
               </p>
             </div>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
             {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
             <div className="space-y-1.5">
-              <label htmlFor="username" className="text-sm font-medium text-slate-700">
+              <label htmlFor="username" className="text-sm font-medium text-stone-700">
                 Your username
               </label>
               <input
@@ -96,8 +96,8 @@ export default function ForgotPasswordPage() {
             {result.found ? (
               <>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Reset link generated</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <h2 className="text-lg font-semibold text-stone-900">Reset link generated</h2>
+                  <p className="mt-1 text-sm text-stone-500">
                     A secure password reset link has been generated for <strong>{result.fullName}</strong>. Copy the
                     link below and open it in your browser, or ask your system administrator to share it with you.
                   </p>
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-700">
                     Your password reset link
                   </p>
-                  <div className="break-all rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-700">
+                  <div className="break-all rounded-md border border-stone-200 bg-white px-3 py-2 font-mono text-xs text-stone-700">
                     {result.resetLink}
                   </div>
                   <button
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
                   >
                     {copied ? "✓ Copied!" : "Copy link"}
                   </button>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-stone-500">
                     ⏱ This link expires in <strong>1 hour</strong> and can only be used once.
                   </p>
                 </div>
@@ -128,8 +128,8 @@ export default function ForgotPasswordPage() {
               </>
             ) : (
               <>
-                <h2 className="text-lg font-semibold text-slate-900">Request received</h2>
-                <p className="text-sm text-slate-500">If a matching active account was found, a reset link has been generated.</p>
+                <h2 className="text-lg font-semibold text-stone-900">Request received</h2>
+                <p className="text-sm text-stone-500">If a matching active account was found, a reset link has been generated.</p>
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                   <strong>No account found or account is inactive.</strong> Please check your username and try again,
                   or contact your system administrator to reset your password manually via Manage Users.

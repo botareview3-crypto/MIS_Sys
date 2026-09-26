@@ -101,7 +101,7 @@ export function EditDeviceForm({
       )}
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-slate-900">Customer</legend>
+        <legend className="text-sm font-semibold text-stone-900">Customer</legend>
         <div className="grid grid-cols-[100px_1fr] gap-3">
           <select className="input" value={form.title} onChange={(e) => set("title", e.target.value)}>
             <option value="">Title</option>
@@ -130,7 +130,7 @@ export function EditDeviceForm({
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-slate-900">Device</legend>
+        <legend className="text-sm font-semibold text-stone-900">Device</legend>
         <input
           className="input"
           placeholder="Given by"
@@ -186,7 +186,7 @@ export function EditDeviceForm({
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Expected completion date</label>
+          <label className="mb-1 block text-sm font-medium text-stone-700">Expected completion date</label>
           <input
             type="date"
             className="input"
@@ -197,8 +197,8 @@ export function EditDeviceForm({
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-slate-900">Accessories</legend>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <legend className="text-sm font-semibold text-stone-900">Accessories</legend>
+        <label className="flex items-center gap-2 text-sm text-stone-700">
           <input
             type="checkbox"
             checked={form.chargerReceived}
@@ -212,7 +212,7 @@ export function EditDeviceForm({
           value={form.networkCableBarcode}
           onChange={(e) => set("networkCableBarcode", e.target.value)}
         />
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-stone-700">
           <input type="checkbox" checked={form.bagReceived} onChange={(e) => set("bagReceived", e.target.checked)} />
           Bag received
         </label>

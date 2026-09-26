@@ -95,7 +95,7 @@ export function AddUserForm() {
           </option>
         ))}
       </select>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-stone-700">
         <input type="checkbox" checked={form.isActive} onChange={(e) => set("isActive", e.target.checked)} />
         Active immediately
       </label>

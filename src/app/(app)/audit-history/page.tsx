@@ -107,30 +107,30 @@ export default async function AuditHistoryPage({
 
   return (
     <main className="p-8">
-      <nav className="flex items-center gap-1.5 text-xs text-slate-400" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-1.5 text-xs text-stone-400" aria-label="Breadcrumb">
         <span>AUC MIS</span>
         <ChevronRight size={12} aria-hidden />
         <Link href="/reports" className="hover:underline">
           Reports
         </Link>
         <ChevronRight size={12} aria-hidden />
-        <span className="font-semibold text-slate-600">Audit History</span>
+        <span className="font-semibold text-stone-600">Audit History</span>
       </nav>
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
             Secure System History
           </p>
-          <h1 className="mt-1 text-lg font-semibold text-slate-900">Audit History</h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">Audit History</h1>
+          <p className="mt-1 max-w-xl text-sm text-stone-500">
             Search and review important account, repair, assignment, credential, deletion, and system
             actions.
           </p>
         </div>
         <Link
           href="/reports"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           <ArrowLeft size={16} aria-hidden /> Back to Reports
         </Link>
@@ -160,7 +160,7 @@ export default async function AuditHistoryPage({
           </button>
           <Link
             href="/audit-history"
-            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
           >
             Clear
           </Link>
@@ -168,23 +168,23 @@ export default async function AuditHistoryPage({
       </form>
 
       <div className="card mt-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Recorded System Activity</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-stone-900">Recorded System Activity</h2>
+            <p className="mt-1 text-xs text-stone-500">
               {totalRecords} {totalRecords === 1 ? "matching event" : "matching events"}
             </p>
           </div>
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+          <span className="text-xs font-bold uppercase tracking-wide text-stone-400">
             Page {page} of {totalPages}
           </span>
         </div>
 
         {auditLogs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <ShieldCheck className="text-slate-300" size={32} aria-hidden />
-            <p className="text-sm font-semibold text-slate-900">No matching audit events found</p>
-            <p className="max-w-sm text-sm text-slate-500">
+            <ShieldCheck className="text-stone-300" size={32} aria-hidden />
+            <p className="text-sm font-semibold text-stone-900">No matching audit events found</p>
+            <p className="max-w-sm text-sm text-stone-500">
               Try changing the search text, action type, or date range.
             </p>
           </div>
@@ -192,7 +192,7 @@ export default async function AuditHistoryPage({
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Action</th>
@@ -206,43 +206,43 @@ export default async function AuditHistoryPage({
                 </thead>
                 <tbody>
                   {auditLogs.map((log, index) => (
-                    <tr key={log.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-4 py-3 text-xs text-slate-400">{offset + index + 1}</td>
-                      <td className="px-4 py-3 font-bold text-slate-900">
+                    <tr key={log.id} className="border-b border-stone-100 last:border-0">
+                      <td className="px-4 py-3 text-xs text-stone-400">{offset + index + 1}</td>
+                      <td className="px-4 py-3 font-bold text-stone-900">
                         {formatAuditLabel(log.actionType)}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-slate-700">{formatAuditLabel(log.recordType)}</div>
+                        <div className="font-semibold text-stone-700">{formatAuditLabel(log.recordType)}</div>
                         {log.recordId && (
-                          <div className="mt-0.5 text-xs text-slate-400">Record ID: {log.recordId}</div>
+                          <div className="mt-0.5 text-xs text-stone-400">Record ID: {log.recordId}</div>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         {log.recordReference ? (
-                          <span className="font-semibold text-slate-900">{log.recordReference}</span>
+                          <span className="font-semibold text-stone-900">{log.recordReference}</span>
                         ) : (
-                          <span className="text-xs text-slate-400">No reference</span>
+                          <span className="text-xs text-stone-400">No reference</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">
+                        <div className="font-bold text-stone-900">
                           {log.performer?.fullName ?? "System or Former User"}
                         </div>
                         {log.performer?.username && (
-                          <div className="mt-0.5 text-xs text-slate-400">@{log.performer.username}</div>
+                          <div className="mt-0.5 text-xs text-stone-400">@{log.performer.username}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {log.reason || <span className="text-xs text-slate-400">No reason provided</span>}
+                      <td className="px-4 py-3 text-stone-500">
+                        {log.reason || <span className="text-xs text-stone-400">No reason provided</span>}
                       </td>
                       <td className="px-4 py-3">
                         {log.ipAddress ? (
-                          <span className="font-semibold text-slate-900">{log.ipAddress}</span>
+                          <span className="font-semibold text-stone-900">{log.ipAddress}</span>
                         ) : (
-                          <span className="text-xs text-slate-400">Not recorded</span>
+                          <span className="text-xs text-stone-400">Not recorded</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">
+                      <td className="px-4 py-3 font-semibold text-stone-700">
                         {log.performedAt.toLocaleString(undefined, {
                           day: "2-digit",
                           month: "short",
@@ -259,26 +259,26 @@ export default async function AuditHistoryPage({
 
             {totalPages > 1 && (
               <nav
-                className="flex items-center gap-3 border-t border-slate-100 px-5 py-4"
+                className="flex items-center gap-3 border-t border-stone-100 px-5 py-4"
                 aria-label="Audit history pages"
               >
                 {page > 1 ? (
                   <Link
                     href={pageUrl(page - 1)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
                   >
                     <ChevronLeft size={14} aria-hidden /> Previous
                   </Link>
                 ) : (
                   <span />
                 )}
-                <span className="flex-1 text-center text-xs font-semibold text-slate-500">
+                <span className="flex-1 text-center text-xs font-semibold text-stone-500">
                   Page {page} of {totalPages}
                 </span>
                 {page < totalPages ? (
                   <Link
                     href={pageUrl(page + 1)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
                   >
                     Next <ChevronRight size={14} aria-hidden />
                   </Link>

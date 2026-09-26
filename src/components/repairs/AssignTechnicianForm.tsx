@@ -68,7 +68,7 @@ export function AssignTechnicianForm({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Technician</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Technician</label>
         <select className="input" value={technicianId} onChange={(e) => setTechnicianId(Number(e.target.value))}>
           <option value={0}>Unassigned</option>
           {technicians.map((t) => (
@@ -80,7 +80,7 @@ export function AssignTechnicianForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Additional Admin (optional)</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Additional Admin (optional)</label>
         <select
           className="input"
           value={secondaryAdminId}

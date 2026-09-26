@@ -78,7 +78,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
   const active = pathname.startsWith("/notifications");
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b border-slate-200 bg-white px-6">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b border-stone-200 bg-stone-50/90 px-6 backdrop-blur">
       <div ref={containerRef} className="relative">
         <button
           type="button"
@@ -87,7 +87,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
           aria-expanded={open}
           aria-haspopup="true"
           className={`relative flex h-10 w-10 items-center justify-center rounded-full transition ${
-            active || open ? "bg-brand-50" : "hover:bg-slate-100"
+            active || open ? "bg-brand-50" : "hover:bg-stone-100"
           }`}
         >
           <Bell
@@ -96,7 +96,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             className={
               hasUnread
                 ? "animate-bell-shake text-red-600 motion-reduce:animate-none"
-                : "text-slate-500"
+                : "text-stone-500"
             }
           />
           {hasUnread && (
@@ -112,29 +112,29 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+            className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-900">Notifications</p>
-              {hasUnread && <p className="text-xs text-slate-500">{unread} unread</p>}
+            <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+              <p className="text-sm font-semibold text-stone-900">Notifications</p>
+              {hasUnread && <p className="text-xs text-stone-500">{unread} unread</p>}
             </div>
 
             <div className="max-h-80 overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-slate-500">
+                <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-stone-500">
                   <Loader2 size={16} className="animate-spin" aria-hidden />
                   Loading…
                 </div>
               ) : items.length === 0 ? (
-                <p className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</p>
+                <p className="px-4 py-8 text-center text-sm text-stone-500">No notifications yet.</p>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-stone-100">
                   {items.map((n) => (
                     <li key={n.id}>
                       <button
                         type="button"
                         onClick={() => !n.isRead && markRead(n.id)}
-                        className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-slate-50 ${
+                        className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-stone-50 ${
                           n.isRead ? "" : "bg-brand-50/40"
                         }`}
                       >
@@ -142,11 +142,11 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
                           {!n.isRead && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" aria-hidden />
                           )}
-                          <span className="flex-1 truncate text-sm font-medium text-slate-900">
+                          <span className="flex-1 truncate text-sm font-medium text-stone-900">
                             {n.title}
                           </span>
                         </div>
-                        <p className="line-clamp-2 text-xs text-slate-500">{n.message}</p>
+                        <p className="line-clamp-2 text-xs text-stone-500">{n.message}</p>
                       </button>
                     </li>
                   ))}
@@ -157,7 +157,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             <button
               type="button"
               onClick={seeAll}
-              className="block w-full border-t border-slate-100 px-4 py-3 text-center text-sm font-medium text-brand-700 hover:bg-slate-50"
+              className="block w-full border-t border-stone-100 px-4 py-3 text-center text-sm font-medium text-brand-700 hover:bg-stone-50"
             >
               See all notifications
             </button>

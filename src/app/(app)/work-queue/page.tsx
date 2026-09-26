@@ -25,7 +25,7 @@ export default async function WorkQueuePage({
   if (!hasAccess) {
     return (
       <main className="p-8">
-        <div className="card p-6 text-sm text-slate-500">
+        <div className="card p-6 text-sm text-stone-500">
           Your role does not have access to the Work Queue.
         </div>
       </main>
@@ -131,12 +131,12 @@ export default async function WorkQueuePage({
 
   return (
     <main className="p-8">
-      <h1 className="text-lg font-semibold text-slate-900">Work Queue</h1>
-      <p className="mt-1 text-sm text-slate-500">All Registered Devices</p>
+      <h1 className="text-lg font-semibold text-stone-900">Work Queue</h1>
+      <p className="mt-1 text-sm text-stone-500">All Registered Devices</p>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {Object.entries(statusTotals).map(([status, count]) => (
-          <span key={status} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+          <span key={status} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
             {status}: {count}
           </span>
         ))}
@@ -147,10 +147,10 @@ export default async function WorkQueuePage({
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
             Current focus · {remainingActiveJobs} active job(s)
           </p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">
+          <h2 className="mt-1 text-base font-semibold text-stone-900">
             {currentQueueItem.hostname || "Device"} — {currentQueueItem.customer.fullName}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{currentQueueItem.reportedProblem}</p>
+          <p className="mt-1 text-sm text-stone-500">{currentQueueItem.reportedProblem}</p>
           <div className="mt-3 flex gap-2">
             <Link href={`/repairs/${currentQueueItem.id}`} className="btn-primary">
               Update repair
@@ -182,7 +182,7 @@ export default async function WorkQueuePage({
 
       <div className="card mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
             <tr>
               <th className="px-4 py-3">Host Name</th>
               <th className="px-4 py-3">Customer</th>
@@ -200,20 +200,20 @@ export default async function WorkQueuePage({
                 d.expectedCompletionDate.toISOString().slice(0, 10) < today &&
                 d.status !== "Delivered";
               return (
-                <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-slate-900">{d.hostname || "—"}</td>
+                <tr key={d.id} className="border-b border-stone-100 last:border-0">
+                  <td className="px-4 py-3 font-medium text-stone-900">{d.hostname || "—"}</td>
                   <td className="px-4 py-3">{d.customer.fullName}</td>
-                  <td className="px-4 py-3 max-w-[240px] truncate text-slate-500">{d.reportedProblem}</td>
+                  <td className="px-4 py-3 max-w-[240px] truncate text-stone-500">{d.reportedProblem}</td>
                   <td className="px-4 py-3">
                     <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
                       {d.status}
                     </span>
                   </td>
-                  <td className={`px-4 py-3 ${overdue ? "font-semibold text-red-600" : "text-slate-500"}`}>
+                  <td className={`px-4 py-3 ${overdue ? "font-semibold text-red-600" : "text-stone-500"}`}>
                     {d.expectedCompletionDate ? d.expectedCompletionDate.toISOString().slice(0, 10) : "—"}
                     {overdue ? " · overdue" : ""}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{d.technician?.fullName ?? "—"}</td>
+                  <td className="px-4 py-3 text-stone-500">{d.technician?.fullName ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <Link href={`/repairs/${d.id}`} className="text-brand-600 hover:underline">
@@ -224,7 +224,7 @@ export default async function WorkQueuePage({
                           Assign
                         </Link>
                       )}
-                      <Link href={`/devices/${d.id}`} className="text-slate-400 hover:underline">
+                      <Link href={`/devices/${d.id}`} className="text-stone-400 hover:underline">
                         View
                       </Link>
                     </div>
@@ -234,7 +234,7 @@ export default async function WorkQueuePage({
             })}
             {sortedQueue.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-stone-400">
                   No devices match these filters.
                 </td>
               </tr>

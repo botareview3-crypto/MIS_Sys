@@ -30,26 +30,26 @@ export default async function ProfilePage() {
 
       <div className="mt-2 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Personal Account</p>
-          <h1 className="mt-1 text-lg font-semibold text-slate-900">My Profile</h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Personal Account</p>
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">My Profile</h1>
+          <p className="mt-1 max-w-xl text-sm text-stone-500">
             Keep your staff photo current so colleagues can quickly identify who is using the system.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-stone-200 bg-stone-200 sm:grid-cols-3">
         <div className="bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Full Name</p>
-          <p className="mt-1 break-words text-sm font-bold text-slate-900">{user.fullName}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-400">Full Name</p>
+          <p className="mt-1 break-words text-sm font-bold text-stone-900">{user.fullName}</p>
         </div>
         <div className="bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Username</p>
-          <p className="mt-1 break-words text-sm font-bold text-slate-900">{user.username}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-400">Username</p>
+          <p className="mt-1 break-words text-sm font-bold text-stone-900">{user.username}</p>
         </div>
         <div className="bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">System Role</p>
-          <p className="mt-1 break-words text-sm font-bold text-slate-900">{user.role}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-stone-400">System Role</p>
+          <p className="mt-1 break-words text-sm font-bold text-stone-900">{user.role}</p>
         </div>
       </div>
 

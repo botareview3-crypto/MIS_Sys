@@ -121,7 +121,7 @@ export function RegisterDeviceForm({
 
       <fieldset className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <legend className="text-sm font-semibold text-slate-900">Customer</legend>
+          <legend className="text-sm font-semibold text-stone-900">Customer</legend>
           <button
             type="button"
             onClick={resetCustomerFields}
@@ -130,7 +130,7 @@ export function RegisterDeviceForm({
             New customer
           </button>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-500">
           Registering another PC for the same person? Leave these filled in and just fill out the Device
           section below. Click &ldquo;New customer&rdquo; to clear them for someone else.
         </p>
@@ -164,7 +164,7 @@ export function RegisterDeviceForm({
               onChange={(e) => set("outlookEmail", e.target.value)}
               required
             />
-            <span className="flex items-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500">
+            <span className="flex items-center rounded-r-lg border border-l-0 border-stone-300 bg-stone-50 px-3 text-sm text-stone-500">
               @africanunion.org
             </span>
           </div>
@@ -185,7 +185,7 @@ export function RegisterDeviceForm({
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-slate-900">Device</legend>
+        <legend className="text-sm font-semibold text-stone-900">Device</legend>
         <input
           className="input"
           placeholder="Given by (name of person dropping off)"
@@ -259,7 +259,7 @@ export function RegisterDeviceForm({
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-stone-700">
             Expected completion date (optional)
           </label>
           <input
@@ -272,8 +272,8 @@ export function RegisterDeviceForm({
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold text-slate-900">Accessories</legend>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <legend className="text-sm font-semibold text-stone-900">Accessories</legend>
+        <label className="flex items-center gap-2 text-sm text-stone-700">
           <input
             type="checkbox"
             checked={form.chargerReceived}
@@ -287,7 +287,7 @@ export function RegisterDeviceForm({
           value={form.networkCableBarcode}
           onChange={(e) => set("networkCableBarcode", e.target.value)}
         />
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-stone-700">
           <input type="checkbox" checked={form.bagReceived} onChange={(e) => set("bagReceived", e.target.checked)} />
           Bag received
         </label>

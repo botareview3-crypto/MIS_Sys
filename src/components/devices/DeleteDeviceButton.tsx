@@ -52,8 +52,8 @@ export function DeleteDeviceButton({ deviceId, jobId }: { deviceId: number; jobI
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="card w-full max-w-sm p-5">
-        <h3 className="text-sm font-semibold text-slate-900">Delete device {jobId}?</h3>
-        <p className="mt-1 text-sm text-slate-500">
+        <h3 className="text-sm font-semibold text-stone-900">Delete device {jobId}?</h3>
+        <p className="mt-1 text-sm text-stone-500">
           This permanently removes the device and its operational records. Audit history is preserved.
         </p>
         {error && <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -68,7 +68,7 @@ export function DeleteDeviceButton({ deviceId, jobId }: { deviceId: number; jobI
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
           >
             Cancel
           </button>

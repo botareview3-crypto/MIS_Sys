@@ -25,7 +25,7 @@ export function BackLink({
   href,
   label,
   useHistory = false,
-  className = "text-sm text-slate-500 hover:text-slate-700",
+  className = "text-sm text-stone-500 hover:text-stone-700",
 }: {
   href: string;
   label: string;

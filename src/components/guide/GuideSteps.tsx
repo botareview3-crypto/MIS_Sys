@@ -23,9 +23,9 @@ export function GuideSteps({
   return (
     <main className="p-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Guide</p>
-        <h1 className="mt-1 text-lg font-semibold text-slate-900">{heading}</h1>
-        {intro ? <p className="mt-1 max-w-xl text-sm text-slate-500">{intro}</p> : null}
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Guide</p>
+        <h1 className="mt-1 text-lg font-semibold text-stone-900">{heading}</h1>
+        {intro ? <p className="mt-1 max-w-xl text-sm text-stone-500">{intro}</p> : null}
       </div>
 
       <ol className="mt-6 space-y-3">
@@ -35,8 +35,8 @@ export function GuideSteps({
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-slate-900">{step.title}</h2>
-              <p className="mt-1 text-sm text-slate-500">{step.description}</p>
+              <h2 className="text-sm font-semibold text-stone-900">{step.title}</h2>
+              <p className="mt-1 text-sm text-stone-500">{step.description}</p>
               {step.image && (
                 // eslint-disable-next-line @next/next/no-img-element -- plain
                 // <img> deliberately: these are static files under /public
@@ -45,7 +45,7 @@ export function GuideSteps({
                 <img
                   src={step.image}
                   alt={step.imageAlt ?? step.title}
-                  className="mt-3 w-full max-w-md rounded-lg border border-slate-200"
+                  className="mt-3 w-full max-w-md rounded-lg border border-stone-200"
                 />
               )}
             </div>

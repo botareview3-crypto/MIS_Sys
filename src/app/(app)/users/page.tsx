@@ -48,8 +48,8 @@ export default async function ManageUsersPage({
     <main className="p-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">Manage Users</h1>
-          <p className="mt-1 text-sm text-slate-500">{totalUsers} account(s)</p>
+          <h1 className="text-lg font-semibold text-stone-900">Manage Users</h1>
+          <p className="mt-1 text-sm text-stone-500">{totalUsers} account(s)</p>
         </div>
         <Link href="/users/add" className="btn-primary">
           Add user
@@ -57,13 +57,13 @@ export default async function ManageUsersPage({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
           Admins: {totalAdmins}
         </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
           Reception: {totalReception}
         </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
           Technicians: {totalTechnicians}
         </span>
       </div>
@@ -83,7 +83,7 @@ export default async function ManageUsersPage({
 
       <div className="card mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Username</th>
@@ -94,8 +94,8 @@ export default async function ManageUsersPage({
           </thead>
           <tbody>
             {sortedUsers.map((u) => (
-              <tr key={u.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-3 font-medium text-slate-900">
+              <tr key={u.id} className="border-b border-stone-100 last:border-0">
+                <td className="px-4 py-3 font-medium text-stone-900">
                   {u.fullName}
                   {u.isMainAdmin && (
                     <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
@@ -103,7 +103,7 @@ export default async function ManageUsersPage({
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-500">{u.username}</td>
+                <td className="px-4 py-3 text-stone-500">{u.username}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
                     {u.role}
@@ -112,7 +112,7 @@ export default async function ManageUsersPage({
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      u.isActive ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"
+                      u.isActive ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500"
                     }`}
                   >
                     {u.isActive ? "Active" : "Inactive"}
@@ -131,7 +131,7 @@ export default async function ManageUsersPage({
             ))}
             {sortedUsers.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-stone-400">
                   No user accounts match this search.
                 </td>
               </tr>

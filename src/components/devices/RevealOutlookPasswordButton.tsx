@@ -38,14 +38,14 @@ export function RevealOutlookPasswordButton({ deviceId }: { deviceId: number }) 
 
   return (
     <span className="inline-flex items-center gap-2">
-      <span className={error ? "text-red-600" : "text-slate-700"}>
+      <span className={error ? "text-red-600" : "text-stone-700"}>
         {error || (visible && password ? password : "••••••••")}
       </span>
       <button
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+        className="rounded-md border border-stone-200 px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
       >
         {loading ? "…" : visible ? "Hide" : "Show"}
       </button>

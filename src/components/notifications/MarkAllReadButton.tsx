@@ -23,7 +23,7 @@ export function MarkAllReadButton() {
       type="button"
       disabled={busy}
       onClick={markAll}
-      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:opacity-60"
     >
       <CheckCheck size={16} aria-hidden />
       {busy ? "Marking…" : "Mark all read"}

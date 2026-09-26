@@ -3,28 +3,79 @@
 @tailwind utilities;
 
 :root {
-  --bg: 250 250 252;
-  --fg: 15 18 27;
+  --bg: 245 245 241; /* stone-50 */
+  --fg: 20 21 31; /* ink */
 }
 
 body {
-  @apply bg-[rgb(var(--bg))] text-[rgb(var(--fg))] antialiased;
+  @apply bg-[rgb(var(--bg))] text-[rgb(var(--fg))] antialiased font-sans;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
+h1, h2, h3, h4 {
+  @apply font-display;
+}
+
+/* Flat by default; a border does the work a shadow used to. Depth is
+   reserved for things you can act on (see .card-interactive). */
 .card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply rounded-md border border-stone-200 bg-white;
+}
+
+.card-interactive {
+  @apply card transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_8px_20px_-12px_rgba(20,21,31,0.25)];
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5
-    text-sm font-medium text-white transition hover:bg-brand-700
+  @apply inline-flex items-center justify-center rounded-full bg-brand-500 px-4 py-2.5
+    text-sm font-medium text-white transition hover:bg-brand-600
+    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-full border border-stone-300 bg-white px-4 py-2.5
+    text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50
     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
     focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
 }
 
 .input {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm
-    placeholder:text-slate-400 focus:border-brand-500 focus:outline-none
+  @apply w-full rounded-md border border-stone-300 bg-white px-3 py-2.5 text-sm
+    placeholder:text-stone-400 focus:border-brand-500 focus:outline-none
     focus:ring-2 focus:ring-brand-500/20;
+}
+
+/* Status key: same five colors everywhere a repair-job status is shown. */
+.badge-status {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium;
+}
+.badge-status::before {
+  content: "";
+  @apply h-1.5 w-1.5 rounded-full;
+}
+.badge-status-received {
+  @apply badge-status border-status-received/25 bg-status-received/10 text-status-received;
+}
+.badge-status-received::before { @apply bg-status-received; }
+.badge-status-diagnosing {
+  @apply badge-status border-status-diagnosing/25 bg-status-diagnosing/10 text-status-diagnosing;
+}
+.badge-status-diagnosing::before { @apply bg-status-diagnosing; }
+.badge-status-repairing {
+  @apply badge-status border-status-repairing/25 bg-status-repairing/10 text-status-repairing;
+}
+.badge-status-repairing::before { @apply bg-status-repairing; }
+.badge-status-ready {
+  @apply badge-status border-status-ready/25 bg-status-ready/10 text-status-ready;
+}
+.badge-status-ready::before { @apply bg-status-ready; }
+.badge-status-delivered {
+  @apply badge-status border-status-delivered/25 bg-status-delivered/10 text-status-delivered;
+}
+.badge-status-delivered::before { @apply bg-status-delivered; }
+
+/* Job IDs, serials, timestamps — anything that's data rather than prose. */
+.data-mono {
+  @apply font-mono tabular-nums;
 }

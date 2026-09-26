@@ -79,22 +79,22 @@ function ResetPasswordForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-lg font-semibold text-white">
             A
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">AUC MIS Repair Management</h1>
+          <h1 className="text-xl font-semibold text-stone-900">AUC MIS Repair Management</h1>
         </div>
 
         <div className="card space-y-4 p-6">
-          {check.status === "checking" && <p className="text-sm text-slate-500">Checking your reset link...</p>}
+          {check.status === "checking" && <p className="text-sm text-stone-500">Checking your reset link...</p>}
 
           {check.status === "invalid" && (
             <>
-              <h2 className="text-lg font-semibold text-slate-900">Link invalid</h2>
-              <p className="text-sm text-slate-500">{check.message}</p>
+              <h2 className="text-lg font-semibold text-stone-900">Link invalid</h2>
+              <p className="text-sm text-stone-500">{check.message}</p>
               <a href="/forgot-password" className="btn-primary block w-full text-center">
                 Request new link
               </a>
@@ -106,8 +106,8 @@ function ResetPasswordForm() {
 
           {check.status === "success" && (
             <>
-              <h2 className="text-lg font-semibold text-slate-900">Password updated!</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-stone-900">Password updated!</h2>
+              <p className="text-sm text-stone-500">
                 Your password has been changed successfully. You can now log in with your new password.
               </p>
               <a href="/login" className="btn-primary block w-full text-center">
@@ -119,7 +119,7 @@ function ResetPasswordForm() {
           {check.status === "valid" && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Set new password</h2>
+                <h2 className="text-lg font-semibold text-stone-900">Set new password</h2>
                 <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50/60 px-3 py-1 text-xs font-semibold text-brand-700">
                   {check.fullName}
                 </span>
@@ -128,7 +128,7 @@ function ResetPasswordForm() {
               {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                <label htmlFor="password" className="text-sm font-medium text-stone-700">
                   New password
                 </label>
                 <div className="flex gap-2">
@@ -147,16 +147,16 @@ function ResetPasswordForm() {
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="shrink-0 rounded-lg border border-slate-300 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    className="shrink-0 rounded-lg border border-stone-300 px-3 text-xs font-medium text-stone-600 hover:bg-stone-50"
                   >
                     {showPw ? "Hide" : "Show"}
                   </button>
                 </div>
-                <p className="text-xs text-slate-400">{strengthLabel(password)}</p>
+                <p className="text-xs text-stone-400">{strengthLabel(password)}</p>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="password_confirmation" className="text-sm font-medium text-slate-700">
+                <label htmlFor="password_confirmation" className="text-sm font-medium text-stone-700">
                   Confirm new password
                 </label>
                 <input

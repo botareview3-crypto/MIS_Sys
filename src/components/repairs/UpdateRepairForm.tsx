@@ -104,7 +104,7 @@ export function UpdateRepairForm({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Status</label>
         <select className="input" value={form.status} onChange={(e) => set("status", e.target.value)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -124,7 +124,7 @@ export function UpdateRepairForm({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Technician diagnosis</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Technician diagnosis</label>
         <textarea
           className="input"
           rows={4}
@@ -134,7 +134,7 @@ export function UpdateRepairForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Repair notes</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Repair notes</label>
         <textarea
           className="input"
           rows={5}
@@ -144,7 +144,7 @@ export function UpdateRepairForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Expected completion date</label>
+        <label className="mb-1 block text-sm font-medium text-stone-700">Expected completion date</label>
         <input
           type="date"
           className="input"
@@ -154,9 +154,9 @@ export function UpdateRepairForm({
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-semibold text-slate-900">Accessory returns</legend>
+        <legend className="text-sm font-semibold text-stone-900">Accessory returns</legend>
         {initial.chargerReceived && (
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-stone-700">
             <input
               type="checkbox"
               checked={form.chargerReturned}
@@ -166,7 +166,7 @@ export function UpdateRepairForm({
           </label>
         )}
         {initial.networkCableReceived && (
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-stone-700">
             <input
               type="checkbox"
               checked={form.networkCableReturned}
@@ -176,13 +176,13 @@ export function UpdateRepairForm({
           </label>
         )}
         {initial.bagReceived && (
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-stone-700">
             <input type="checkbox" checked={form.bagReturned} onChange={(e) => set("bagReturned", e.target.checked)} />
             Bag returned to customer
           </label>
         )}
         {!initial.chargerReceived && !initial.networkCableReceived && !initial.bagReceived && (
-          <p className="text-sm text-slate-400">No accessories were received with this device.</p>
+          <p className="text-sm text-stone-400">No accessories were received with this device.</p>
         )}
       </fieldset>
 

@@ -70,11 +70,11 @@ export default async function ReportsPage({
     <main className="p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
             Operational Intelligence
           </p>
-          <h1 className="mt-1 text-lg font-semibold text-slate-900">Reports and History</h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">Reports and History</h1>
+          <p className="mt-1 max-w-xl text-sm text-stone-500">
             Review repair activity, status changes, receipts, customer communications, deletions, and
             authorized system actions.
           </p>
@@ -86,24 +86,24 @@ export default async function ReportsPage({
           <Link href="/audit-history" className="btn-primary">
             View Audit History
           </Link>
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Admin Access Only</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-stone-400">Admin Access Only</span>
         </div>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="card p-4">
-            <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-            <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+            <p className="text-2xl font-bold text-stone-900">{s.value}</p>
+            <p className="mt-1 text-xs font-medium text-stone-500">{s.label}</p>
           </div>
         ))}
       </div>
 
       <div className="card mt-6">
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-stone-100 px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Recent Audit Activity</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-stone-900">Recent Audit Activity</h2>
+            <p className="mt-1 text-xs text-stone-500">
               {search !== ""
                 ? "The ten latest matching actions. Overview totals above include all records."
                 : "The ten latest important system actions."}
@@ -117,10 +117,10 @@ export default async function ReportsPage({
               </Link>
             )}
           </div>
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Secure History</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-stone-400">Secure History</span>
         </div>
 
-        <form className="flex gap-3 border-b border-slate-100 p-4" method="GET">
+        <form className="flex gap-3 border-b border-stone-100 p-4" method="GET">
           <input
             type="text"
             name="search"
@@ -135,16 +135,16 @@ export default async function ReportsPage({
 
         {recentAuditLogs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <ShieldCheck className="text-slate-300" size={32} aria-hidden />
-            <p className="text-sm font-semibold text-slate-900">No audit activity recorded</p>
-            <p className="max-w-sm text-sm text-slate-500">
+            <ShieldCheck className="text-stone-300" size={32} aria-hidden />
+            <p className="text-sm font-semibold text-stone-900">No audit activity recorded</p>
+            <p className="max-w-sm text-sm text-stone-500">
               Important system activity will appear here after users perform recorded actions.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
                 <tr>
                   <th className="px-4 py-3">#</th>
                   <th className="px-4 py-3">Action</th>
@@ -157,26 +157,26 @@ export default async function ReportsPage({
               </thead>
               <tbody>
                 {recentAuditLogs.map((log, index) => (
-                  <tr key={log.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-4 py-3 text-xs text-slate-400">{index + 1}</td>
-                    <td className="px-4 py-3 font-bold text-slate-900">
+                  <tr key={log.id} className="border-b border-stone-100 last:border-0">
+                    <td className="px-4 py-3 text-xs text-stone-400">{index + 1}</td>
+                    <td className="px-4 py-3 font-bold text-stone-900">
                       {formatAuditAction(log.actionType)}
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{formatAuditAction(log.recordType)}</td>
+                    <td className="px-4 py-3 text-stone-700">{formatAuditAction(log.recordType)}</td>
                     <td className="px-4 py-3">
                       {log.recordReference ? (
-                        <span className="font-semibold text-slate-900">{log.recordReference}</span>
+                        <span className="font-semibold text-stone-900">{log.recordReference}</span>
                       ) : (
-                        <span className="text-xs text-slate-400">No reference</span>
+                        <span className="text-xs text-stone-400">No reference</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-bold text-slate-900">
+                    <td className="px-4 py-3 font-bold text-stone-900">
                       {log.performer?.fullName ?? "System or Former User"}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {log.reason || <span className="text-xs text-slate-400">No reason provided</span>}
+                    <td className="px-4 py-3 text-stone-500">
+                      {log.reason || <span className="text-xs text-stone-400">No reason provided</span>}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-slate-700">
+                    <td className="px-4 py-3 font-semibold text-stone-700">
                       {log.performedAt.toLocaleString(undefined, {
                         day: "2-digit",
                         month: "short",

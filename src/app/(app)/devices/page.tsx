@@ -92,8 +92,8 @@ export default async function ManageDevicesPage({
 
   return (
     <main className="p-8">
-      <h1 className="text-lg font-semibold text-slate-900">Manage Devices</h1>
-      <p className="mt-1 text-sm text-slate-500">{totalRecords} device(s) found</p>
+      <h1 className="text-lg font-semibold text-stone-900">Manage Devices</h1>
+      <p className="mt-1 text-sm text-stone-500">{totalRecords} device(s) found</p>
 
       <form className="card mt-6 flex flex-wrap gap-3 p-4" method="GET">
         <input
@@ -128,7 +128,7 @@ export default async function ManageDevicesPage({
 
       <div className="card mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
             <tr>
               <th className="px-4 py-3">Job ID</th>
               <th className="px-4 py-3">Customer</th>
@@ -140,14 +140,14 @@ export default async function ManageDevicesPage({
           </thead>
           <tbody>
             {devices.map((d: (typeof devices)[number]) => (
-              <tr key={d.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">
+              <tr key={d.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50">
+                <td className="px-4 py-3 font-medium text-stone-900">
                   <Link href={`/devices/${d.id}`} className="text-brand-600 hover:underline">
                     {d.jobId}
                   </Link>
                 </td>
                 <td className="px-4 py-3">{d.customer.fullName}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-stone-500">
                   {d.aucAssetBarcode} / {d.serialNumber}
                 </td>
                 <td className="px-4 py-3">
@@ -155,13 +155,13 @@ export default async function ManageDevicesPage({
                     {d.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-500">{d.technician?.fullName ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{d.receivedAt.toISOString().slice(0, 10)}</td>
+                <td className="px-4 py-3 text-stone-500">{d.technician?.fullName ?? "—"}</td>
+                <td className="px-4 py-3 text-stone-500">{d.receivedAt.toISOString().slice(0, 10)}</td>
               </tr>
             ))}
             {devices.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
                   No devices match these filters.
                 </td>
               </tr>
@@ -174,16 +174,16 @@ export default async function ManageDevicesPage({
         <div className="mt-4 flex items-center justify-center gap-2 text-sm">
           <Link
             href={buildUrl({ page: String(Math.max(1, page - 1)) })}
-            className={`rounded-md px-3 py-1.5 ${page <= 1 ? "pointer-events-none text-slate-300" : "text-brand-600 hover:bg-brand-50"}`}
+            className={`rounded-md px-3 py-1.5 ${page <= 1 ? "pointer-events-none text-stone-300" : "text-brand-600 hover:bg-brand-50"}`}
           >
             Previous
           </Link>
-          <span className="text-slate-500">
+          <span className="text-stone-500">
             Page {page} of {totalPages}
           </span>
           <Link
             href={buildUrl({ page: String(Math.min(totalPages, page + 1)) })}
-            className={`rounded-md px-3 py-1.5 ${page >= totalPages ? "pointer-events-none text-slate-300" : "text-brand-600 hover:bg-brand-50"}`}
+            className={`rounded-md px-3 py-1.5 ${page >= totalPages ? "pointer-events-none text-stone-300" : "text-brand-600 hover:bg-brand-50"}`}
           >
             Next
           </Link>

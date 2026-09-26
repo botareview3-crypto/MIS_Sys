@@ -50,27 +50,27 @@ export function NotificationItem({
     <article className={`flex gap-4 px-5 py-4 ${isRead ? "bg-white" : "bg-brand-50/40"}`}>
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-          isRead ? "bg-slate-100 text-slate-500" : "bg-blue-100 text-blue-600"
+          isRead ? "bg-stone-100 text-stone-500" : "bg-blue-100 text-blue-600"
         }`}
       >
         <Icon size={18} aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+          <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-stone-500">
             {notificationType.replace(/_/g, " ")}
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-              isRead ? "bg-slate-100 text-slate-400" : "bg-blue-50 text-blue-600 ring-1 ring-blue-200"
+              isRead ? "bg-stone-100 text-stone-400" : "bg-blue-50 text-blue-600 ring-1 ring-blue-200"
             }`}
           >
             {isRead ? "Read" : "Unread"}
           </span>
         </div>
-        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-        <p className="mt-1 whitespace-pre-line text-sm text-slate-600">{message}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+        <h3 className="text-sm font-bold text-stone-900">{title}</h3>
+        <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{message}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-stone-400">
           <span className="inline-flex items-center gap-1">
             <UserCircle size={13} aria-hidden /> {createdByName}
           </span>
@@ -94,7 +94,7 @@ export function NotificationItem({
               type="button"
               disabled={busy}
               onClick={markRead}
-              className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-brand-600 disabled:opacity-60"
+              className="inline-flex items-center gap-1 font-semibold text-stone-500 hover:text-brand-600 disabled:opacity-60"
             >
               <Check size={14} aria-hidden /> Mark as read
             </button>
