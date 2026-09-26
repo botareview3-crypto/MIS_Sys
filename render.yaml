@@ -55,6 +55,17 @@ services:
     # (~200MB Chrome download) on top of the ~300MB Puppeteer/Chromium
     # weight session 19 already flagged - accepted cost of the free-tier
     # whatsapp-web.js approach.
+    #
+    # ALSO NOTE (session 24): the download above still wasn't enough by
+    # itself - it landed in $HOME/.cache/puppeteer (/opt/render/.cache),
+    # which is OUTSIDE the project directory Render actually carries from
+    # the build step into the running instance ("Uploading build..." only
+    # packages the project folder). See `.puppeteerrc.cjs` at the repo
+    # root, which redirects Puppeteer's cache into the project directory
+    # itself so build-time download and runtime `puppeteer.launch()` agree
+    # on where to find it. This buildCommand didn't need to change for
+    # that fix - `.puppeteerrc.cjs` is picked up automatically by both the
+    # CLI install step here and the runtime client.
     buildCommand: npm install --include=dev && npx puppeteer browsers install chrome && npm run build
     startCommand: npm start
     healthCheckPath: /api/health

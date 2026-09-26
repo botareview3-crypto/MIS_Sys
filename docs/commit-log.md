@@ -4,6 +4,59 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (24) — Fix: Puppeteer Chrome cache lands outside Render's deployed project folder
+
+**Scope:** Session 23's fix (`npx puppeteer browsers install chrome` in
+the build command) did make Chrome download successfully — confirmed in
+the build log: `chrome@146.0.7680.31
+/opt/render/.cache/puppeteer/chrome/linux-146.0.7680.31/chrome-linux64/chrome`,
+followed by a clean `Build successful`. But the WhatsApp Setup page still
+hit the identical "Could not find Chrome" error afterward, same version
+number.
+
+**Diagnosis:** confirmed against Puppeteer's own docs, which name Render
+specifically: *"If you deploy a project using Puppeteer to a hosting
+provider, such as Render or Heroku, you might need to reconfigure the
+location of the cache to be within your project folder... because not all
+hosting providers include `$HOME/.cache` into the project's deployment."*
+Puppeteer's default cache dir is `$HOME/.cache/puppeteer`
+(`/opt/render/.cache/puppeteer` here). Render's build log shows an
+`Uploading build...` step right after `next build` finishes — that step
+only packages the project directory (`/opt/render/project/src`), not
+arbitrary paths under `$HOME`. So Chrome genuinely did download during the
+build, into a location that then never made it into the running instance.
+Also a matching, well-known upstream report:
+https://github.com/puppeteer/puppeteer/issues/9694 ("Puppeteer fails to
+find Chromium on Render.com") — same exact error text.
+
+**Fix:** added `.puppeteerrc.cjs` at the repo root (Puppeteer's own
+documented mechanism for this exact scenario), setting
+`cacheDirectory: join(__dirname, ".cache", "puppeteer")` — i.e. inside the
+project folder instead of `$HOME`. This file is read automatically both by
+the `npx puppeteer browsers install chrome` CLI step (build time) and by
+`puppeteer.launch()` inside whatsapp-web.js's `Client` (runtime), so both
+now agree on the same project-relative path, and that path is what Render
+actually carries from build into the running instance. `render.yaml`'s
+`buildCommand` itself didn't need to change for this.
+
+**Changed:**
+- `.puppeteerrc.cjs` (new) — cache-directory override, with an inline
+  comment explaining why.
+- `.gitignore` — added `.cache/` so the downloaded Chrome binary is never
+  accidentally committed if this is ever run/built locally.
+- `render.yaml` — comment expanded to note the cache-location fix and
+  point at `.puppeteerrc.cjs`.
+
+**Not verified:** same standing limitation as sessions 20/23 — this
+sandbox has no network access to actually run
+`npx puppeteer browsers install chrome` or `next start` and confirm Chrome
+gets found at runtime. Watch the next build log for the same
+`chrome@146.0.7680.31 ...` download line (should still appear — the
+config file changes *where* it downloads to, not whether it downloads),
+then re-check the WhatsApp Setup page.
+
+---
+
 ## 2026-09-26 (23) — Fix: Puppeteer can't find Chrome on Render
 
 **Scope:** After session 22's revert unblocked deploys, the WhatsApp Setup
