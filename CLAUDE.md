@@ -32,13 +32,28 @@ $repoPath   = "D:\Chrome_Downloads\MIS_Sys"
 # --- 1. Unzip the download (into its own temp folder first) ---
 Expand-Archive -Path $zipPath -DestinationPath $extractTo -Force
 
-# --- 2. Copy the extracted files into the git repo, overwriting existing ones ---
+# --- 2. Remove files/folders this delivery deleted (only present when
+# Claude's reply says files were removed this session; empty/omit
+# otherwise — see "Handling deleted files" below) ---
+$toRemove = @(
+    # "path\to\removed\file.ts",
+    # "path\to\removed\folder"
+)
+foreach ($path in $toRemove) {
+    $fullPath = Join-Path $repoPath $path
+    if (Test-Path $fullPath) {
+        Remove-Item -Path $fullPath -Recurse -Force
+        Write-Host "Removed: $fullPath"
+    }
+}
+
+# --- 3. Copy the extracted files into the git repo, overwriting existing ones ---
 Copy-Item -Path "$extractTo\*" -Destination $repoPath -Recurse -Force
 
-# --- 3. Clean up the temp extraction folder ---
+# --- 4. Clean up the temp extraction folder ---
 Remove-Item -Path $extractTo -Recurse -Force
 
-# --- 4. Stage, commit, and push ---
+# --- 5. Stage, commit, and push ---
 cd $repoPath
 git status
 git add -A
@@ -52,10 +67,20 @@ Notes for Claude to keep in mind:
 - Check the actual downloaded filename in `<DOWNLOADS_FOLDER>` before assuming
   it matches `$zipPath` exactly (browsers append ` (1)`, etc. on repeat
   downloads).
-- `Copy-Item -Force` overwrites files but does not delete files that exist in
-  the repo but not in the new zip.
 - Never assume the default branch name — tell the user to confirm with
   `git branch --show-current` before pushing.
+
+### Handling deleted files
+
+`Copy-Item -Force` overwrites files but never deletes ones that exist in the
+repo but not in the new zip — first hit 2026-09-26 (session 25) when the
+WhatsApp auto-send removal left stale files behind. Whenever Claude's own
+changes this session delete a file or folder from the project (not just
+edit it), Claude must populate the `$toRemove` array in step 2 above with
+every such path (Windows-style backslashes, relative to `$repoPath`) —
+don't leave it commented out/empty in that case. When nothing was deleted
+this session, leave `$toRemove` empty and say so briefly, so the user
+knows step 2 is a no-op rather than wondering if something was missed.
 
 ## File naming
 
