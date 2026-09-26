@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import {
   isWhatsappMessageType,
   getWhatsappWorkflowError,
+  getMultiDeviceReadyBlockMessage,
   normalizePhoneForWhatsapp,
   buildReceivedAccessoryText,
   buildReturnedAccessoryText,
@@ -63,6 +64,24 @@ export default async function WhatsappMessagePage({
     pageError = "The customer phone number is not valid for WhatsApp.";
   }
 
+  // For "Ready": a customer with several devices in for repair should only
+  // get one combined message once ALL of their devices are ready — never
+  // one message per device as each individually finishes.
+  let otherReadyHostnames: (string | null)[] | undefined;
+  if (!pageError && messageType === "Ready") {
+    const otherActiveDevices = await prisma.repairJob.findMany({
+      where: { customerId: job.customerId, id: { not: job.id }, status: { not: "Delivered" } },
+      select: { hostname: true, jobId: true, status: true },
+    });
+
+    const blockMessage = getMultiDeviceReadyBlockMessage(otherActiveDevices);
+    if (blockMessage) {
+      pageError = blockMessage;
+    } else if (otherActiveDevices.length > 0) {
+      otherReadyHostnames = otherActiveDevices.map((d) => d.hostname);
+    }
+  }
+
   const receivedAccessoryText = buildReceivedAccessoryText({
     chargerReceived: job.accessories?.chargerReceived ?? false,
     networkCableBarcode: job.accessories?.networkCableBarcode ?? null,
@@ -76,11 +95,12 @@ export default async function WhatsappMessagePage({
 
   const defaultMessage = buildDefaultWhatsappMessage(messageType, {
     customerName,
-    jobId: job.jobId,
+    hostname: job.hostname,
     receivedAt: job.receivedAt,
     deliveredAt: job.deliveredAt,
     receivedAccessoryText,
     returnedAccessoryText,
+    otherReadyHostnames,
   });
 
   return (

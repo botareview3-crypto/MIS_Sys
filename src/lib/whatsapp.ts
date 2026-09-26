@@ -86,39 +86,88 @@ function fmtTime(d: Date): string {
   return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }).format(d);
 }
 
-/** Mirrors the three message templates in the original exactly. */
+/**
+ * Message templates, revised from the original three:
+ * - Job ID dropped (staff-facing detail, not useful to the customer); the
+ *   device's hostname is used instead so the customer can tell which
+ *   machine is being referred to.
+ * - "Thank you for trusting AUC MIS" dropped from the Received/Delivered
+ *   templates — these are organization-owned PCs receiving mandatory
+ *   maintenance, not a service the customer opted into, so gratitude-for-
+ *   trust framing doesn't fit. Replaced with a plain statement of what
+ *   happens next / an invitation to reach out.
+ * - "Ready" supports a combined multi-device message via
+ *   `otherReadyHostnames`: when a customer has more than one device in for
+ *   repair, callers should only pass this once every device is Ready, so a
+ *   single message goes out instead of one per device. See
+ *   `getMultiDeviceReadyBlockMessage` for the corresponding "not all ready
+ *   yet" guard.
+ */
 export function buildDefaultWhatsappMessage(
   messageType: WhatsappMessageType,
   opts: {
     customerName: string;
-    jobId: string;
+    hostname: string | null;
     receivedAt: Date;
     deliveredAt: Date | null;
     receivedAccessoryText: string;
     returnedAccessoryText: string;
+    /** Hostnames of the customer's OTHER devices, only when all of them are also Ready. */
+    otherReadyHostnames?: (string | null)[];
   },
 ): string {
+  const deviceLabel = opts.hostname ? ` (${opts.hostname})` : "";
+
   if (messageType === "Received") {
     return (
-      `Dear ${opts.customerName}, we received your computer for maintenance on ` +
+      `Dear ${opts.customerName}, we received your computer${deviceLabel} for maintenance on ` +
       `${fmtDate(opts.receivedAt)} at ${fmtTime(opts.receivedAt)}. ` +
-      `Items received: ${opts.receivedAccessoryText}. Your Job ID is ${opts.jobId}. ` +
-      `Thank you for trusting AUC MIS.`
+      `Items received: ${opts.receivedAccessoryText}. ` +
+      `We will inform you once it is ready for pick-up.`
     );
   }
+
   if (messageType === "Ready") {
+    if (opts.otherReadyHostnames && opts.otherReadyHostnames.length > 0) {
+      const allDeviceLabels = [opts.hostname, ...opts.otherReadyHostnames]
+        .map((h, i) => h || `device ${i + 1}`)
+        .join(", ");
+      return (
+        `Dear ${opts.customerName}, maintenance for your computers (${allDeviceLabels}) is complete ` +
+        `and they are all ready for collection. Please bring your receipt when collecting them.`
+      );
+    }
     return (
-      `Dear ${opts.customerName}, maintenance for your computer is complete ` +
-      `and it is ready for collection. Your Job ID is ${opts.jobId}. ` +
-      `Please bring your receipt when collecting it.`
+      `Dear ${opts.customerName}, maintenance for your computer${deviceLabel} is complete ` +
+      `and it is ready for collection. Please bring your receipt when collecting it.`
     );
   }
+
   const deliveredAt = opts.deliveredAt ?? new Date();
   return (
-    `Dear ${opts.customerName}, your computer was delivered on ` +
+    `Dear ${opts.customerName}, your computer${deviceLabel} was delivered on ` +
     `${fmtDate(deliveredAt)} at ${fmtTime(deliveredAt)} together with ` +
     `${opts.returnedAccessoryText}. The reported issue was addressed. ` +
-    `Thank you for trusting AUC MIS.`
+    `Please contact AUC MIS if you notice any further issues.`
+  );
+}
+
+/**
+ * For the "Ready" message on a customer with multiple devices: the message
+ * should only go out once every one of the customer's still-active devices
+ * (not yet Delivered) is Ready. Pass the OTHER active devices' statuses
+ * (excluding the current one) and this returns a non-empty error naming the
+ * ones still in progress, or "" when it's safe to send.
+ */
+export function getMultiDeviceReadyBlockMessage(
+  otherActiveDevices: { hostname: string | null; jobId: string; status: string }[],
+): string {
+  const notReady = otherActiveDevices.filter((d) => !["Ready", "Delivered"].includes(d.status));
+  if (notReady.length === 0) return "";
+  const names = notReady.map((d) => d.hostname || d.jobId).join(", ");
+  return (
+    `This customer has ${notReady.length} other device(s) still in progress (${names}). ` +
+    `Wait until all of this customer's devices are ready before sending the Ready message.`
   );
 }
 

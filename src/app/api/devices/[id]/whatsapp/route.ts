@@ -4,6 +4,7 @@ import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import {
   isWhatsappMessageType,
   getWhatsappWorkflowError,
+  getMultiDeviceReadyBlockMessage,
   normalizePhoneForWhatsapp,
   buildWhatsappUrl,
   WHATSAPP_FORBIDDEN_CONTENT,
@@ -76,6 +77,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const workflowError = getWhatsappWorkflowError(messageType, job.status);
   if (workflowError) {
     return NextResponse.json({ success: false, message: workflowError }, { status: 422 });
+  }
+
+  // Same multi-device guard as the page: never let a "Ready" message go out
+  // while the customer has other devices still in progress, even if the
+  // client-side check was somehow bypassed.
+  if (messageType === "Ready") {
+    const otherActiveDevices = await prisma.repairJob.findMany({
+      where: { customerId: job.customerId, id: { not: job.id }, status: { not: "Delivered" } },
+      select: { hostname: true, jobId: true, status: true },
+    });
+    const multiDeviceBlock = getMultiDeviceReadyBlockMessage(otherActiveDevices);
+    if (multiDeviceBlock) {
+      return NextResponse.json({ success: false, message: multiDeviceBlock }, { status: 422 });
+    }
   }
 
   const normalizedPhone = normalizePhoneForWhatsapp(job.customer.phoneNumber);

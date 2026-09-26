@@ -7,8 +7,9 @@ import type { WhatsappMessageType } from "@/lib/whatsapp";
  * Ported from the <form> + live preview + `oninput` handler on
  * whatsapp-message.php. Submitting POSTs the (possibly edited) message to
  * the API route, which logs it and returns the wa.me URL; on success we
- * navigate the browser there, matching the original's server-side
- * `header('Location: ...')` redirect straight into WhatsApp.
+ * open that URL in a new tab (rather than the original's server-side
+ * `header('Location: ...')` redirect) so staff don't lose this page — they
+ * can send the message in the new tab and come straight back here.
  */
 export function WhatsappMessageForm({
   deviceId,
@@ -41,7 +42,7 @@ export function WhatsappMessageForm({
       if (!res.ok || !data.success) {
         throw new Error(data.message || "The WhatsApp message could not be prepared.");
       }
-      window.location.href = data.whatsappUrl;
+      window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
     } catch (err) {
       setError(err instanceof Error ? err.message : "The WhatsApp message could not be prepared.");
     } finally {
