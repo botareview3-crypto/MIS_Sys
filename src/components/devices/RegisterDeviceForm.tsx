@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
-import { BarcodeScanButton } from "./BarcodeScanButton";
+import { Barcode, Plus, Trash2 } from "lucide-react";
 
 type Technician = { id: number; fullName: string; role: string };
 
@@ -77,6 +76,14 @@ export function RegisterDeviceForm({
 
   function removeDevice(index: number) {
     setDevices((ds) => (ds.length <= 1 ? ds : ds.filter((_, i) => i !== index)));
+  }
+
+  // USB barcode scanners act as a keyboard — they just "type" the scanned
+  // value into whichever field is focused, then usually send an Enter
+  // keystroke. Left alone, that Enter would submit the whole form as soon
+  // as one barcode is scanned, so it's suppressed on the barcode fields.
+  function blockEnterSubmit(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") e.preventDefault();
   }
 
   function resetCustomerFields() {
@@ -237,30 +244,32 @@ export function RegisterDeviceForm({
             required
           />
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-stretch gap-2">
+            <div className="relative">
               <input
-                className="input flex-1"
+                className="input pr-10"
                 placeholder="PC barcode"
                 value={device.aucAssetBarcode}
                 onChange={(e) => setDeviceField(index, "aucAssetBarcode", e.target.value)}
+                onKeyDown={blockEnterSubmit}
                 required
               />
-              <BarcodeScanButton
-                label="Scan PC barcode"
-                onScan={(value) => setDeviceField(index, "aucAssetBarcode", value)}
+              <Barcode
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
             </div>
-            <div className="flex items-stretch gap-2">
+            <div className="relative">
               <input
-                className="input flex-1"
+                className="input pr-10"
                 placeholder="Serial number"
                 value={device.serialNumber}
                 onChange={(e) => setDeviceField(index, "serialNumber", e.target.value)}
+                onKeyDown={blockEnterSubmit}
                 required
               />
-              <BarcodeScanButton
-                label="Scan serial number"
-                onScan={(value) => setDeviceField(index, "serialNumber", value)}
+              <Barcode
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
             </div>
             <input
@@ -336,17 +345,18 @@ export function RegisterDeviceForm({
               />
               Charger received
             </label>
-            <div className="flex items-stretch gap-2">
+            <div className="relative">
               <input
-                className="input flex-1"
+                className="input pr-10"
                 placeholder="Network cable barcode"
                 value={device.networkCableBarcode}
                 onChange={(e) => setDeviceField(index, "networkCableBarcode", e.target.value)}
+                onKeyDown={blockEnterSubmit}
                 required
               />
-              <BarcodeScanButton
-                label="Scan network cable barcode"
-                onScan={(value) => setDeviceField(index, "networkCableBarcode", value)}
+              <Barcode
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
             </div>
             <label className="flex items-center gap-2 text-sm text-stone-700">

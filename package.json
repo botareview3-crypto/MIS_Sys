@@ -17,8 +17,6 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
-    "@zxing/browser": "^0.2.1",
-    "@zxing/library": "^0.23.0",
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.3",
     "jszip": "^3.10.2",
