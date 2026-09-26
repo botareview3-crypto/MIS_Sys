@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { validExpectedCompletionDate } from "@/lib/repair-deadlines";
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 const UpdateRepairSchema = z.object({
   technicianDiagnosis: z.string().trim().max(5000).default(""),

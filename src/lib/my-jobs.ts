@@ -15,7 +15,7 @@ export function myJobsWhere(userId: number) {
   };
 }
 
-export const STATUS_KEYS = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+export const STATUS_KEYS = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 export async function getMyDashboardData(userId: number) {
   const where = myJobsWhere(userId);

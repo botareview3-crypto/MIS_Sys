@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 export default async function WorkQueuePage({
   searchParams,
@@ -62,7 +62,7 @@ export default async function WorkQueuePage({
   };
 
   const activeWhere: RepairJobWhereInput = {
-    status: { in: ["Received", "Diagnosing", "Repairing"] },
+    status: { in: ["Received", "Repairing"] },
     ...(requiresAssignment
       ? isSecondaryAdmin
         ? { assignedSecondaryAdminId: session.userId }
@@ -95,7 +95,7 @@ export default async function WorkQueuePage({
     const aDate = a.expectedCompletionDate?.getTime() ?? Infinity;
     const bDate = b.expectedCompletionDate?.getTime() ?? Infinity;
     if (aDate !== bDate) return aDate - bDate;
-    const order = { Received: 1, Diagnosing: 2, Repairing: 3, Ready: 4, Delivered: 5 } as const;
+    const order = { Received: 1, Repairing: 2, Ready: 3, Delivered: 4 } as const;
     const aOrder = order[a.status as keyof typeof order] ?? 6;
     const bOrder = order[b.status as keyof typeof order] ?? 6;
     if (aOrder !== bOrder) return aOrder - bOrder;
@@ -105,7 +105,7 @@ export default async function WorkQueuePage({
   const currentQueueItem = activeJobs[0] ?? null;
   const remainingActiveJobs = activeJobs.length;
 
-  const statusTotals: Record<string, number> = { Received: 0, Diagnosing: 0, Repairing: 0, Ready: 0, Delivered: 0 };
+  const statusTotals: Record<string, number> = { Received: 0, Repairing: 0, Ready: 0, Delivered: 0 };
   for (const item of workQueue) {
     if (item.status in statusTotals) statusTotals[item.status]++;
   }
@@ -165,7 +165,7 @@ export default async function WorkQueuePage({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Job ID</th>
+              <th className="px-4 py-3">Host Name</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Problem</th>
               <th className="px-4 py-3">Status</th>
@@ -182,7 +182,7 @@ export default async function WorkQueuePage({
                 d.status !== "Delivered";
               return (
                 <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-slate-900">{d.jobId}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{d.hostname || "—"}</td>
                   <td className="px-4 py-3">{d.customer.fullName}</td>
                   <td className="px-4 py-3 max-w-[240px] truncate text-slate-500">{d.reportedProblem}</td>
                   <td className="px-4 py-3">

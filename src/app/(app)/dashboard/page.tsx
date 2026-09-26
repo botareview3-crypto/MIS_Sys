@@ -8,8 +8,7 @@ import { getMyDashboardData } from "@/lib/my-jobs";
 import { MyDevicesSection } from "@/components/dashboard/MyDevicesSection";
 
 const STATUS_STEPS = [
-  { key: "Received", label: "Received", note: "Waiting for diagnosis" },
-  { key: "Diagnosing", label: "Diagnosing", note: "Technical assessment" },
+  { key: "Received", label: "Received", note: "Waiting to be worked on" },
   { key: "Repairing", label: "Repairing", note: "Work in progress" },
   { key: "Ready", label: "Ready", note: "Awaiting collection" },
   { key: "Delivered", label: "Delivered", note: "Completed jobs" },
@@ -68,16 +67,14 @@ export default async function DashboardPage() {
   const myData = await getMyDashboardData(session.userId);
 
   let received = 0;
-  let diagnosing = 0;
   let repairing = 0;
   let ready = 0;
   let delivered = 0;
   let latestLog: Prisma.AuditLogGetPayload<{ include: { performer: true } }> | null = null;
 
   if (isAdmin) {
-    [received, diagnosing, repairing, ready, delivered, latestLog] = await Promise.all([
+    [received, repairing, ready, delivered, latestLog] = await Promise.all([
       prisma.repairJob.count({ where: { status: "Received" } }),
-      prisma.repairJob.count({ where: { status: "Diagnosing" } }),
       prisma.repairJob.count({ where: { status: "Repairing" } }),
       prisma.repairJob.count({ where: { status: "Ready" } }),
       prisma.repairJob.count({ where: { status: "Delivered" } }),
@@ -90,13 +87,12 @@ export default async function DashboardPage() {
 
   const statusCounts: Record<string, number> = {
     Received: received,
-    Diagnosing: diagnosing,
     Repairing: repairing,
     Ready: ready,
     Delivered: delivered,
   };
-  const total = received + diagnosing + repairing + ready + delivered;
-  const activeRepairs = statusCounts.Received + statusCounts.Diagnosing + statusCounts.Repairing;
+  const total = received + repairing + ready + delivered;
+  const activeRepairs = statusCounts.Received + statusCounts.Repairing;
   const completedPercent = total > 0 ? Math.round((statusCounts.Delivered / total) * 100) : 0;
 
   // Resolve the device this audit entry points at, if any — mirrors the
@@ -145,8 +141,7 @@ export default async function DashboardPage() {
               {greeting}, {firstName}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Keep every repair moving with a clear view of intake, diagnosis, workshop progress, and delivery
-              readiness.
+              Keep every repair moving with a clear view of intake, workshop progress, and delivery readiness.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +171,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Status strip */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <Link href="/devices" className="card p-4 transition hover:shadow-md">
                 <div className="text-2xl font-bold text-slate-900">{total}</div>
                 <div className="mt-1 text-xs text-slate-500">Total Devices</div>
@@ -205,7 +200,7 @@ export default async function DashboardPage() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {STATUS_STEPS.map((s) => (
                     <Link key={s.key} href={`/devices?status=${s.key}`} className="text-center">
                       <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
@@ -222,8 +217,8 @@ export default async function DashboardPage() {
                     <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-700" />
                     <span>
                       <strong>Today&rsquo;s focus:</strong> {statusCounts.Received} device
-                      {statusCounts.Received !== 1 ? "s" : ""} waiting for diagnosis. Assign the oldest records first
-                      to keep the queue moving.
+                      {statusCounts.Received !== 1 ? "s" : ""} waiting to be worked on. Assign the oldest records
+                      first to keep the queue moving.
                     </span>
                   </div>
                 )}

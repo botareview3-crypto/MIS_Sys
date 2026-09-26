@@ -5,7 +5,7 @@ import Link from "next/link";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 const PAGE_SIZE = 10;
 
 export default async function ManageDevicesPage({

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 type Initial = {
   technicianDiagnosis: string;

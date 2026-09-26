@@ -24,7 +24,7 @@ export function MyDevicesSection({
   jobs: MyJob[];
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h2 className="font-semibold text-slate-900">Your Devices</h2>
         <p className="text-xs text-slate-500">
@@ -32,7 +32,7 @@ export function MyDevicesSection({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {STATUS_KEYS.map((s) => (
           <Link key={s} href={`/devices?status=${s}`} className="card p-3 transition hover:shadow-md">
             <div className="text-xl font-bold text-slate-900">{statusCounts[s] ?? 0}</div>
@@ -49,10 +49,10 @@ export function MyDevicesSection({
         ) : (
           <ul className="divide-y divide-slate-100">
             {jobs.map((job) => (
-              <li key={job.id}>
+              <li key={job.id} className="px-1">
                 <Link
                   href={`/devices/${job.id}`}
-                  className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-lg px-2 py-5 first:pt-2 last:pb-2 hover:bg-slate-50"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                     <ClipboardList className="h-4 w-4" />
