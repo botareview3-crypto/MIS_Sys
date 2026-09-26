@@ -4,6 +4,119 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (22) — Build command reverted; WhatsApp auto-send no longer logs to DB
+
+**Scope:** Two changes, both in response to what session 21's Build
+Command fix surfaced.
+
+**1. `render.yaml`'s `npx prisma db push` step never should have run
+unattended.** Turning it on (fixing the dashboard to match `render.yaml`,
+per session 21) immediately hit a `prisma db push` data-loss guard on the
+very next deploy — completely unrelated to WhatsApp: `users.id`,
+`notifications.id` / `recipient_user_id` / `created_by`, and
+`user_profile_images.user_id` are declared `Int` in `prisma/schema.prisma`
+but are actually `bigint` in production Postgres. This is a pre-existing
+drift (not introduced by session 19's WhatsApp work) that's been invisible
+until now because `db push` had never actually run against production
+before session 21's dashboard fix. Prisma correctly refused to proceed
+without `--accept-data-loss` — **not applied**, and should not be, without
+a dedicated investigation session with `Arp-main/database/schema.sql` in
+hand: the warning explicitly says a partial failure could leave `users`,
+`notifications`, or `user_profile_images` without a primary key
+constraint, and `users` is the auth table every foreign key in the app
+depends on. Not a risk worth taking to unblock one feature's table
+creation, especially since that table (`whatsapp_sessions`) was already
+created manually via direct SQL against Neon.
+
+**Fix:** Render dashboard's Build Command reverted (by the project owner)
+back to `npm install --include=dev && npm run build` — no `db push`.
+Deploys are unblocked again with zero further risk to production data.
+**Consequence, flagged as a new open item:** any *future* additive schema
+change (new table/column) again needs to be applied manually via direct
+SQL against production, same as `whatsapp_sessions` was, until the
+Int/BigInt drift is investigated and resolved on purpose. `render.yaml`
+still has the `db push` line in its comments/history for reference but
+should not be re-enabled in the dashboard until that's done — re-check
+`Arp-main/database/schema.sql` (not present in the zip used this session,
+needs to be re-shared) to determine which side is actually correct before
+touching `users`/`notifications`/`user_profile_images`.
+
+**2. `whatsapp_logs` DB write removed from auto-send (owner request).**
+`autoSendWhatsappMessage()` (session 19) used to write a `whatsapp_logs`
+row on every Received/Ready auto-send, success or failure. Owner asked for
+this to be removed — the function now just sends and returns, no DB
+write at all.
+
+**Changed:**
+- `src/lib/whatsapp-auto-send.ts` — removed both `prisma.whatsappLog.create()`
+  calls (the "no valid number" early-return case and the post-send case).
+  Failures now only go to `console.error` (server logs), nothing in the DB
+  or app UI records them.
+- `render.yaml` — comment expanded with the drift/data-loss finding.
+
+**Consequences worth knowing about, not fixed here:**
+- Auto-sent Received/Ready messages will **not** appear in a device's
+  WhatsApp messages history section (`devices/[id]/page.tsx` reads
+  `device.whatsappLogs`) — that list now only ever shows the manual
+  "Prepared" flow's entries (whatsapp-message.php port) and the
+  now-removed auto-send entries won't be there for past or future sends.
+  Nothing else reads `whatsapp_logs` in a way this breaks (Reports page's
+  count just reports a lower number now; the backup export just exports
+  fewer rows) — checked `reports/page.tsx`, `devices/[id]/page.tsx`,
+  `lib/devices.ts`, `backups/generate-backup.ts`.
+- A failed auto-send (disconnected WhatsApp session, bad number, send
+  error) is now genuinely invisible from the app itself — only in Render's
+  server console logs. If that turns out to matter in practice (e.g.
+  customers report not getting messages and staff have no way to check),
+  worth reconsidering some lighter-weight visibility that isn't a full
+  `whatsapp_logs` row.
+
+---
+
+## 2026-09-26 (21) — Diagnose: `whatsapp_sessions` table missing in production
+
+**Scope:** After session 20's build fix deployed successfully (`next build`
+now passes), the WhatsApp Setup page surfaced a new, separate runtime
+error: `Invalid prisma.whatsappSession.findUnique() invocation: The table
+public.whatsapp_sessions does not exist in the current database.`
+
+**Diagnosis:** session 19 added the `WhatsappSession` model to
+`prisma/schema.prisma` (flagged additive-only) and also added
+`npx prisma db push` to `render.yaml`'s `buildCommand`, specifically so
+this table would get created on deploy (free tier has no Shell access to
+run it by hand). But the failing build log from session 19/20 shows no
+`prisma db push` step anywhere between `npm install` and `next build` —
+strong evidence that Render's actual configured Build Command (Settings ->
+Build & Deploy in the dashboard) does not match `render.yaml`, which
+happens when a service is created by hand rather than via Render's
+"New -> Blueprint" flow: the dashboard's own setting wins and does not
+auto-sync with this file. So the `db push` step session 19 added has
+likely never actually run in production.
+
+**Not fixed by Claude — flagged to project owner, per standing instruction
+never to touch production DB state without explicit confirmation:**
+1. Immediate unblock: run this directly against production Postgres (Neon
+   SQL Editor or any Postgres client) to create just the missing table:
+   ```sql
+   CREATE TABLE IF NOT EXISTS public.whatsapp_sessions (
+     id         text PRIMARY KEY,
+     data       bytea NOT NULL,
+     updated_at timestamp NOT NULL DEFAULT now()
+   );
+   ```
+2. Durable fix: check the Render dashboard's actual Build Command for the
+   `arp-next` service and make sure it includes `npx prisma db push`
+   (matching `render.yaml`), or every future additive schema change will
+   have the same silent-drift problem.
+
+**Changed:**
+- `render.yaml` — added a comment at the top flagging the Blueprint-sync
+  gap discovered here, so a future session doesn't waste time assuming
+  this file is authoritative for what Render actually runs.
+- `docs/commit-log.md` — this entry.
+
+---
+
 ## 2026-09-26 (20) — Fix Render build failure from session 19 (unzipper/@aws-sdk/client-s3)
 
 **Scope:** Session 19's WhatsApp auto-send feature broke the Render build:

@@ -6,10 +6,16 @@
  *
  * Never throws to the caller: a WhatsApp failure (disconnected session,
  * bad number, send error) must never fail device registration or a repair
- * status update. Every attempt is logged to `whatsapp_logs` regardless of
- * outcome, so it still shows up in the device's WhatsApp messages section
- * — `messageStatus` is "Sent" or "Failed" instead of the manual flow's
- * "Prepared".
+ * status update.
+ *
+ * Deliberately does NOT write to `whatsapp_logs` (owner request,
+ * 2026-09-26, session 22) — this just fires the message and forgets it.
+ * Consequence: auto-sent Received/Ready messages will NOT show up in the
+ * device's WhatsApp messages history section, unlike the manual "Prepared"
+ * flow (whatsapp-message.php port), which still logs every time. Failures
+ * (disconnected session, bad/missing number, send error) are only visible
+ * in the server console log (`console.error` below), not in the app UI or
+ * DB anywhere — there is currently no other record of a failed auto-send.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -36,15 +42,9 @@ export async function autoSendWhatsappMessage(params: {
 
     const normalizedPhone = normalizePhoneForWhatsapp(job.customer.phoneNumber);
     if (!normalizedPhone) {
-      await prisma.whatsappLog.create({
-        data: {
-          repairJobId: job.id,
-          messageType: params.messageType,
-          recipientNumber: job.customer.phoneNumber || "—",
-          generatedMessage: "(not sent automatically — no valid WhatsApp number on file)",
-          messageStatus: "Failed",
-        },
-      });
+      console.error(
+        `Auto WhatsApp send skipped for job ${job.jobId}: no valid WhatsApp number on file.`,
+      );
       return;
     }
 
@@ -67,16 +67,11 @@ export async function autoSendWhatsappMessage(params: {
 
     const result = await sendWhatsappTextMessage(normalizedPhone, message);
 
-    await prisma.whatsappLog.create({
-      data: {
-        repairJobId: job.id,
-        messageType: params.messageType,
-        recipientNumber: normalizedPhone,
-        generatedMessage: result.ok ? message : `${message}\n\n(send failed: ${result.error})`,
-        messageStatus: result.ok ? "Sent" : "Failed",
-        sentAt: result.ok ? new Date() : null,
-      },
-    });
+    if (!result.ok) {
+      console.error(
+        `Auto WhatsApp send failed for job ${job.jobId} (${params.messageType}): ${result.error}`,
+      );
+    }
   } catch (err) {
     // Last-resort guard — this function must never throw into a caller
     // that's in the middle of returning an unrelated HTTP response.

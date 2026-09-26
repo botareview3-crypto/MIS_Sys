@@ -4,6 +4,17 @@
 # entirely and create the service by hand in the dashboard — see the
 # deploy steps for both paths.
 #
+# ⚠️ IMPORTANT (found 2026-09-26, session 21): if this service was ever
+# created by hand in the dashboard (not via "New -> Blueprint"), Render
+# does NOT auto-sync changes to this file into that service's actual
+# build settings — the dashboard's own "Build Command" field (Settings ->
+# Build & Deploy) wins, and can silently drift out of sync with what's
+# written here. This is exactly how the `npx prisma db push` step added
+# below (session 19) failed to ever run in production: the build logs
+# showed no db-push step at all, only the dashboard's stale command. If
+# you change buildCommand here, also go check/update the dashboard field
+# directly, or re-sync via Blueprint, or this file is just documentation.
+#
 # Native Node runtime, not Docker: unlike the original PHP app (whose
 # Dockerfile/docker-entrypoint.sh exist to run migration scripts and a
 # custom PHP built-in server), this Next.js app only needs `npm install`

@@ -254,16 +254,41 @@ exactly what's changed, in order. This file is the current snapshot.
     assigned jobs) — any Technician can prepare a WhatsApp message for any
     repair job. That's intentional-as-found, not an omission in this port.
 
+15. **`prisma/schema.prisma` disagrees with production Postgres on ID
+    column types — found 2026-09-26, session 22, NOT resolved.**
+    `users.id`, `notifications.id`, `notifications.recipient_user_id`,
+    `notifications.created_by`, and `user_profile_images.user_id` are all
+    declared `Int` in the Prisma schema but are actually `bigint` in
+    production. Invisible until session 22 because `prisma db push` had
+    never actually run against production before then (see deviation
+    below in commit-log session 21/22 for the full story — Render's
+    dashboard Build Command didn't match `render.yaml`). Attempting
+    `db push` hit Prisma's data-loss guard (primary key type change on
+    `users`, the auth table) and was correctly **not** forced through with
+    `--accept-data-loss`. Until this is deliberately investigated —
+    ideally against `Arp-main/database/schema.sql` to confirm which side
+    is actually correct — `db push` must not be re-enabled in the Render
+    Build Command, and any new additive schema change has to be applied
+    manually via direct SQL against production (same as `whatsapp_sessions`
+    was in session 21). This is the highest-priority open item: it blocks
+    the normal "add a model, deploy" workflow for every future feature
+    until resolved.
+
 ## To resume in a new chat
-1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
+1. Share this repo (or re-upload the zip) plus `Arp-main` for reference —
+   `Arp-main/database/schema.sql` specifically is needed to resolve
+   deviation #15 below, the current top-priority open item.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
    above). Repair-deadline sync, manufacturer lookup / reveal-outlook-
    password, Receipts preview/print, and WhatsApp message prep are all
    built — see deviations #9, #10, #13, and #14 above for what's still open
-   on each. Good next candidate: Reports + audit history — decide
-   deviation #8's `audit_logs` naming drift first, since that page is the
-   first thing that would actually query by `action_type`.
+   on each. **Deviation #15 (Int/BigInt schema drift) should probably come
+   before any of those** — it's blocking the deploy pipeline's ability to
+   apply schema changes at all. Otherwise, good next candidate: Reports +
+   audit history — decide deviation #8's `audit_logs` naming drift first,
+   since that page is the first thing that would actually query by
+   `action_type`.
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.
