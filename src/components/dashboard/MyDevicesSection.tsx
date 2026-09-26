@@ -2,6 +2,13 @@ import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { STATUS_KEYS } from "@/lib/my-jobs";
 
+const STATUS_DOT: Record<string, string> = {
+  Received: "bg-status-received",
+  Repairing: "bg-status-repairing",
+  Ready: "bg-status-ready",
+  Delivered: "bg-status-delivered",
+};
+
 type MyJob = {
   id: number;
   jobId: string;
@@ -27,7 +34,7 @@ export function MyDevicesSection({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-semibold text-stone-900">Your Devices</h2>
+        <h2 className="font-display font-semibold text-ink">Your Devices</h2>
         <p className="text-xs text-stone-500">
           Devices you registered or that are assigned to you — {total} total.
         </p>
@@ -35,9 +42,16 @@ export function MyDevicesSection({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {STATUS_KEYS.map((s) => (
-          <Link key={s} href={`/devices?status=${s}`} className="card p-3 transition hover:shadow-md">
-            <div className="text-xl font-bold text-stone-900">{statusCounts[s] ?? 0}</div>
-            <div className="mt-0.5 text-xs text-stone-500">{s}</div>
+          <Link key={s} href={`/devices?status=${s}`} className="stat-chip">
+            <div
+              className={`absolute -right-5 -top-5 h-16 w-16 rounded-full ${STATUS_DOT[s]} opacity-10`}
+              aria-hidden
+            />
+            <div className="relative flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${STATUS_DOT[s]}`} aria-hidden />
+              <div className="text-xl font-bold text-ink">{statusCounts[s] ?? 0}</div>
+            </div>
+            <div className="relative mt-0.5 text-xs text-stone-500">{s}</div>
           </Link>
         ))}
       </div>
@@ -53,9 +67,9 @@ export function MyDevicesSection({
               <li key={job.id}>
                 <Link
                   href={`/devices/${job.id}`}
-                  className="flex items-center gap-3 rounded-lg border border-stone-100 px-3 py-4 hover:bg-stone-50 hover:border-stone-200"
+                  className="flex items-center gap-3 rounded-2xl border border-stone-100 bg-white/60 px-3 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:bg-white hover:shadow-candy"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
                     <ClipboardList className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -64,7 +78,7 @@ export function MyDevicesSection({
                       {job.customer.fullName} · {formatDate(job.receivedAt)}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm ${STATUS_DOT[job.status] ?? "bg-brand-500"}`}>
                     {job.status}
                   </span>
                 </Link>

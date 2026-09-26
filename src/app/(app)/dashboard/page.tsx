@@ -132,21 +132,18 @@ export default async function DashboardPage() {
     <main className="p-8">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Welcome row */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="card animate-pop-in flex flex-wrap items-end justify-between gap-4 p-6">
           <div>
-            <p className="text-xs font-medium text-stone-500">{today}</p>
-            <h1 className="mt-1 font-display text-2xl font-medium text-ink">
-              {greeting}, {firstName}
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">{today}</p>
+            <h1 className="mt-1 font-display text-3xl font-semibold text-gradient">
+              {greeting}, {firstName} 👋
             </h1>
-            <p className="mt-1 text-sm text-stone-500">
+            <p className="mt-1.5 text-sm text-stone-500">
               Keep every repair moving with a clear view of intake, workshop progress, and delivery readiness.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/work-queue"
-              className="inline-flex items-center justify-center rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-            >
+            <Link href="/work-queue" className="btn-secondary">
               <ClipboardList className="mr-1.5 h-4 w-4" />
               Open Work Queue
             </Link>
@@ -170,17 +167,19 @@ export default async function DashboardPage() {
 
             {/* Status strip */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <Link href="/devices" className="card-interactive p-4">
-                <div className="data-mono text-2xl font-medium text-ink">{total}</div>
-                <div className="mt-1 text-xs text-stone-500">Total devices</div>
+              <Link href="/devices" className="card-interactive relative overflow-hidden p-4">
+                <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-brand-gradient opacity-10" aria-hidden />
+                <div className="data-mono relative text-2xl font-semibold text-ink">{total}</div>
+                <div className="relative mt-1 text-xs text-stone-500">Total devices</div>
               </Link>
               {STATUS_STEPS.map((s) => (
-                <Link key={s.key} href={`/devices?status=${s.key}`} className="card-interactive p-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden />
-                    <div className="data-mono text-2xl font-medium text-ink">{statusCounts[s.key]}</div>
+                <Link key={s.key} href={`/devices?status=${s.key}`} className="card-interactive relative overflow-hidden p-4">
+                  <div className={`absolute -right-4 -top-4 h-16 w-16 rounded-full ${s.dot} opacity-10`} aria-hidden />
+                  <div className="relative flex items-center gap-1.5">
+                    <span className={`h-2 w-2 rounded-full ${s.dot} shadow-sm`} aria-hidden />
+                    <div className="data-mono text-2xl font-semibold text-ink">{statusCounts[s.key]}</div>
                   </div>
-                  <div className="mt-1 text-xs text-stone-500">{s.label}</div>
+                  <div className="relative mt-1 text-xs text-stone-500">{s.label}</div>
                 </Link>
               ))}
             </div>
@@ -216,7 +215,7 @@ export default async function DashboardPage() {
                 </div>
 
                 {statusCounts.Received > 0 && (
-                  <div className="mt-6 flex items-start gap-2 rounded-md border-l-2 border-status-received bg-stone-50 p-3 text-xs text-stone-600">
+                  <div className="mt-6 flex items-start gap-2 rounded-2xl border border-status-received/20 bg-status-received/5 p-3 text-xs text-stone-600">
                     <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-received" />
                     <span>
                       <strong>Today&rsquo;s focus:</strong> {statusCounts.Received} device
@@ -237,8 +236,8 @@ export default async function DashboardPage() {
                 {activity ? (
                   <ActivityCard activity={activity} />
                 ) : (
-                  <div className="flex items-start gap-3 rounded-md border border-stone-200 bg-stone-50 p-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-700">
+                  <div className="flex items-start gap-3 rounded-2xl border border-brand-100 bg-brand-50/50 p-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
                       <Info className="h-4 w-4" />
                     </div>
                     <div>
@@ -254,11 +253,11 @@ export default async function DashboardPage() {
             <div className="card p-5">
               <div className="flex flex-wrap items-center gap-5">
                 <div
-                  className="relative grid h-14 w-14 shrink-0 place-items-center rounded-full"
-                  style={{ background: `conic-gradient(#4f3ff0 ${completedPercent * 3.6}deg, #e2e0d6 0deg)` }}
+                  className="relative grid h-16 w-16 shrink-0 place-items-center rounded-full shadow-glow"
+                  style={{ background: `conic-gradient(#7c3aed ${completedPercent * 3.6}deg, #ec489922 0deg)` }}
                 >
                   <div className="absolute inset-1.5 rounded-full bg-white" />
-                  <strong className="data-mono relative z-10 text-xs font-medium text-ink">{completedPercent}%</strong>
+                  <strong className="data-mono relative z-10 text-sm font-semibold text-gradient">{completedPercent}%</strong>
                 </div>
                 <div className="min-w-[220px] flex-1">
                   <strong className="block font-display text-sm font-medium text-ink">Operations pulse</strong>
@@ -294,7 +293,7 @@ function ActivityCard({
 }) {
   const inner = (
     <>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-700">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
         <ClipboardList className="h-4 w-4" />
       </div>
       <div className="min-w-0">
@@ -309,11 +308,11 @@ function ActivityCard({
   );
 
   const className =
-    "flex items-start gap-3 rounded-md border border-stone-200 bg-white p-3 transition";
+    "flex items-start gap-3 rounded-2xl border border-stone-100 bg-white/70 p-3 transition";
 
   if (activity.deviceId) {
     return (
-      <Link href={`/devices/${activity.deviceId}`} className={`${className} hover:bg-stone-50`}>
+      <Link href={`/devices/${activity.deviceId}`} className={`${className} hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-candy`}>
         {inner}
       </Link>
     );

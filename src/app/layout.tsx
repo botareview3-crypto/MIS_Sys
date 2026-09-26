@@ -35,7 +35,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <div className="app-ambient" aria-hidden>
+          <span className="blob-1" />
+          <span className="blob-2" />
+          <span className="blob-3" />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }

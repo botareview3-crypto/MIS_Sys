@@ -53,17 +53,14 @@ export function Sidebar({
         key={keyPrefix}
         href={item.href!}
         aria-current={active ? "page" : undefined}
-        className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
+        className={`relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
           indent ? "ml-4" : ""
         } ${
           active
-            ? "bg-white/[0.07] text-white"
-            : "text-ink-muted hover:bg-white/[0.04] hover:text-white"
+            ? "bg-brand-gradient text-white shadow-glow"
+            : "text-ink-muted hover:translate-x-0.5 hover:bg-white/[0.06] hover:text-white"
         }`}
       >
-        {active && (
-          <span className="absolute -left-3 top-1/2 h-4 w-0.5 -transtone-y-1/2 rounded-full bg-brand-500" aria-hidden />
-        )}
         <Icon size={18} aria-hidden />
         <span className="flex-1">{item.label}</span>
       </Link>
@@ -72,10 +69,10 @@ export function Sidebar({
 
   const renderGroup = (label: string, items: ReturnType<typeof getNavGroups>["workspace"]) => (
     <div className="mb-6">
-      <p className="mb-2 px-3 text-xs font-medium tracking-wide text-ink-muted/70">
+      <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink-muted/60">
         {label}
       </p>
-      <div className="space-y-0.5">
+      <div className="space-y-1">
         {items.map((item) => {
           if (item.children && item.children.length > 0) {
             const Icon = item.icon;
@@ -85,7 +82,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.label)}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-white/[0.04] hover:text-white"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-ink-muted transition hover:bg-white/[0.06] hover:text-white"
                   aria-expanded={open}
                 >
                   <Icon size={18} aria-hidden />
@@ -97,7 +94,7 @@ export function Sidebar({
                   )}
                 </button>
                 {open && (
-                  <div className="mt-0.5 space-y-0.5">
+                  <div className="mt-0.5 space-y-1 border-l border-white/10 pl-1">
                     {item.children.map((child) =>
                       renderLink(child, `${item.label}-${child.href}`, true)
                     )}
@@ -113,22 +110,31 @@ export function Sidebar({
   );
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col bg-ink">
-      <div className="flex items-center gap-2.5 px-4 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-500 font-display text-sm font-bold text-white">
+    <aside className="relative flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-ink-gradient">
+      <div
+        className="pointer-events-none absolute -left-16 -top-24 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-pop-pink/20 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative flex items-center gap-2.5 px-4 py-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-gradient font-display text-sm font-bold text-white shadow-glow">
           A
         </div>
         <strong className="font-display text-sm font-semibold text-white">MIS Repair</strong>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav className="relative flex-1 overflow-y-auto px-3 py-2">
         {renderGroup("Workspace", workspace)}
         {administration.length > 0 && renderGroup("Administration", administration)}
       </nav>
 
-      <div className="border-t border-white/[0.06] p-3">
-        <div className="flex items-center gap-3 rounded-md px-2 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.08] text-xs font-semibold text-white">
+      <div className="relative border-t border-white/[0.08] p-3">
+        <div className="flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.05]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-semibold text-white shadow-glow">
             {initials(session.fullName)}
           </div>
           <div className="min-w-0 flex-1">
@@ -139,7 +145,7 @@ export function Sidebar({
             type="button"
             onClick={handleLogout}
             aria-label="Log out"
-            className="rounded-md p-1.5 text-ink-muted hover:bg-white/[0.06] hover:text-white"
+            className="rounded-xl p-1.5 text-ink-muted transition hover:bg-white/[0.08] hover:text-white"
           >
             <LogOut size={16} aria-hidden />
           </button>

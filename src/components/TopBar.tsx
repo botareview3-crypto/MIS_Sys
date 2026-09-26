@@ -78,7 +78,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
   const active = pathname.startsWith("/notifications");
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b border-stone-200 bg-stone-50/90 px-6 backdrop-blur">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b border-white/60 bg-white/60 px-6 backdrop-blur-xl">
       <div ref={containerRef} className="relative">
         <button
           type="button"
@@ -86,8 +86,8 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
           aria-label={hasUnread ? `Notifications, ${unread} unread` : "Notifications"}
           aria-expanded={open}
           aria-haspopup="true"
-          className={`relative flex h-10 w-10 items-center justify-center rounded-full transition ${
-            active || open ? "bg-brand-50" : "hover:bg-stone-100"
+          className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 ${
+            active || open ? "bg-brand-gradient shadow-glow" : "hover:-translate-y-0.5 hover:bg-white hover:shadow-candy"
           }`}
         >
           <Bell
@@ -95,13 +95,15 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             aria-hidden
             className={
               hasUnread
-                ? "animate-bell-shake text-red-600 motion-reduce:animate-none"
-                : "text-stone-500"
+                ? "animate-bell-shake text-solder-500 motion-reduce:animate-none"
+                : active || open
+                  ? "text-white"
+                  : "text-stone-500"
             }
           />
           {hasUnread && (
             <span
-              className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white"
+              className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-pop-pink to-solder-500 px-1 text-[10px] font-semibold leading-none text-white shadow-glow"
               aria-hidden
             >
               {displayCount}
@@ -112,11 +114,11 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
+            className="card animate-pop-in absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] overflow-hidden !rounded-3xl p-0 shadow-glow-lg"
           >
             <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
               <p className="text-sm font-semibold text-stone-900">Notifications</p>
-              {hasUnread && <p className="text-xs text-stone-500">{unread} unread</p>}
+              {hasUnread && <p className="text-xs font-medium text-brand-600">{unread} unread</p>}
             </div>
 
             <div className="max-h-80 overflow-y-auto">
@@ -134,13 +136,13 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
                       <button
                         type="button"
                         onClick={() => !n.isRead && markRead(n.id)}
-                        className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-stone-50 ${
-                          n.isRead ? "" : "bg-brand-50/40"
+                        className={`flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-brand-50/60 ${
+                          n.isRead ? "" : "bg-brand-50/50"
                         }`}
                       >
                         <div className="flex w-full items-center gap-2">
                           {!n.isRead && (
-                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" aria-hidden />
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pop-pink" aria-hidden />
                           )}
                           <span className="flex-1 truncate text-sm font-medium text-stone-900">
                             {n.title}
@@ -157,7 +159,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             <button
               type="button"
               onClick={seeAll}
-              className="block w-full border-t border-stone-100 px-4 py-3 text-center text-sm font-medium text-brand-700 hover:bg-stone-50"
+              className="block w-full border-t border-stone-100 px-4 py-3 text-center text-sm font-semibold text-brand-600 transition hover:bg-brand-50/60"
             >
               See all notifications
             </button>

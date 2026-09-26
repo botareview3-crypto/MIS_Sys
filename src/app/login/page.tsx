@@ -43,11 +43,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-stone-50">
+    <main className="flex min-h-screen">
       {/* Left: brand panel. The one bold moment in the whole app. */}
-      <div className="relative hidden w-[42%] shrink-0 overflow-hidden bg-ink lg:flex lg:flex-col lg:justify-between lg:p-10">
+      <div className="relative hidden w-[42%] shrink-0 overflow-hidden bg-ink-gradient lg:flex lg:flex-col lg:justify-between lg:p-10">
+        <div className="pointer-events-none absolute -left-20 top-1/3 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl animate-blob" aria-hidden />
+        <div className="pointer-events-none absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-pop-pink/25 blur-3xl animate-blob-slow" aria-hidden />
+
         <svg
-          className="pointer-events-none absolute inset-0 h-full w-full text-white/[0.07]"
+          className="pointer-events-none absolute inset-0 h-full w-full text-white/[0.06]"
           viewBox="0 0 400 800"
           fill="none"
           preserveAspectRatio="xMidYMid slice"
@@ -66,7 +69,7 @@ export default function LoginPage() {
         </svg>
 
         <div className="relative flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-500 font-display text-sm font-bold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-gradient font-display text-sm font-bold text-white shadow-glow">
             A
           </div>
           <strong className="font-display text-sm font-semibold text-white">MIS Repair</strong>
@@ -76,7 +79,7 @@ export default function LoginPage() {
           <h1 className="font-display text-3xl font-medium leading-tight text-white">
             Every device,
             <br />
-            one clear status.
+            <span className="text-gradient">one clear status.</span>
           </h1>
           <p className="mt-3 max-w-xs text-sm text-ink-muted">
             From intake to delivery, the workbench tracks each repair through five stages so
@@ -86,7 +89,7 @@ export default function LoginPage() {
             {STATUS_LEGEND.map((s) => (
               <li
                 key={s.label}
-                className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-ink-muted"
+                className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs text-ink-muted backdrop-blur"
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${s.color}`} aria-hidden />
                 {s.label}
@@ -100,10 +103,10 @@ export default function LoginPage() {
 
       {/* Right: sign-in form */}
       <div className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
+        <div className="card animate-pop-in w-full max-w-sm p-8">
           <div className="mb-8 lg:hidden">
             <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-500 font-display text-sm font-bold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-gradient font-display text-sm font-bold text-white shadow-glow">
                 A
               </div>
               <strong className="font-display text-sm font-semibold text-ink">MIS Repair</strong>
@@ -117,7 +120,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+              <div className="rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
             )}
 
             <div className="space-y-1.5">

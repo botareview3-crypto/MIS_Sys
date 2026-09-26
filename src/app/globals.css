@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --bg: 245 245 241; /* stone-50 */
-  --fg: 20 21 31; /* ink */
+  --bg: 247 245 251; /* stone-50 */
+  --fg: 23 15 46; /* ink */
 }
 
 body {
@@ -16,39 +16,64 @@ h1, h2, h3, h4 {
   @apply font-display;
 }
 
-/* Flat by default; a border does the work a shadow used to. Depth is
-   reserved for things you can act on (see .card-interactive). */
+/* -----------------------------------------------------------------------
+   Ambient background: a few large, soft, slowly-drifting blobs plus a
+   subtle radial "aurora" wash. Pure decoration — fixed, blurred, behind
+   everything, never intercepts clicks. Gives every page a bit of life
+   instead of a flat workspace-grey slab.
+------------------------------------------------------------------------ */
+.app-ambient {
+  @apply pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-aurora;
+}
+.app-ambient span {
+  @apply absolute rounded-full blur-3xl opacity-60;
+}
+.app-ambient .blob-1 {
+  @apply -left-24 -top-24 h-[26rem] w-[26rem] bg-brand-200/60 animate-blob;
+}
+.app-ambient .blob-2 {
+  @apply -right-20 top-10 h-[22rem] w-[22rem] bg-pop-pink/20 animate-blob-slow;
+}
+.app-ambient .blob-3 {
+  @apply -bottom-32 left-1/3 h-[24rem] w-[24rem] bg-pop-cyan/20 animate-blob;
+}
+
+/* Glassy by default; a soft tinted shadow does the work a hard border
+   used to. Depth is reserved for things you can act on (see
+   .card-interactive), but everything gets a touch of glow. */
 .card {
-  @apply rounded-md border border-stone-200 bg-white;
+  @apply rounded-3xl border border-white/70 bg-white/80 shadow-[0_10px_30px_-18px_rgba(124,58,237,0.25)] backdrop-blur-xl;
 }
 
 .card-interactive {
-  @apply card transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_8px_20px_-12px_rgba(20,21,31,0.25)];
+  @apply card transition duration-300 ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-glow-lg;
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-full bg-brand-500 px-4 py-2.5
-    text-sm font-medium text-white transition hover:bg-brand-600
+  @apply inline-flex items-center justify-center rounded-full bg-brand-gradient bg-[length:200%_200%] px-4 py-2.5
+    text-sm font-semibold text-white shadow-glow transition-all duration-300 ease-out
+    hover:scale-[1.03] hover:bg-right hover:shadow-glow-lg active:scale-[0.98]
     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-    focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
+    focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100;
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-full border border-stone-300 bg-white px-4 py-2.5
-    text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50
+  @apply inline-flex items-center justify-center rounded-full border border-stone-200 bg-white/80 px-4 py-2.5
+    text-sm font-medium text-stone-700 backdrop-blur transition-all duration-300 ease-out hover:-translate-y-0.5
+    hover:border-brand-300 hover:bg-white hover:text-brand-700 hover:shadow-candy
     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-    focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60;
+    focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
 }
 
 .input {
-  @apply w-full rounded-md border border-stone-300 bg-white px-3 py-2.5 text-sm
-    placeholder:text-stone-400 focus:border-brand-500 focus:outline-none
-    focus:ring-2 focus:ring-brand-500/20;
+  @apply w-full rounded-2xl border border-stone-200 bg-white/90 px-3 py-2.5 text-sm
+    placeholder:text-stone-400 transition focus:border-brand-400 focus:outline-none
+    focus:ring-4 focus:ring-brand-400/15;
 }
 
 /* Status key: same five colors everywhere a repair-job status is shown. */
 .badge-status {
-  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold;
 }
 .badge-status::before {
   content: "";
@@ -61,11 +86,11 @@ h1, h2, h3, h4 {
 .badge-status-diagnosing {
   @apply badge-status border-status-diagnosing/25 bg-status-diagnosing/10 text-status-diagnosing;
 }
-.badge-status-diagnosing::before { @apply bg-status-diagnosing; }
+.badge-status-diagnosing::before { @apply bg-status-diagnosing animate-pulse-soft; }
 .badge-status-repairing {
   @apply badge-status border-status-repairing/25 bg-status-repairing/10 text-status-repairing;
 }
-.badge-status-repairing::before { @apply bg-status-repairing; }
+.badge-status-repairing::before { @apply bg-status-repairing animate-pulse-soft; }
 .badge-status-ready {
   @apply badge-status border-status-ready/25 bg-status-ready/10 text-status-ready;
 }
@@ -78,4 +103,17 @@ h1, h2, h3, h4 {
 /* Job IDs, serials, timestamps — anything that's data rather than prose. */
 .data-mono {
   @apply font-mono tabular-nums;
+}
+
+/* Gradient text — for hero headings that should feel like a moment, not
+   another grey H1. Use sparingly (one per page, usually the greeting). */
+.text-gradient {
+  @apply bg-brand-gradient bg-clip-text text-transparent;
+}
+
+/* Colorful stat-tile chip, keyed by repair status — dashboard tiles use
+   this instead of a flat white card so the four stages read at a glance. */
+.stat-chip {
+  @apply relative overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-4 shadow-[0_10px_30px_-18px_rgba(124,58,237,0.25)]
+    backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-glow-lg;
 }
