@@ -6,9 +6,10 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Ported from app/pages/reports/reports.php. Admin only (requireRoles(['Admin'])
- * in the original). "Export PDF" is NOT ported here — the original shells out to
- * a PHP PDF library with no equivalent dependency in this project yet; that's a
- * separate follow-up rather than part of this page's port.
+ * in the original). "Export PDF" now hits GET /api/reports/export-pdf, which
+ * builds a real .pdf with pdfkit (see src/lib/reports/generate-report-pdf.ts) —
+ * the original shelled out to a PHP PDF library with no equivalent here, but
+ * that gap is closed now.
  */
 function formatAuditAction(action: string) {
   return action
@@ -79,6 +80,9 @@ export default async function ReportsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <a href="/api/reports/export-pdf" className="btn-primary">
+            Export PDF
+          </a>
           <Link href="/audit-history" className="btn-primary">
             View Audit History
           </Link>
