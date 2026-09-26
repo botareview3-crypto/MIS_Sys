@@ -47,15 +47,10 @@ export default async function WorkQueuePage({
     ...(search
       ? {
           OR: [
-            { jobId: { contains: search, mode: "insensitive" } },
-            { receiptNumber: { contains: search, mode: "insensitive" } },
             { aucAssetBarcode: { contains: search, mode: "insensitive" } },
             { serialNumber: { contains: search, mode: "insensitive" } },
-            { macAddress: { contains: search, mode: "insensitive" } },
             { hostname: { contains: search, mode: "insensitive" } },
             { customer: { fullName: { contains: search, mode: "insensitive" } } },
-            { customer: { phoneNumber: { contains: search, mode: "insensitive" } } },
-            { customer: { outlookEmail: { contains: search, mode: "insensitive" } } },
           ],
         }
       : {}),
@@ -145,7 +140,7 @@ export default async function WorkQueuePage({
           type="text"
           name="search"
           defaultValue={search}
-          placeholder="Search job ID, barcode, serial, customer…"
+          placeholder="Search hostname, serial, customer…"
           className="input flex-1 min-w-[220px]"
         />
         <select name="status" defaultValue={statusFilter} className="input w-40">
