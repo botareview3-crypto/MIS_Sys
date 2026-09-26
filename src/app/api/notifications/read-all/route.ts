@@ -8,7 +8,9 @@ export async function POST() {
   try {
     session = await requireApiRoles(["Admin", "Secondary Admin", "Reception", "Technician"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const result = await prisma.notification.updateMany({

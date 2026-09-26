@@ -20,7 +20,9 @@ export async function GET() {
   try {
     session = await requireApiRoles(["Admin"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const { buffer, filename, tableCount, rowTotal } = await generateDatabaseBackup();

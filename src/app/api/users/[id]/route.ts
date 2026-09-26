@@ -18,7 +18,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
     session = await requireApiRoles(["Admin"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const { id } = await params;
@@ -103,7 +105,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
     session = await requireApiRoles(["Admin"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const { id } = await params;

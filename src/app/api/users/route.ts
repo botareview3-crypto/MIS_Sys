@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
   try {
     session = await requireApiRoles(["Admin"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const body = await req.json().catch(() => null);
