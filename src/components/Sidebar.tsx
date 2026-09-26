@@ -18,10 +18,8 @@ function initials(fullName: string) {
 
 export function Sidebar({
   session,
-  unreadNotifications,
 }: {
   session: SessionPayload;
-  unreadNotifications: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -65,11 +63,6 @@ export function Sidebar({
       >
         <Icon size={18} aria-hidden />
         <span className="flex-1">{item.label}</span>
-        {item.showBadge && unreadNotifications > 0 && (
-          <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-            {unreadNotifications}
-          </span>
-        )}
       </Link>
     );
   };

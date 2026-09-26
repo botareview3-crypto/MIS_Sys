@@ -4,7 +4,6 @@ import {
   PlusSquare,
   HardDrive,
   ClipboardList,
-  Bell,
   Users,
   BarChart3,
   ShieldCheck,
@@ -20,15 +19,16 @@ export type NavItem = {
   href?: string;
   label: string;
   icon: LucideIcon;
-  showBadge?: boolean;
   children?: NavItem[];
 };
 
 /**
  * Mirrors includes/sidebar.php exactly:
  * - Register Device: Admin, Reception, Technician (NOT Secondary Admin)
- * - Notifications: everyone except Admin, in Workspace group;
- *   Admin also gets it, but inside the Administration group instead.
+ * - Notifications (2026-09-26): removed from the sidebar entirely — the
+ *   top bar bell (src/components/TopBar.tsx) is now the only nav entry
+ *   point to /notifications, for every role. Was previously listed here:
+ *   everyone except Admin in Workspace, Admin in Administration.
  * - Administration group: Admin only.
  *
  * "Local" / "Intra" split (added 2026-09-25): the existing device
@@ -70,14 +70,10 @@ export function getNavGroups(role: SessionPayload["role"]) {
     { label: "Local", icon: MapPin, children: deviceItems("/guide/local") },
     { label: "Intra", icon: Network, children: deviceItems("/guide/intra") },
     { href: "/work-queue", label: "Work Queue", icon: ClipboardList },
-    ...(!isAdmin
-      ? [{ href: "/notifications", label: "Notifications", icon: Bell, showBadge: true }]
-      : []),
   ];
 
   const administration: NavItem[] = isAdmin
     ? [
-        { href: "/notifications", label: "Notifications", icon: Bell, showBadge: true },
         { href: "/users", label: "Manage Users", icon: Users },
         { href: "/reports", label: "Reports & History", icon: BarChart3 },
         { href: "/audit-history", label: "Audit History", icon: ShieldCheck },
