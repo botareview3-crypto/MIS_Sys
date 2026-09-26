@@ -127,7 +127,7 @@ export function Sidebar({
         <strong className="font-display text-sm font-semibold text-white">MIS Repair</strong>
       </div>
 
-      <nav className="relative flex-1 overflow-y-auto px-3 py-2">
+      <nav className="no-scrollbar relative flex-1 overflow-y-auto px-3 py-2">
         {renderGroup("Workspace", workspace)}
         {administration.length > 0 && renderGroup("Administration", administration)}
       </nav>

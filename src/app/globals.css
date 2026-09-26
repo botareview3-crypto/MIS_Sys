@@ -100,6 +100,17 @@ h1, h2, h3, h4 {
 }
 .badge-status-delivered::before { @apply bg-status-delivered; }
 
+/* Keeps native scrolling (wheel, trackpad, keyboard, drag) but hides the
+   OS/browser scrollbar chrome. Used on the main content pane so the fixed
+   sidebar doesn't sit next to a visible scroll track. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, new Edge */
+}
+
 /* Job IDs, serials, timestamps — anything that's data rather than prose. */
 .data-mono {
   @apply font-mono tabular-nums;
