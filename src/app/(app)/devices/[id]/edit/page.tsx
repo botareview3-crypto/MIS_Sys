@@ -20,8 +20,8 @@ export default async function EditDevicePage({ params }: { params: Promise<{ id:
 
   return (
     <main className="p-8">
+      <BackLink href={`/devices/${device.id}`} label="Back to Device Details" />
       <div className="mx-auto max-w-3xl">
-        <BackLink href={`/devices/${device.id}`} label="Back to Device Details" />
         <h1 className="mt-2 text-lg font-semibold text-slate-900">Edit Device {device.jobId}</h1>
         <p className="mt-1 text-sm text-slate-500">Corrects customer and device details. Status changes happen from Work Queue.</p>
         <div className="card mt-6 p-6">

@@ -30,12 +30,12 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
   return (
     <main className="p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        {/* Reached from the devices list, Work Queue, the dashboard, and the
-            receipt preview page — no single parent, so this returns to
-            whichever of those the user actually came from. */}
-        <BackLink href="/devices" label="Back to Devices" useHistory />
+      {/* Reached from the devices list, Work Queue, the dashboard, and the
+          receipt preview page — no single parent, so this returns to
+          whichever of those the user actually came from. */}
+      <BackLink href="/devices" label="Back to Devices" useHistory />
 
+      <div className="mx-auto mt-2 max-w-4xl space-y-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>

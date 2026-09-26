@@ -18,8 +18,8 @@ export default async function UpdateRepairPage({ params }: { params: Promise<{ i
 
   return (
     <main className="p-8">
+      <BackLink href="/work-queue" label="Back to Work Queue" />
       <div className="mx-auto max-w-2xl">
-        <BackLink href="/work-queue" label="Back to Work Queue" />
         <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>
         <h1 className="text-lg font-semibold text-slate-900">{device.customer.fullName}</h1>
         <p className="mt-1 text-sm text-slate-500">{device.reportedProblem}</p>
