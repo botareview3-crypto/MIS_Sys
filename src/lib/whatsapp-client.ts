@@ -101,57 +101,94 @@ export function getWhatsappClient(): Client {
 
   const state = getState();
 
-  const client = new Client({
-    authStrategy: new RemoteAuth({
-      clientId: SESSION_NAME,
-      store: new PrismaWhatsappStore(),
-      backupSyncIntervalMs: BACKUP_SYNC_INTERVAL_MS,
-    }),
-    puppeteer: {
-      headless: true,
-      // Required for Chromium to run in Render's container (no sandbox
-      // permissions available, and the process may run as root).
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    },
-  });
+  // Everything below used to fail silently into `state` only, with nothing
+  // printed to stdout — meaning a Puppeteer/Chromium crash or a missing
+  // Chrome binary on Render would never show up in the deploy log stream,
+  // only in the (auth-gated) /api/whatsapp/status response. Every branch
+  // now also console.error's/console.log's, so `render logs` actually
+  // shows what's happening during pairing.
+  let client: Client;
+  try {
+    client = new Client({
+      authStrategy: new RemoteAuth({
+        clientId: SESSION_NAME,
+        store: new PrismaWhatsappStore(),
+        backupSyncIntervalMs: BACKUP_SYNC_INTERVAL_MS,
+      }),
+      puppeteer: {
+        headless: true,
+        args: [
+          // Required for Chromium to run in Render's container (no sandbox
+          // permissions available, and the process may run as root).
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          // Render's containers have a tiny /dev/shm; Chromium's default
+          // shared-memory usage overflows it under load and the browser
+          // dies mid-session — a very common cause of a QR that scans on
+          // the phone but then fails to link. This forces Chromium to use
+          // /tmp instead.
+          "--disable-dev-shm-usage",
+        ],
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to construct the WhatsApp client.";
+    console.error("[whatsapp] Client construction failed:", message);
+    state.status = "error";
+    state.lastError = message;
+    // Rethrow: there's no client to return or cache here.
+    throw err;
+  }
 
   client.on("qr", (qr) => {
+    console.log("[whatsapp] QR code received, rendering data URL.");
     state.status = "qr";
     QRCode.toDataURL(qr)
       .then((dataUrl) => {
         state.qrDataUrl = dataUrl;
       })
       .catch((err) => {
-        state.lastError = err instanceof Error ? err.message : "Failed to render QR code.";
+        const message = err instanceof Error ? err.message : "Failed to render QR code.";
+        console.error("[whatsapp] QR render failed:", message);
+        state.lastError = message;
       });
   });
 
   client.on("authenticated", () => {
+    console.log("[whatsapp] Authenticated.");
     state.status = "authenticated";
     state.qrDataUrl = null;
     state.lastError = null;
   });
 
   client.on("ready", () => {
+    console.log("[whatsapp] Ready.");
     state.status = "ready";
     state.qrDataUrl = null;
     state.lastError = null;
   });
 
   client.on("disconnected", (reason) => {
+    const message = typeof reason === "string" ? reason : "WhatsApp session disconnected.";
+    console.error("[whatsapp] Disconnected:", message);
     state.status = "disconnected";
     state.qrDataUrl = null;
-    state.lastError = typeof reason === "string" ? reason : "WhatsApp session disconnected.";
+    state.lastError = message;
   });
 
   client.on("auth_failure", (message) => {
+    const text = typeof message === "string" ? message : "WhatsApp authentication failed.";
+    console.error("[whatsapp] Auth failure:", text);
     state.status = "error";
-    state.lastError = typeof message === "string" ? message : "WhatsApp authentication failed.";
+    state.lastError = text;
   });
 
+  console.log("[whatsapp] Calling client.initialize()...");
   client.initialize().catch((err) => {
+    const message = err instanceof Error ? err.message : "Failed to start the WhatsApp client.";
+    console.error("[whatsapp] initialize() rejected:", message, err instanceof Error ? err.stack : "");
     state.status = "error";
-    state.lastError = err instanceof Error ? err.message : "Failed to start the WhatsApp client.";
+    state.lastError = message;
   });
 
   globalThis.__whatsappClient = client;
@@ -160,7 +197,14 @@ export function getWhatsappClient(): Client {
 
 /** Ensures the client has been started, then returns its current state for the pairing/status page. */
 export function getWhatsappStatus(): WhatsappState {
-  getWhatsappClient();
+  try {
+    getWhatsappClient();
+  } catch {
+    // getWhatsappClient() already logged and set state.status/lastError
+    // before rethrowing (e.g. Client construction failed outright) — fall
+    // through and return that state instead of letting this throw crash
+    // the /api/whatsapp/status route.
+  }
   return getState();
 }
 
