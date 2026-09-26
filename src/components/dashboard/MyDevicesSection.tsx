@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
+import { Laptop } from "lucide-react";
 import { STATUS_KEYS } from "@/lib/my-jobs";
 
 const STATUS_DOT: Record<string, string> = {
@@ -70,7 +70,7 @@ export function MyDevicesSection({
                   className="flex items-center gap-3 rounded-2xl border border-stone-100 bg-white/60 px-3 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:bg-white hover:shadow-candy"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
-                    <ClipboardList className="h-4 w-4" />
+                    <Laptop className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-stone-900">{job.hostname || "Unnamed device"}</p>
