@@ -6,6 +6,7 @@ import { isMyJob } from "@/lib/my-jobs";
 import { manufacturerLookup } from "@/lib/device-manufacturer";
 import { DeleteDeviceButton } from "@/components/devices/DeleteDeviceButton";
 import { RevealOutlookPasswordButton } from "@/components/devices/RevealOutlookPasswordButton";
+import { SelfAssignButton } from "@/components/devices/SelfAssignButton";
 import { BackLink } from "@/components/nav/BackLink";
 
 function fmt(d: Date | null) {
@@ -39,6 +40,17 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
     session.role === "Admin" ||
     session.role === "Secondary Admin" ||
     (session.role === "Technician" && isMyJob(device, session.userId));
+  // Registering a device does NOT formally assign the technician who
+  // registered it (src/app/api/devices/register/route.ts forces
+  // assignedTechnicianId blank even for a Technician registrant) — only
+  // acceptedBy is set. So a device can be "mine" per isMyJob (above, used
+  // for looser things like the Update Status button and the dashboard's
+  // My Jobs list) while still showing "Unassigned" in the Technician
+  // field everywhere else. Offer the explicit claim action whenever
+  // that's the case, so status auto-advances (see
+  // /api/repairs/[id]/self-assign) only once the device is genuinely
+  // assigned — not the moment it's merely "mine" in the loose sense.
+  const canSelfAssign = session.role === "Technician" && !device.assignedTechnicianId && device.status !== "Delivered";
 
   return (
     <main className="p-8">
@@ -57,6 +69,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </span>
           </div>
           <div className="flex gap-2">
+            {canSelfAssign && <SelfAssignButton deviceId={device.id} />}
             {canUpdateStatus && (
               <Link href={`/repairs/${device.id}`} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
                 Update Status

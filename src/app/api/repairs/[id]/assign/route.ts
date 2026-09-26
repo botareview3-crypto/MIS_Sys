@@ -65,14 +65,35 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       }
 
       const previousTechnicianId = job.assignedTechnicianId;
+      // A technician being assigned onto a still-"Received" device means
+      // work is now clearly claimed and about to start, so the status
+      // advances to Repairing right along with the assignment — same rule
+      // for an Admin assigning someone here as for a Technician assigning
+      // themselves (see /api/repairs/[id]/self-assign). Only fires when
+      // status is still Received (an Admin reassigning a device that's
+      // already Repairing/Ready/Delivered shouldn't roll it backwards).
+      const willAutoAdvance = technicianId > 0 && job.status === "Received";
 
       await tx.repairJob.update({
         where: { id: deviceId },
         data: {
           assignedTechnicianId: technicianId > 0 ? technicianId : null,
           assignedSecondaryAdminId: secondaryAdminId || null,
+          ...(willAutoAdvance ? { status: "Repairing" } : {}),
         },
       });
+
+      if (willAutoAdvance) {
+        await tx.statusHistory.create({
+          data: {
+            repairJobId: deviceId,
+            previousStatus: job.status,
+            newStatus: "Repairing",
+            changedBy: session.userId,
+            changeNote: `Status automatically advanced to Repairing after ${selectedTechnician?.fullName ?? "a technician"} was assigned.`,
+          },
+        });
+      }
 
       await tx.auditLog.create({
         data: {
@@ -89,12 +110,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
             new_technician_username: selectedTechnician?.username ?? null,
             secondary_admin_id: secondaryAdminId || null,
             secondary_admin_name: selectedSecondaryAdmin?.fullName ?? null,
+            status_auto_advanced_to_repairing: willAutoAdvance,
           },
           reason: "Technician assignment updated by an administrator.",
         },
       });
 
-      return { technicianName: selectedTechnician?.fullName ?? null };
+      return { technicianName: selectedTechnician?.fullName ?? null, statusAutoAdvanced: willAutoAdvance };
     });
 
     return NextResponse.json({ ok: true, ...result });

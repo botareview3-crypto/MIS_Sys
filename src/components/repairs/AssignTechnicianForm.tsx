@@ -42,7 +42,9 @@ export function AssignTechnicianForm({
       setMessage({
         type: "success",
         text: data.technicianName
-          ? `Device successfully assigned to ${data.technicianName}.`
+          ? `Device successfully assigned to ${data.technicianName}.${
+              data.statusAutoAdvanced ? " Status automatically moved to Repairing." : ""
+            }`
           : "Admin assignment saved without a technician.",
       });
       router.refresh();

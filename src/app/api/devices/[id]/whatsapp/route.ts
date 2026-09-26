@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
-import { isMyJob } from "@/lib/my-jobs";
 import {
   isWhatsappMessageType,
   getWhatsappWorkflowError,
@@ -124,49 +123,16 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  // A Technician sending their own job's "Received" message has, in effect,
-  // told the customer their device is now being worked on — so the status
-  // auto-advances to Repairing right here instead of making them find the
-  // separate Update Status screen. Scoped to Technician + their own job
-  // (see isMyJob — acceptedBy or assignedTechnicianId) so this never fires
-  // for Admin/Reception sending on someone else's behalf, or for a
-  // Technician sending on a job that isn't theirs; those cases still use
-  // the manual "Update Status" action (always available to Admin, and to
-  // Secondary Admin/Technician on their own jobs — see /devices/[id]).
-  const shouldAutoAdvanceToRepairing =
-    messageType === "Received" &&
-    job.status === "Received" &&
-    session.role === "Technician" &&
-    isMyJob(job, session.userId);
-
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whatsappLog = await prisma.$transaction(async (tx: any) => {
-      const log = await tx.whatsappLog.create({
-        data: {
-          repairJobId: job.id,
-          messageType,
-          recipientNumber: normalizedPhone,
-          generatedMessage: submittedMessage,
-          messageStatus: "Prepared",
-          preparedBy: session.userId,
-        },
-      });
-
-      if (shouldAutoAdvanceToRepairing) {
-        await tx.repairJob.update({ where: { id: job.id }, data: { status: "Repairing" } });
-        await tx.statusHistory.create({
-          data: {
-            repairJobId: job.id,
-            previousStatus: job.status,
-            newStatus: "Repairing",
-            changedBy: session.userId,
-            changeNote: "Status automatically advanced to Repairing after the Received WhatsApp message was sent.",
-          },
-        });
-      }
-
-      return log;
+    const whatsappLog = await prisma.whatsappLog.create({
+      data: {
+        repairJobId: job.id,
+        messageType,
+        recipientNumber: normalizedPhone,
+        generatedMessage: submittedMessage,
+        messageStatus: "Prepared",
+        preparedBy: session.userId,
+      },
     });
 
     const ipAddress = req.headers.get("x-forwarded-for") ?? "unknown";
@@ -184,7 +150,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
             recipientNumber: normalizedPhone,
             messageStatus: "Prepared",
             messageLength: submittedMessage.length,
-            statusAutoAdvancedToRepairing: shouldAutoAdvanceToRepairing,
           },
           reason: "Customer WhatsApp message prepared for staff review.",
           ipAddress,
@@ -197,7 +162,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       success: true,
       whatsappUrl: buildWhatsappUrl(normalizedPhone, submittedMessage),
-      statusAutoAdvancedToRepairing: shouldAutoAdvanceToRepairing,
     });
   } catch (err) {
     console.error("WhatsApp message preparation failed:", err);
