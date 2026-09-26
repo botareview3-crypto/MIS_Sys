@@ -172,15 +172,13 @@ model WhatsappLog {
   @@map("whatsapp_logs")
 }
 
-/**
- * FLAGGED SCHEMA CHANGE (2026-09-26): new table, additive only — no
- * existing table, column, or CHECK constraint touched. Stores the
- * whatsapp-web.js RemoteAuth session (a zip blob) so the paired WhatsApp
- * login survives Render free-tier restarts/deploys, which wipe local disk
- * (see PrismaWhatsappStore in src/lib/whatsapp-client.ts). Single row,
- * fixed id "mis-whatsapp". Unrelated to Arp-main/database/schema.sql — the
- * old PHP app has no concept of this and simply won't see this table.
- */
+// FLAGGED SCHEMA CHANGE (2026-09-26): new table, additive only — no
+// existing table, column, or CHECK constraint touched. Stores the
+// whatsapp-web.js RemoteAuth session (a zip blob) so the paired WhatsApp
+// login survives Render free-tier restarts/deploys, which wipe local disk
+// (see PrismaWhatsappStore in src/lib/whatsapp-client.ts). Single row,
+// fixed id "mis-whatsapp". Unrelated to Arp-main/database/schema.sql — the
+// old PHP app has no concept of this and simply won't see this table.
 model WhatsappSession {
   id        String   @id
   data      Bytes

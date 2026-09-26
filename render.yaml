@@ -23,7 +23,15 @@ services:
     # aliases (@/*) when building the webpack config, even though the
     # aliases are configured correctly. --include=dev forces them in
     # for the build; they aren't needed at runtime (npm start).
-    buildCommand: npm install --include=dev && npm run build
+    # `prisma db push` added to the build 2026-09-26 (session 19, WhatsApp
+    # auto-send): applies any additive schema changes (new tables/columns)
+    # to the DB on every deploy, since Render's build never touched the DB
+    # before this and the free plan has no Shell access to run it by hand.
+    # Safe to leave here — it's a no-op when the schema already matches.
+    # Would prompt/fail on a genuinely destructive change (dropped column,
+    # changed type) instead of applying it, which is the correct behavior:
+    # never add --accept-data-loss here without a human reading the diff.
+    buildCommand: npm install --include=dev && npx prisma db push && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
