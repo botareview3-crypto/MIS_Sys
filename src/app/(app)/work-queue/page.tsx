@@ -8,6 +8,26 @@ type RepairJobWhereInput = any;
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
+// Literal Tailwind classes per column — kept as a lookup (rather than
+// built with template strings) so the JIT content-scanner actually picks
+// them up. Mirrors the same status-color key used everywhere else
+// (StatusBadge, dashboard STATUS_STEPS, login legend).
+const COLUMN_META: Record<(typeof STATUSES)[number], { dot: string; chip: string }> = {
+  Received: { dot: "bg-status-received", chip: "bg-status-received" },
+  Repairing: { dot: "bg-status-repairing", chip: "bg-status-repairing" },
+  Ready: { dot: "bg-status-ready", chip: "bg-status-ready" },
+  Delivered: { dot: "bg-status-delivered", chip: "bg-status-delivered" },
+};
+
+function initials(fullName: string) {
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default async function WorkQueuePage({
   searchParams,
 }: {
@@ -180,68 +200,89 @@ export default async function WorkQueuePage({
         </button>
       </form>
 
-      <div className="card mt-4 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
-            <tr>
-              <th className="px-4 py-3">Host Name</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Problem</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Deadline</th>
-              <th className="px-4 py-3">Technician</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedQueue.map((d) => {
-              const overdue =
-                d.expectedCompletionDate &&
-                d.expectedCompletionDate.toISOString().slice(0, 10) < today &&
-                d.status !== "Delivered";
-              return (
-                <tr key={d.id} className="border-b border-stone-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-stone-900">{d.hostname || "—"}</td>
-                  <td className="px-4 py-3">{d.customer.fullName}</td>
-                  <td className="px-4 py-3 max-w-[240px] truncate text-stone-500">{d.reportedProblem}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className={`px-4 py-3 ${overdue ? "font-semibold text-red-600" : "text-stone-500"}`}>
-                    {d.expectedCompletionDate ? d.expectedCompletionDate.toISOString().slice(0, 10) : "—"}
-                    {overdue ? " · overdue" : ""}
-                  </td>
-                  <td className="px-4 py-3 text-stone-500">{d.technician?.fullName ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Link href={`/repairs/${d.id}`} className="text-brand-600 hover:underline">
-                        Update
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {STATUSES.map((status) => {
+          const meta = COLUMN_META[status];
+          const jobs = sortedQueue.filter((d) => d.status === status);
+          return (
+            <div key={status} className="rounded-3xl bg-white/50 p-3 backdrop-blur-xl">
+              <div className="mb-3 flex items-center justify-between px-1.5">
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                  <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden />
+                  {status}
+                </span>
+                <span
+                  className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}
+                >
+                  {jobs.length}
+                </span>
+              </div>
+
+              <div className="min-h-[80px] space-y-2.5">
+                {jobs.map((d) => {
+                  const overdue =
+                    d.expectedCompletionDate &&
+                    d.expectedCompletionDate.toISOString().slice(0, 10) < today &&
+                    d.status !== "Delivered";
+                  return (
+                    <div key={d.id} className="card-interactive p-3.5">
+                      <Link href={`/devices/${d.id}`} className="block">
+                        <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
+                        <p className="mt-1 truncate text-xs text-stone-500">{d.customer.fullName}</p>
+                        <p className="data-mono mt-0.5 truncate text-[11px] text-stone-400">
+                          {d.serialNumber || d.aucAssetBarcode || "—"}
+                        </p>
                       </Link>
-                      {isAdmin && (
-                        <Link href={`/repairs/${d.id}/assign`} className="text-brand-600 hover:underline">
-                          Assign
+
+                      <div className="mt-3 flex items-center justify-between">
+                        <span
+                          className={`text-[11px] ${overdue ? "font-semibold text-red-600" : "text-stone-400"}`}
+                        >
+                          {d.expectedCompletionDate
+                            ? d.expectedCompletionDate.toISOString().slice(0, 10)
+                            : "No deadline"}
+                          {overdue ? " · overdue" : ""}
+                        </span>
+                        {d.technician && (
+                          <span
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white"
+                            title={d.technician.fullName}
+                          >
+                            {initials(d.technician.fullName)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-2.5 flex gap-3 border-t border-stone-100 pt-2.5 text-xs">
+                        <Link href={`/repairs/${d.id}`} className="font-medium text-brand-600 hover:underline">
+                          Update
                         </Link>
-                      )}
-                      <Link href={`/devices/${d.id}`} className="text-stone-400 hover:underline">
-                        View
-                      </Link>
+                        {isAdmin && (
+                          <Link
+                            href={`/repairs/${d.id}/assign`}
+                            className="font-medium text-brand-600 hover:underline"
+                          >
+                            Assign
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {sortedQueue.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-stone-400">
-                  No devices match these filters.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  );
+                })}
+                {jobs.length === 0 && (
+                  <p className="px-2 py-6 text-center text-xs text-stone-400">No devices</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {sortedQueue.length === 0 && (
+        <div className="card mt-4 p-8 text-center text-sm text-stone-400">
+          No devices match these filters.
+        </div>
+      )}
     </main>
   );
 }
