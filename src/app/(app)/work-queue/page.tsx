@@ -124,7 +124,7 @@ export default async function WorkQueuePage({
             Current focus · {remainingActiveJobs} active job(s)
           </p>
           <h2 className="mt-1 text-base font-semibold text-slate-900">
-            {currentQueueItem.jobId} — {currentQueueItem.customer.fullName}
+            {currentQueueItem.hostname || "Device"} — {currentQueueItem.customer.fullName}
           </h2>
           <p className="mt-1 text-sm text-slate-500">{currentQueueItem.reportedProblem}</p>
           <div className="mt-3 flex gap-2">
