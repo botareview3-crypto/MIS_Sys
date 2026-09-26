@@ -36,6 +36,30 @@ export default async function WorkQueuePage({
   const search = (params.search ?? "").trim();
   const statusFilter = STATUSES.includes(params.status as (typeof STATUSES)[number]) ? params.status! : "";
 
+  // Barcode scanners type the scanned code then send Enter, which submits
+  // this search form. When the scanned value is an exact match for one
+  // device's serial number, asset barcode, or hostname, skip the filtered
+  // list entirely and jump straight to that device's full record.
+  if (search) {
+    const scanMatches = await prisma.repairJob.findMany({
+      where: {
+        ...(requiresAssignment
+          ? isSecondaryAdmin
+            ? { assignedSecondaryAdminId: session.userId }
+            : { assignedTechnicianId: session.userId }
+          : {}),
+        OR: [
+          { serialNumber: { equals: search, mode: "insensitive" } },
+          { aucAssetBarcode: { equals: search, mode: "insensitive" } },
+          { hostname: { equals: search, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+      take: 2,
+    });
+    if (scanMatches.length === 1) redirect(`/devices/${scanMatches[0].id}`);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
     ...(requiresAssignment

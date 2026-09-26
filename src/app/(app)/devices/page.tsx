@@ -25,6 +25,26 @@ export default async function ManageDevicesPage({
   const isSecondaryAdmin = session.role === "Secondary Admin";
   const isTechnicianRole = session.role === "Technician";
 
+  // Barcode scanners type the scanned code then send Enter, which submits
+  // this search form. When the scanned value is an exact match for one
+  // device's serial number, asset barcode, or hostname, skip the filtered
+  // list entirely and jump straight to that device's full record.
+  if (search) {
+    const scanMatches = await prisma.repairJob.findMany({
+      where: {
+        ...(isSecondaryAdmin ? { assignedSecondaryAdminId: session.userId } : {}),
+        OR: [
+          { serialNumber: { equals: search, mode: "insensitive" } },
+          { aucAssetBarcode: { equals: search, mode: "insensitive" } },
+          { hostname: { equals: search, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+      take: 2,
+    });
+    if (scanMatches.length === 1) redirect(`/devices/${scanMatches[0].id}`);
+  }
+
   const where: RepairJobWhereInput = {
     ...(isSecondaryAdmin ? { assignedSecondaryAdminId: session.userId } : {}),
     ...(!isTechnicianRole && technicianFilter ? { assignedTechnicianId: technicianFilter } : {}),
