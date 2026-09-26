@@ -36,7 +36,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
       <BackLink href="/devices" label="Back to Devices" useHistory />
 
       <div className="mx-auto mt-2 max-w-4xl space-y-6">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>
             <h1 className="text-lg font-semibold text-slate-900">{device.customer.fullName}</h1>
@@ -54,16 +54,16 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-slate-900">Customer</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <Row label="Name" value={`${device.customer.title ?? ""} ${device.customer.fullName}`.trim()} />
               <Row label="Phone" value={device.customer.phoneNumber} />
               <Row label="Outlook email" value={device.customer.outlookEmail} />
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Outlook password</dt>
-                <dd className="text-right">
+              <div>
+                <dt className="text-xs text-slate-400">Outlook password</dt>
+                <dd className="mt-0.5">
                   <RevealOutlookPasswordButton deviceId={device.id} />
                 </dd>
               </div>
@@ -76,9 +76,9 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             <dl className="mt-3 space-y-2 text-sm">
               <Row label="AUC barcode" value={device.aucAssetBarcode} />
               <Row label="Serial number" value={device.serialNumber} />
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Manufacturer</dt>
-                <dd className="text-right text-slate-700">
+              <div>
+                <dt className="text-xs text-slate-400">Manufacturer</dt>
+                <dd className="mt-0.5 break-words text-slate-700">
                   {lookup.manufacturer}
                   {lookup.productNumber && ` · ${lookup.productNumber}`}{" "}
                   <Link href={`/devices/${device.id}/manufacturer`} className="text-brand-600 hover:underline">
@@ -97,7 +97,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </dl>
           </section>
 
-          <section className="card p-5 col-span-2">
+          <section className="card p-5 sm:col-span-2">
             <h2 className="text-sm font-semibold text-slate-900">Reported problem</h2>
             <p className="mt-2 text-sm text-slate-600">{device.reportedProblem}</p>
             {device.technicianDiagnosis && (
@@ -132,7 +132,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </dl>
           </section>
 
-          <section className="card col-span-2 p-5">
+          <section className="card sm:col-span-2 p-5">
             <h2 className="text-sm font-semibold text-slate-900">Status history</h2>
             {device.statusHistory.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">No status changes recorded.</p>
@@ -153,7 +153,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             )}
           </section>
 
-          <section className="card col-span-2 p-5">
+          <section className="card sm:col-span-2 p-5">
             <h2 className="text-sm font-semibold text-slate-900">Receipts</h2>
             {device.receipts.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">Generated receipts will appear here.</p>
@@ -181,7 +181,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             )}
           </section>
 
-          <section className="card col-span-2 p-5">
+          <section className="card sm:col-span-2 p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-900">WhatsApp messages</h2>
               {["Received", "Ready", "Delivered"].includes(device.status) && (
@@ -216,9 +216,9 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-slate-400">{label}</dt>
-      <dd className="text-right text-slate-700">{value}</dd>
+    <div>
+      <dt className="text-xs text-slate-400">{label}</dt>
+      <dd className="mt-0.5 break-words text-slate-700">{value}</dd>
     </div>
   );
 }
