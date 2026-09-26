@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
+import { BackLink } from "@/components/nav/BackLink";
 
 /**
  * Ported from app/pages/notifications/notifications.php.
@@ -45,7 +46,12 @@ export default async function NotificationsPage({
 
   return (
     <main className="p-8">
-      <div className="flex items-start justify-between gap-4">
+      {/* Opened from the bell icon in the top bar, present on every page —
+          there's no single parent page, so this returns to wherever the
+          user actually came from. */}
+      <BackLink href="/dashboard" label="Back" useHistory />
+
+      <div className="mt-2 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Administration</p>
           <h1 className="mt-1 text-lg font-semibold text-slate-900">Notifications</h1>

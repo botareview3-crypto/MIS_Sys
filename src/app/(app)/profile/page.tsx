@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfilePhotoForm } from "@/components/profile/ProfilePhotoForm";
+import { BackLink } from "@/components/nav/BackLink";
 
 function initialsOf(fullName: string) {
   return fullName
@@ -22,7 +23,12 @@ export default async function ProfilePage() {
 
   return (
     <main className="p-8">
-      <div className="flex items-start justify-between gap-4">
+      {/* Opened from the avatar/profile control in the top bar, present on
+          every page — there's no single parent page, so this returns to
+          wherever the user actually came from. */}
+      <BackLink href="/dashboard" label="Back" useHistory />
+
+      <div className="mt-2 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Personal Account</p>
           <h1 className="mt-1 text-lg font-semibold text-slate-900">My Profile</h1>

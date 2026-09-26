@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EditUserForm } from "@/components/users/EditUserForm";
+import { BackLink } from "@/components/nav/BackLink";
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -18,7 +19,8 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   return (
     <main className="p-8">
       <div className="mx-auto max-w-lg">
-        <h1 className="text-lg font-semibold text-slate-900">Edit {user.fullName}</h1>
+        <BackLink href="/users" label="Back to Manage Users" />
+        <h1 className="mt-2 text-lg font-semibold text-slate-900">Edit {user.fullName}</h1>
         <p className="mt-1 text-sm text-slate-500">@{user.username}</p>
         <div className="card mt-6 p-6">
           <EditUserForm
