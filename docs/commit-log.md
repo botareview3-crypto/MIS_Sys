@@ -4,6 +4,55 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-26 (20) — Fix Render build failure from session 19 (unzipper/@aws-sdk/client-s3)
+
+**Scope:** Session 19's WhatsApp auto-send feature broke the Render build:
+`prisma generate` passed, but `next build` failed with `Module not found:
+Can't resolve '@aws-sdk/client-s3'`, traced through
+`unzipper → whatsapp-web.js RemoteAuth → src/lib/whatsapp-client.ts →
+src/app/api/whatsapp/status/route.ts`.
+
+**Diagnosis (verified, not assumed):** confirmed via `unzipper`'s own
+upstream issue tracker (ZJONSSON/node-unzipper#330 — same exact error
+signature) that `lib/Open/index.js` does an **unconditional top-level**
+`require('@aws-sdk/client-s3')` to support an *optional* `Open.s3()` method
+purely for opening zip files that live on S3. Nothing in this app calls
+that method or anything on that code path — RemoteAuth only ever opens
+local zip files/buffers (the whatsapp session blob, round-tripped through
+Postgres, not S3). `@aws-sdk/client-s3` was correctly never installed here
+(no S3 usage), but Next's webpack build statically resolves every
+`require()` it finds while bundling server code, so it fails even though
+the path is dead at runtime.
+
+**Fix:** added `whatsapp-web.js` to `experimental.serverComponentsExternalPackages`
+in `next.config.js`. This tells Next.js 14 to leave that package (and its
+full dependency tree, including `unzipper`) out of the webpack bundle
+entirely and `require()` it natively at runtime instead — so webpack never
+walks into the `unzipper`/`@aws-sdk` code path in the first place. Chosen
+over the alternatives: a webpack `externals`/`IgnorePlugin` entry would
+work too but is more fragile (has to be kept in sync manually); actually
+installing `@aws-sdk/client-s3` as a real dependency would "fix" the build
+but adds real weight (an unused AWS SDK package) for a code path that's
+never exercised — not worth it just to satisfy webpack's static analysis.
+Renamed to the stable top-level `serverExternalPackages` config key in
+Next.js 15 — flagged in a comment in `next.config.js` for whenever this
+project upgrades past 14.
+
+**Verified:** confirmed the root cause against `unzipper`'s own GitHub
+issue tracker (exact matching error signature) rather than guessing; this
+sandbox still has no network access (same standing constraint as deviation
+#4 in `status.md`), so the fix could not be confirmed against an actual
+`npm install && next build` run or a real Render deploy. Push and watch
+the next Render build log to confirm this clears the `next build` step
+before trusting it fully.
+
+**Changed:**
+- `next.config.js` — added `whatsapp-web.js` to
+  `experimental.serverComponentsExternalPackages`, with an inline comment
+  explaining why (see above).
+
+---
+
 ## 2026-09-26 (19) — Automatic WhatsApp sending (Received/Ready)
 
 **Scope:** The WhatsApp messages section on a device's detail page used to be
