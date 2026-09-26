@@ -1,18 +1,21 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { GuideSteps } from "@/components/guide/GuideSteps";
+import { localGuideSteps } from "@/lib/guide-content";
 
 // Split from the shared /guide placeholder on 2026-09-26 — Local and Intra
 // are meant to get their own guide content later; this is the Local half.
+// Steps are placeholder data in src/lib/guide-content.ts until the project
+// owner supplies the real content.
 export default async function LocalGuidePage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
   return (
-    <main className="p-8">
-      <div className="card p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Local Guide</h1>
-        <p className="mt-1 text-sm text-slate-500">Content coming later.</p>
-      </div>
-    </main>
+    <GuideSteps
+      heading="Local Guide"
+      intro="Step-by-step setup for Local devices. Content below is a placeholder."
+      steps={localGuideSteps}
+    />
   );
 }
