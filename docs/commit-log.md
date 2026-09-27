@@ -4,6 +4,67 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-27 (27) — Improvements bundle, part 2: bulk actions on Work Queue
+
+**Scope:** Item 2 of the improvements list — multi-select checkboxes on
+Work Queue with bulk status change and bulk technician reassignment. No
+schema change. No change to any existing route's behavior — the two new
+endpoints are additive, and the single-job PATCH routes
+(`/api/repairs/[id]`, `/api/repairs/[id]/assign`) are untouched.
+
+**Added:**
+- `src/app/api/repairs/bulk/status/route.ts` — `PATCH`, `["Admin",
+  "Secondary Admin", "Technician"]`, same ownership scoping as the
+  single-job status route (Secondary Admin restricted to jobs where
+  `assignedSecondaryAdminId` is theirs; Technician and Admin unrestricted,
+  matching existing behavior). Takes `{ ids, status, changeNote? }`, loops
+  per id inside one transaction, and per job writes the same shape of
+  `StatusHistory` row, auto-creates a Ready/Delivery `Receipt` if one
+  doesn't already exist, and writes an `AuditLog` entry
+  (`action_type: "repair_status_bulk_updated"` — new name, consistent with
+  the existing drift noted in `docs/status.md` deviation #8, not an
+  attempt to fix it). Technician-performed changes still notify active
+  Admins, same as the single-job route. Jobs that don't exist / aren't
+  accessible / are already at the target status are skipped and reported
+  back rather than failing the whole batch.
+- `src/app/api/repairs/bulk/assign/route.ts` — `PATCH`, Admin-only, same
+  shape as `/api/repairs/[id]/assign`: validates the technician and
+  optional secondary-admin once, then applies to every selected job,
+  including the existing Received→Repairing auto-advance rule when a
+  technician is newly assigned. `action_type` reuses the existing
+  `technician_assigned` / `technician_reassigned` values (not renamed,
+  since this route's audit shape matches the single-job one exactly).
+- `src/components/work-queue/WorkQueueBoard.tsx` — client component now
+  rendering Work Queue's per-status columns (moved out of the page, which
+  stays a server component for data-fetching). Adds a checkbox per card, a
+  fixed bottom action bar that appears once ≥1 job is selected (status
+  dropdown + "Set status", and — Admin only — a technician dropdown +
+  "Reassign"), calls the two new endpoints, and `router.refresh()`s on
+  success. Selection state is local to the component; navigating away
+  clears it (no draft/persistence — matches how the existing single-job
+  Assign/Update pages already behave, no autosave expectation here).
+
+**Changed:** `src/app/(app)/work-queue/page.tsx` — the inline 4-column
+card grid was extracted into `WorkQueueBoard`; the page now maps
+`sortedQueue` into the plain shape that component needs and, for Admins
+only, additionally fetches the same technician-options list
+`repairs/[id]/assign/page.tsx` already queries (role in
+Technician/Admin, active, not deleted). No change to the page's own data
+fetching, filtering, sorting, or role gating.
+
+**Reminder carried over from part 1:** the bulk-status endpoint's allowed
+statuses are still the same four (`Received/Repairing/Ready/Delivered`)
+as the single-job route — `Diagnosing` remains unreachable through any
+status-change path in this app. Still waiting on a decision before
+touching that; see part 1's note. It matters more now because section 3
+(Kanban) explicitly asks for a 5th `Diagnosing` column.
+
+**Not verified (no `node_modules` in this sandbox):** `npx tsc --noEmit`,
+`npm run build`. Reviewed by hand; the bulk routes deliberately mirror
+existing, already-verified route shapes field-for-field to minimize risk.
+
+---
+
 ## 2026-09-27 (26) — Improvements bundle, part 1: overdue flagging (Work Queue + Dashboard)
 
 **Scope:** First of several planned deliveries against the project owner's

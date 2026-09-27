@@ -4,31 +4,12 @@ import { AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isJobOverdue } from "@/lib/repair-overdue";
+import { WorkQueueBoard } from "@/components/work-queue/WorkQueueBoard";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
-
-// Literal Tailwind classes per column — kept as a lookup (rather than
-// built with template strings) so the JIT content-scanner actually picks
-// them up. Mirrors the same status-color key used everywhere else
-// (StatusBadge, dashboard STATUS_STEPS, login legend).
-const COLUMN_META: Record<(typeof STATUSES)[number], { dot: string; chip: string }> = {
-  Received: { dot: "bg-status-received", chip: "bg-status-received" },
-  Repairing: { dot: "bg-status-repairing", chip: "bg-status-repairing" },
-  Ready: { dot: "bg-status-ready", chip: "bg-status-ready" },
-  Delivered: { dot: "bg-status-delivered", chip: "bg-status-delivered" },
-};
-
-function initials(fullName: string) {
-  return fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export default async function WorkQueuePage({
   searchParams,
@@ -111,7 +92,7 @@ export default async function WorkQueuePage({
       : {}),
   };
 
-  const [workQueue, activeJobs] = await Promise.all([
+  const [workQueue, activeJobs, technicianOptions] = await Promise.all([
     prisma.repairJob.findMany({
       where,
       include: { customer: true, technician: true },
@@ -124,6 +105,13 @@ export default async function WorkQueuePage({
       orderBy: [{ expectedCompletionDate: "asc" }, { receivedAt: "asc" }, { id: "asc" }],
       take: 50,
     }),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { role: { in: ["Technician", "Admin"] }, isActive: true, deletedAt: null },
+          select: { id: true, fullName: true, role: true },
+          orderBy: { fullName: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   // Overdue-first, then earliest deadline, then received order (mirrors the SQL ORDER BY).
@@ -208,93 +196,21 @@ export default async function WorkQueuePage({
         </button>
       </form>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {STATUSES.map((status) => {
-          const meta = COLUMN_META[status];
-          const jobs = sortedQueue.filter((d) => d.status === status);
-          return (
-            <div key={status} className="rounded-3xl bg-white/50 p-3 backdrop-blur-xl">
-              <div className="mb-3 flex items-center justify-between px-1.5">
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden />
-                  {status}
-                </span>
-                <span
-                  className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}
-                >
-                  {jobs.length}
-                </span>
-              </div>
-
-              <div className="min-h-[80px] space-y-2.5">
-                {jobs.map((d) => {
-                  const overdue = isJobOverdue(d);
-                  return (
-                    <div key={d.id} className={`card-interactive p-3.5 ${overdue ? "ring-1 ring-inset ring-red-200" : ""}`}>
-                      <Link href={`/devices/${d.id}`} className="block">
-                        <div className="flex items-start justify-between gap-2">
-                          <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
-                          {overdue && (
-                            <span className="flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
-                              <AlertTriangle className="h-3 w-3" />
-                              Overdue
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 truncate text-xs text-stone-500">{d.customer.fullName}</p>
-                        <p className="data-mono mt-0.5 truncate text-[11px] text-stone-400">
-                          {d.serialNumber || d.aucAssetBarcode || "—"}
-                        </p>
-                      </Link>
-
-                      <div className="mt-3 flex items-center justify-between">
-                        <span
-                          className={`text-[11px] ${overdue ? "font-semibold text-red-600" : "text-stone-400"}`}
-                        >
-                          {d.expectedCompletionDate
-                            ? d.expectedCompletionDate.toISOString().slice(0, 10)
-                            : "No deadline"}
-                        </span>
-                        {d.technician && (
-                          <span
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white"
-                            title={d.technician.fullName}
-                          >
-                            {initials(d.technician.fullName)}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-2.5 flex gap-3 border-t border-stone-100 pt-2.5 text-xs">
-                        <Link href={`/repairs/${d.id}`} className="font-medium text-brand-600 hover:underline">
-                          Update
-                        </Link>
-                        {isAdmin && (
-                          <Link
-                            href={`/repairs/${d.id}/assign`}
-                            className="font-medium text-brand-600 hover:underline"
-                          >
-                            Assign
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {jobs.length === 0 && (
-                  <p className="px-2 py-6 text-center text-xs text-stone-400">No devices</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {sortedQueue.length === 0 && (
-        <div className="card mt-4 p-8 text-center text-sm text-stone-400">
-          No devices match these filters.
-        </div>
-      )}
+      <WorkQueueBoard
+        jobs={sortedQueue.map((d) => ({
+          id: d.id,
+          hostname: d.hostname,
+          serialNumber: d.serialNumber,
+          aucAssetBarcode: d.aucAssetBarcode,
+          status: d.status,
+          expectedCompletionDate: d.expectedCompletionDate,
+          overdue: isJobOverdue(d),
+          customer: { fullName: d.customer.fullName },
+          technician: d.technician ? { id: d.technician.id, fullName: d.technician.fullName } : null,
+        }))}
+        isAdmin={isAdmin}
+        technicianOptions={technicianOptions}
+      />
     </main>
   );
 }

@@ -121,10 +121,12 @@ exactly what's changed, in order. This file is the current snapshot.
       down the device page. No ban risk, no headless browser, no Render
       free-tier memory pressure.
 - [x] Overdue flagging on Work Queue + Dashboard (session 26, part 1 of the
-      improvements bundle) — see commit-log. Remaining from that bundle,
-      not yet started: bulk actions on Work Queue, Kanban view, one-click
-      "Ready" WhatsApp prefill, global search bar (folds into the item
-      below), Reports charts, Admin 2FA, recently-viewed devices.
+      improvements bundle) — see commit-log.
+- [x] Bulk actions on Work Queue: checkbox multi-select, bulk status
+      change, bulk technician reassignment (session 27, part 2) — see
+      commit-log. Remaining from the bundle: Kanban drag-and-drop view,
+      one-click "Ready" WhatsApp prefill, global search bar (folds into
+      the item below), Reports charts, Admin 2FA, recently-viewed devices.
 - [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
       search across the admin UI. Not the same as the per-page search boxes
       already ported on Audit History / Reports. Genuinely not started;
