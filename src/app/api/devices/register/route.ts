@@ -7,6 +7,7 @@ import { resolveReportedProblem } from "@/lib/reported-problems";
 import { generateUniqueReference } from "@/lib/reference";
 
 const RegisterDeviceSchema = z.object({
+  customerId: z.string().default(""), // set when reusing/updating an existing customer
   title: z.enum(["Mr", "Ms", ""]).optional().default(""),
   customerFullName: z.string().trim().min(1).max(150),
   phoneNumber: z.string().trim().min(1).max(30),
@@ -83,6 +84,9 @@ export async function POST(req: NextRequest) {
   if (assignedTechnicianId !== "" && !/^\d+$/.test(assignedTechnicianId)) {
     return NextResponse.json({ error: "Please select a valid Technician." }, { status: 400 });
   }
+  if (data.customerId !== "" && !/^\d+$/.test(data.customerId)) {
+    return NextResponse.json({ error: "Invalid customer reference." }, { status: 400 });
+  }
   if (data.expectedCompletionDate) {
     const valid = /^\d{4}-\d{2}-\d{2}$/.test(data.expectedCompletionDate);
     const todayUtc = new Date().toISOString().slice(0, 10);
@@ -147,17 +151,42 @@ export async function POST(req: NextRequest) {
       const jobId = await generateUniqueReference("jobId", "AUC");
       const receiptNumber = await generateUniqueReference("receiptNumber", "REC");
 
-      const customer = await tx.customer.create({
-        data: {
-          title: data.title || null,
-          fullName: data.customerFullName,
-          phoneNumber: data.phoneNumber,
-          outlookEmail: normalizedEmail,
-          outlookPasswordEncrypted: encryptedOutlookPassword,
-          regionalOffice: data.regionalOffice || null,
-          createdBy: session.userId,
-        },
-      });
+      // Reuse an existing customer (picked via the search autocomplete, or
+      // carried over from an earlier device in the same batch/session)
+      // instead of always inserting a new row — keeps one customer from
+      // accumulating a duplicate row per visit or per device in a batch.
+      // Their editable details still get updated to whatever's on the form
+      // now; the password is only overwritten if a new one was typed.
+      let customer;
+      if (data.customerId) {
+        const existingCustomer = await tx.customer.findUnique({ where: { id: Number(data.customerId) } });
+        if (!existingCustomer) {
+          throw new Error("The selected customer no longer exists. Please search again or start a new customer.");
+        }
+        customer = await tx.customer.update({
+          where: { id: existingCustomer.id },
+          data: {
+            title: data.title || null,
+            fullName: data.customerFullName,
+            phoneNumber: data.phoneNumber,
+            outlookEmail: normalizedEmail,
+            regionalOffice: data.regionalOffice || null,
+            ...(data.outlookPassword ? { outlookPasswordEncrypted: encryptedOutlookPassword } : {}),
+          },
+        });
+      } else {
+        customer = await tx.customer.create({
+          data: {
+            title: data.title || null,
+            fullName: data.customerFullName,
+            phoneNumber: data.phoneNumber,
+            outlookEmail: normalizedEmail,
+            outlookPasswordEncrypted: encryptedOutlookPassword,
+            regionalOffice: data.regionalOffice || null,
+            createdBy: session.userId,
+          },
+        });
+      }
 
       const repairJob = await tx.repairJob.create({
         data: {
@@ -245,7 +274,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return { jobId, receiptNumber, repairJobId: repairJob.id };
+      return { jobId, receiptNumber, repairJobId: repairJob.id, customerId: customer.id };
     });
 
     // Auto-send via whatsapp-web.js was removed 2026-09-26 — see the
