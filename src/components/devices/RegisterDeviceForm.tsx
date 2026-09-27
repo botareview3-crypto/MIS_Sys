@@ -2,22 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Plus, Trash2 } from "lucide-react";
+import { Plus, ScanLine, Trash2 } from "lucide-react";
 
 type Technician = { id: number; fullName: string; role: string };
+
+// Every local device's hostname is meant to follow this convention; the
+// field starts pre-filled with it so the person only has to type the
+// distinguishing part.
+const HOSTNAME_PREFIX = "AUC-HQ-";
 
 type DeviceEntry = {
   givenByName: string;
   aucAssetBarcode: string; // shown to the user as "PC barcode"
-  serialNumber: string;
+  serialNumber: string; // shown to the user as "PC serial number"
   macAddress: string;
   hostname: string;
+  networkCableBarcode: string;
+  nicReceived: boolean; // gates whether networkCableBarcode can be edited
   reportedProblemType: string;
   reportedProblemCustom: string;
   assignedTechnicianId: string;
-  expectedCompletionDate: string;
   chargerReceived: boolean;
-  networkCableBarcode: string;
   bagReceived: boolean;
 };
 
@@ -31,13 +36,13 @@ function emptyDevice(previous?: DeviceEntry): DeviceEntry {
     aucAssetBarcode: "",
     serialNumber: "",
     macAddress: "",
-    hostname: "",
+    hostname: HOSTNAME_PREFIX,
+    networkCableBarcode: "",
+    nicReceived: false,
     reportedProblemType: "",
     reportedProblemCustom: "",
     assignedTechnicianId: previous?.assignedTechnicianId ?? "",
-    expectedCompletionDate: "",
     chargerReceived: false,
-    networkCableBarcode: "",
     bagReceived: false,
   };
 }
@@ -253,7 +258,7 @@ export function RegisterDeviceForm({
                 onKeyDown={blockEnterSubmit}
                 required
               />
-              <Barcode
+              <ScanLine
                 size={16}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
@@ -261,13 +266,13 @@ export function RegisterDeviceForm({
             <div className="relative">
               <input
                 className="input pr-10"
-                placeholder="Serial number"
+                placeholder="PC serial number"
                 value={device.serialNumber}
                 onChange={(e) => setDeviceField(index, "serialNumber", e.target.value)}
                 onKeyDown={blockEnterSubmit}
                 required
               />
-              <Barcode
+              <ScanLine
                 size={16}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
@@ -285,6 +290,21 @@ export function RegisterDeviceForm({
               onChange={(e) => setDeviceField(index, "hostname", e.target.value)}
               required
             />
+            <div className="relative col-span-2">
+              <input
+                className={`input pr-10 ${!device.nicReceived ? "cursor-not-allowed opacity-50" : ""}`}
+                placeholder="Network cable barcode"
+                value={device.networkCableBarcode}
+                onChange={(e) => setDeviceField(index, "networkCableBarcode", e.target.value)}
+                onKeyDown={blockEnterSubmit}
+                disabled={!device.nicReceived}
+                required={device.nicReceived}
+              />
+              <ScanLine
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
+              />
+            </div>
           </div>
 
           <select
@@ -323,18 +343,6 @@ export function RegisterDeviceForm({
             </select>
           )}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">
-              Expected completion date (optional)
-            </label>
-            <input
-              type="date"
-              className="input"
-              value={device.expectedCompletionDate}
-              onChange={(e) => setDeviceField(index, "expectedCompletionDate", e.target.value)}
-            />
-          </div>
-
           <div className="space-y-3 border-t border-stone-100 pt-3">
             <p className="text-sm font-semibold text-stone-900">Accessories</p>
             <label className="flex items-center gap-2 text-sm text-stone-700">
@@ -345,20 +353,23 @@ export function RegisterDeviceForm({
               />
               Charger received
             </label>
-            <div className="relative">
+            <label className="flex items-center gap-2 text-sm text-stone-700">
               <input
-                className="input pr-10"
-                placeholder="Network cable barcode"
-                value={device.networkCableBarcode}
-                onChange={(e) => setDeviceField(index, "networkCableBarcode", e.target.value)}
-                onKeyDown={blockEnterSubmit}
-                required
+                type="checkbox"
+                checked={device.nicReceived}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setDevices((ds) =>
+                    ds.map((d, i) =>
+                      i === index
+                        ? { ...d, nicReceived: checked, networkCableBarcode: checked ? d.networkCableBarcode : "" }
+                        : d
+                    )
+                  );
+                }}
               />
-              <Barcode
-                size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
-              />
-            </div>
+              NIC received
+            </label>
             <label className="flex items-center gap-2 text-sm text-stone-700">
               <input
                 type="checkbox"

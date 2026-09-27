@@ -23,7 +23,9 @@ const RegisterDeviceSchema = z.object({
   assignedTechnicianId: z.string().default(""),
   expectedCompletionDate: z.string().default(""), // "" or YYYY-MM-DD
   chargerReceived: z.boolean().default(false),
-  networkCableBarcode: z.string().trim().min(1),
+  // Only required client-side when the "NIC received" checkbox is on;
+  // the checkbox itself isn't persisted, so this stays optional here.
+  networkCableBarcode: z.string().trim().default(""),
   bagReceived: z.boolean().default(false),
 });
 
@@ -74,7 +76,6 @@ export async function POST(req: NextRequest) {
     data.aucAssetBarcode === "" ||
     data.serialNumber === "" ||
     data.hostname === "" ||
-    data.networkCableBarcode === "" ||
     reportedProblem === ""
   ) {
     return NextResponse.json({ error: "Please complete every required field." }, { status: 400 });

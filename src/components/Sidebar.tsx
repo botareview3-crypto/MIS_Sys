@@ -27,8 +27,25 @@ export function Sidebar({
   // Local/Intra (and any future parent items) default to expanded.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
+  // Sibling routes can share a prefix (e.g. "/devices/register" starts with
+  // "/devices"), so a plain startsWith would light up both "Manage Devices"
+  // and "Register Device" at once. Instead, find every href in the sidebar
+  // that matches the current path and only light up the longest (most
+  // specific) one.
+  function collectHrefs(items: NavItem[]): string[] {
+    return items.flatMap((item) => [
+      ...(item.href ? [item.href] : []),
+      ...(item.children ? collectHrefs(item.children) : []),
+    ]);
+  }
+  const allHrefs = [...collectHrefs(workspace), ...collectHrefs(administration)];
+  const matchingHrefs = allHrefs.filter((href) =>
+    href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(href + "/")
+  );
+  const activeHref = matchingHrefs.sort((a, b) => b.length - a.length)[0];
+
   function isActive(href: string) {
-    return href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+    return href === activeHref;
   }
 
   function isGroupOpen(label: string) {
