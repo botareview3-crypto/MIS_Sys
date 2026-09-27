@@ -4,6 +4,82 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-27 (29) — Improvements bundle, part 4: global search + recently-viewed devices (items 5 & 8)
+
+**Scope:** Items 5 and 8 of the project owner's remaining-improvements list
+("Bunch B"). No Prisma schema change in either — flagged as a design
+decision below for item 8 rather than a pre-approval question, since
+CLAUDE.md only requires confirming *before* coding when a schema change is
+actually on the table.
+
+**Changed:**
+- `src/components/TopBar.tsx` — added a search input to the persistent top
+  bar (every authenticated page). Submitting it navigates to
+  `/devices?search=<query>`, reusing the *exact* lookup
+  `src/app/(app)/devices/page.tsx` already implements (exact-match
+  barcode/serial/hostname shortcut straight to the device record,
+  contains-match filtered list otherwise) — no new search logic, no new API
+  route. Targets `/devices` rather than `/work-queue` on purpose: Reception
+  has no Work Queue access at all (`hasAccess` gate in
+  `work-queue/page.tsx`), but every role can reach `/devices`
+  (`src/lib/nav.ts` — "Manage Devices" has no role gate), so this is the
+  only target that's actually reachable "from any page" for all four
+  roles, not three of them.
+- `src/lib/recently-viewed.ts` — new. Cookie-based (not a new Prisma
+  table): `arp_recent_devices` holds a JSON array of up to 6 device ids,
+  most-recent-first. Exports the parse/update helpers (route uses
+  `withRecentlyViewed`) and `getRecentlyViewedDevices(cookie, session)`
+  (dashboard uses this), which re-scopes through the same Secondary-Admin
+  restriction `loadDeviceForRole` uses and silently drops any id the
+  viewer can no longer see (reassigned away, deleted) rather than erroring.
+- `src/app/api/devices/[id]/view/route.ts` — new `POST`. Any authenticated
+  role; loads the device through `loadDeviceForRole` first (so the cookie
+  can never end up pointing at a job outside that viewer's own access),
+  then moves it to the front of the cookie. No audit log entry — this is
+  a personalization convenience, not a record-changing action.
+- `src/components/devices/RecordDeviceView.tsx` — new. Renders nothing;
+  fires the `POST` above once on mount (guarded against React Strict
+  Mode's double-invoke), swallows any failure so a hiccup here can never
+  break the device page itself. Mounted at the top of
+  `src/app/(app)/devices/[id]/page.tsx`.
+- `src/components/dashboard/RecentlyViewedSection.tsx` — new. Compact
+  horizontal card strip, reusing `isJobOverdue` for the same overdue badge
+  treatment as the rest of the dashboard. Renders `null` when the list is
+  empty (fresh browser, nothing viewed yet) rather than showing an empty
+  shell.
+- `src/app/(app)/dashboard/page.tsx` — reads the cookie via
+  `cookies()`, calls `getRecentlyViewedDevices`, and renders
+  `RecentlyViewedSection` right after "Your Devices" — **outside** the
+  `isAdmin` block, so every role sees it when they have a non-empty list,
+  not just Technician (the motivating case in the request, but Reception/
+  Admin jumping between a couple of records benefits the same way).
+- `docs/commit-log.md` — this entry.
+
+**Design decision on item 8 (worth a second look, not asking permission
+for since it's not a schema change):** recently-viewed is tracked
+per-browser via a plain cookie, not per-account via a new DB table. Trade-
+off stated plainly: it won't follow a user who signs in on a different
+browser or device, and it doesn't survive a cleared cookie jar. Chosen
+over a `RecentlyViewedDevice` table specifically to keep this section
+additive with zero migration risk against the same production DB
+`Arp-main` still reads. If that trade-off isn't acceptable, say so and
+it can be redone against a real table instead.
+
+**Verified:** Manual review only — this sandbox still has no npm registry
+access (`npm install` 403s the same way it has every session since #28),
+so neither `npx tsc --noEmit` nor `npm run build` could actually run.
+Traced every new import against its actual export (`RECENTLY_VIEWED_COOKIE`,
+`getRecentlyViewedDevices`, `withRecentlyViewed`, `RecordDeviceView`,
+`RecentlyViewedSection`) and cross-checked field names used
+(`customer.fullName`, `expectedCompletionDate`, etc.) against
+`prisma/schema.prisma` and the existing `isJobOverdue`/`loadDeviceForRole`
+signatures by hand.
+
+**Not verified:** `npx tsc --noEmit`, `npm run build`, no live-browser
+check of the search box or the recently-viewed strip.
+
+---
+
 ## 2026-09-27 (28) — Improvements bundle, part 3: Kanban view + one-click "Ready" WhatsApp (items 3 & 4)
 
 **Scope:** Items 3 and 4 of the project owner's remaining-improvements list,

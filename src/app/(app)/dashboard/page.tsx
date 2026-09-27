@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { ClipboardList, Plus, ArrowUpRight, Info, AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -6,7 +7,9 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getMyDashboardData } from "@/lib/my-jobs";
 import { MyDevicesSection } from "@/components/dashboard/MyDevicesSection";
+import { RecentlyViewedSection } from "@/components/dashboard/RecentlyViewedSection";
 import { overdueWhereClause } from "@/lib/repair-overdue";
+import { RECENTLY_VIEWED_COOKIE, getRecentlyViewedDevices } from "@/lib/recently-viewed";
 
 const STATUS_STEPS = [
   { key: "Received", label: "Received", note: "Waiting to be worked on", dot: "bg-status-received" },
@@ -66,6 +69,8 @@ export default async function DashboardPage() {
   const canRegisterDevice = ["Admin", "Reception", "Technician"].includes(session.role);
 
   const myData = await getMyDashboardData(session.userId);
+  const recentCookie = (await cookies()).get(RECENTLY_VIEWED_COOKIE)?.value;
+  const recentlyViewed = await getRecentlyViewedDevices(recentCookie, session);
 
   let received = 0;
   let repairing = 0;
@@ -165,6 +170,8 @@ export default async function DashboardPage() {
           jobs={myData.jobs}
           overdueCount={myData.overdueCount}
         />
+
+        <RecentlyViewedSection jobs={recentlyViewed} />
 
         {isAdmin && (
           <>

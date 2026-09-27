@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Bell, Loader2 } from "lucide-react";
+import { Bell, Loader2, Search } from "lucide-react";
 
 type NotificationSummary = {
   id: number;
@@ -26,7 +26,22 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<NotificationSummary[]>([]);
   const [unread, setUnread] = useState(unreadNotifications);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Reuses the exact same lookup /devices already implements (exact-match
+  // barcode/serial/hostname shortcut straight to the device, contains-match
+  // filtered list otherwise) — chosen over /work-queue as the target
+  // because Reception can't reach Work Queue at all, while every role can
+  // reach /devices, so this is reachable "from any page" for every role,
+  // not just three of the four.
+  function handleSearchSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const query = searchValue.trim();
+    if (!query) return;
+    router.push(`/devices?search=${encodeURIComponent(query)}`);
+    setSearchValue("");
+  }
 
   // The server only recomputes this on a full page load/refresh; keep the
   // badge in sync when that happens while the dropdown is closed.
@@ -78,7 +93,25 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
   const active = pathname.startsWith("/notifications");
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-end border-b border-white/60 bg-white/60 px-6 backdrop-blur-xl">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-white/60 bg-white/60 px-6 backdrop-blur-xl">
+      <form onSubmit={handleSearchSubmit} className="hidden max-w-sm flex-1 sm:block">
+        <label className="relative block">
+          <Search
+            size={16}
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+          />
+          <input
+            type="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Search hostname, serial, barcode, customer…"
+            aria-label="Search devices"
+            className="input py-2 pl-9 text-sm"
+          />
+        </label>
+      </form>
+
       <div ref={containerRef} className="relative">
         <button
           type="button"
