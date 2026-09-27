@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ClipboardList, Plus, ArrowUpRight, Info } from "lucide-react";
+import { ClipboardList, Plus, ArrowUpRight, Info, AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getMyDashboardData } from "@/lib/my-jobs";
 import { MyDevicesSection } from "@/components/dashboard/MyDevicesSection";
+import { overdueWhereClause } from "@/lib/repair-overdue";
 
 const STATUS_STEPS = [
   { key: "Received", label: "Received", note: "Waiting to be worked on", dot: "bg-status-received" },
@@ -70,14 +71,16 @@ export default async function DashboardPage() {
   let repairing = 0;
   let ready = 0;
   let delivered = 0;
+  let overdueTotal = 0;
   let latestLog: Prisma.AuditLogGetPayload<{ include: { performer: true } }> | null = null;
 
   if (isAdmin) {
-    [received, repairing, ready, delivered, latestLog] = await Promise.all([
+    [received, repairing, ready, delivered, overdueTotal, latestLog] = await Promise.all([
       prisma.repairJob.count({ where: { status: "Received" } }),
       prisma.repairJob.count({ where: { status: "Repairing" } }),
       prisma.repairJob.count({ where: { status: "Ready" } }),
       prisma.repairJob.count({ where: { status: "Delivered" } }),
+      prisma.repairJob.count({ where: overdueWhereClause() }),
       prisma.auditLog.findFirst({
         orderBy: [{ performedAt: "desc" }, { id: "desc" }],
         include: { performer: true },
@@ -156,7 +159,12 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <MyDevicesSection statusCounts={myData.statusCounts} total={myData.total} jobs={myData.jobs} />
+        <MyDevicesSection
+          statusCounts={myData.statusCounts}
+          total={myData.total}
+          jobs={myData.jobs}
+          overdueCount={myData.overdueCount}
+        />
 
         {isAdmin && (
           <>
@@ -166,7 +174,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Status strip */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <Link href="/devices" className="card-interactive relative overflow-hidden p-4">
                 <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-brand-gradient opacity-10" aria-hidden />
                 <div className="data-mono relative text-2xl font-semibold text-ink">{total}</div>
@@ -182,6 +190,19 @@ export default async function DashboardPage() {
                   <div className="relative mt-1 text-xs text-stone-500">{s.label}</div>
                 </Link>
               ))}
+              <Link
+                href="/work-queue"
+                className={`card-interactive relative overflow-hidden p-4 ${overdueTotal > 0 ? "ring-1 ring-inset ring-red-200" : ""}`}
+              >
+                <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-red-500 opacity-10" aria-hidden />
+                <div className="relative flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-600" aria-hidden />
+                  <div className={`data-mono text-2xl font-semibold ${overdueTotal > 0 ? "text-red-600" : "text-ink"}`}>
+                    {overdueTotal}
+                  </div>
+                </div>
+                <div className="relative mt-1 text-xs text-stone-500">Overdue</div>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.45fr_0.75fr]">
@@ -213,6 +234,20 @@ export default async function DashboardPage() {
                     </Link>
                   ))}
                 </div>
+
+                {overdueTotal > 0 && (
+                  <div className="mt-6 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
+                    <span>
+                      <strong>{overdueTotal} job{overdueTotal !== 1 ? "s are" : " is"} past its expected completion
+                      date</strong> and not yet Delivered.{" "}
+                      <Link href="/work-queue" className="font-medium underline">
+                        Review in Work Queue
+                      </Link>
+                      .
+                    </span>
+                  </div>
+                )}
 
                 {statusCounts.Received > 0 && (
                   <div className="mt-6 flex items-start gap-2 rounded-2xl border border-status-received/20 bg-status-received/5 p-3 text-xs text-stone-600">

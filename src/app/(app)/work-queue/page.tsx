@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isJobOverdue } from "@/lib/repair-overdue";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
@@ -124,12 +126,10 @@ export default async function WorkQueuePage({
     }),
   ]);
 
-  const today = new Date().toISOString().slice(0, 10);
-
   // Overdue-first, then earliest deadline, then received order (mirrors the SQL ORDER BY).
   const sortedQueue = [...workQueue].sort((a, b) => {
-    const aOverdue = a.expectedCompletionDate && a.expectedCompletionDate.toISOString().slice(0, 10) < today && a.status !== "Delivered";
-    const bOverdue = b.expectedCompletionDate && b.expectedCompletionDate.toISOString().slice(0, 10) < today && b.status !== "Delivered";
+    const aOverdue = isJobOverdue(a);
+    const bOverdue = isJobOverdue(b);
     if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
     const aDate = a.expectedCompletionDate?.getTime() ?? Infinity;
     const bDate = b.expectedCompletionDate?.getTime() ?? Infinity;
@@ -145,8 +145,10 @@ export default async function WorkQueuePage({
   const remainingActiveJobs = activeJobs.length;
 
   const statusTotals: Record<string, number> = { Received: 0, Repairing: 0, Ready: 0, Delivered: 0 };
+  let overdueTotal = 0;
   for (const item of workQueue) {
     if (item.status in statusTotals) statusTotals[item.status]++;
+    if (isJobOverdue(item)) overdueTotal++;
   }
 
   return (
@@ -160,6 +162,12 @@ export default async function WorkQueuePage({
             {status}: {count}
           </span>
         ))}
+        {overdueTotal > 0 && (
+          <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Overdue: {overdueTotal}
+          </span>
+        )}
       </div>
 
       {currentQueueItem && (
@@ -220,14 +228,19 @@ export default async function WorkQueuePage({
 
               <div className="min-h-[80px] space-y-2.5">
                 {jobs.map((d) => {
-                  const overdue =
-                    d.expectedCompletionDate &&
-                    d.expectedCompletionDate.toISOString().slice(0, 10) < today &&
-                    d.status !== "Delivered";
+                  const overdue = isJobOverdue(d);
                   return (
-                    <div key={d.id} className="card-interactive p-3.5">
+                    <div key={d.id} className={`card-interactive p-3.5 ${overdue ? "ring-1 ring-inset ring-red-200" : ""}`}>
                       <Link href={`/devices/${d.id}`} className="block">
-                        <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
+                        <div className="flex items-start justify-between gap-2">
+                          <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
+                          {overdue && (
+                            <span className="flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                              <AlertTriangle className="h-3 w-3" />
+                              Overdue
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 truncate text-xs text-stone-500">{d.customer.fullName}</p>
                         <p className="data-mono mt-0.5 truncate text-[11px] text-stone-400">
                           {d.serialNumber || d.aucAssetBarcode || "—"}
@@ -241,7 +254,6 @@ export default async function WorkQueuePage({
                           {d.expectedCompletionDate
                             ? d.expectedCompletionDate.toISOString().slice(0, 10)
                             : "No deadline"}
-                          {overdue ? " · overdue" : ""}
                         </span>
                         {d.technician && (
                           <span

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { overdueWhereClause } from "@/lib/repair-overdue";
 
 /**
  * "My jobs" for the personalized dashboard (2026-09-26): a job counts as
@@ -33,7 +34,7 @@ export const STATUS_KEYS = ["Received", "Repairing", "Ready", "Delivered"] as co
 export async function getMyDashboardData(userId: number) {
   const where = myJobsWhere(userId);
 
-  const [counts, jobs] = await Promise.all([
+  const [counts, jobs, overdueCount] = await Promise.all([
     prisma.repairJob.groupBy({ by: ["status"], where, _count: { status: true } }),
     prisma.repairJob.findMany({
       where,
@@ -41,11 +42,12 @@ export async function getMyDashboardData(userId: number) {
       orderBy: [{ receivedAt: "desc" }],
       take: 8,
     }),
+    prisma.repairJob.count({ where: { ...where, ...overdueWhereClause() } }),
   ]);
 
   const statusCounts: Record<string, number> = Object.fromEntries(STATUS_KEYS.map((k) => [k, 0]));
   for (const row of counts) statusCounts[row.status] = row._count.status;
   const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
-  return { statusCounts, total, jobs };
+  return { statusCounts, total, jobs, overdueCount };
 }

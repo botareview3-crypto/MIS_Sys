@@ -4,6 +4,58 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-27 (26) — Improvements bundle, part 1: overdue flagging (Work Queue + Dashboard)
+
+**Scope:** First of several planned deliveries against the project owner's
+"remaining improvements" list (overdue flagging, bulk actions, Kanban view,
+one-click WhatsApp on Ready, global search, Reports charts, 2FA for Admin,
+recently-viewed devices). This session covers item 1 only — flagging repair
+jobs past `expectedCompletionDate` that aren't yet `Delivered`. Pure UI
+addition: no schema change, no new endpoints, no change to which jobs are
+returned by any existing query.
+
+**Added:** `src/lib/repair-overdue.ts` — `isJobOverdue()` and
+`overdueWhereClause()`, a single canonical definition of "overdue" (has a
+deadline, that deadline is before today UTC-midnight, status isn't
+`Delivered`) matching the one already used by `syncRepairDeadlines()`
+(`src/lib/repair-deadlines.ts`). Work Queue and the dashboard's
+personal/admin overdue counts now both derive from this instead of each
+re-deriving the date comparison inline.
+
+**Changed:**
+- `src/app/(app)/work-queue/page.tsx` — replaced the inline overdue
+  comparison (already existed per-card as red text) with `isJobOverdue()`;
+  upgraded the per-card treatment to a small red "Overdue" badge + card
+  outline; added an "Overdue: N" summary chip next to the existing
+  per-status count chips at the top of the page.
+- `src/lib/my-jobs.ts` (`getMyDashboardData`) — now also returns
+  `overdueCount` (same "mine" scoping as the rest of that function).
+- `src/components/dashboard/MyDevicesSection.tsx` — accepts the new
+  `overdueCount` prop, shows it as a header badge, and flags individual
+  overdue rows in the "Your Devices" list with the same badge treatment.
+- `src/app/(app)/dashboard/page.tsx` — Admin system-overview section gets a
+  6th status-strip tile ("Overdue", red, links to Work Queue) and a red
+  banner (mirroring the existing "Today's focus" one) when the sitewide
+  overdue count is above zero.
+
+**Noted, not fixed this session:** Work Queue's `STATUSES` constant (and
+`statusTotals`) only lists `Received / Repairing / Ready / Delivered` —
+`Diagnosing` is a valid status everywhere else (`StatusBadge`, login
+legend) but currently has no column on Work Queue, so a job sitting in
+`Diagnosing` is invisible there even though it's still included in the
+overdue math. Deliberately left alone here since fixing it changes which
+jobs are visible on the page (a behavior change, not just a visual one) —
+planned to be addressed as part of item 3 (Kanban view), which explicitly
+asks for a column per status including `Diagnosing`. Flagging now rather
+than silently carrying it into that section.
+
+**Not verified (no `node_modules` in this sandbox, same standing
+limitation as every prior session — see deviation #4 in `docs/status.md`):**
+`npx tsc --noEmit`, `npm run build`. Reviewed by hand for type-correctness
+instead.
+
+---
+
 ## 2026-09-26 (25) — Abandon whatsapp-web.js auto-send; replace with manual click-to-send
 
 **Scope:** After session 24's Puppeteer cache-path fix, a real QR scan on a
