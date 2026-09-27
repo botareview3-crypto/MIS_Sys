@@ -3,6 +3,13 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { TurnaroundCharts } from "@/components/reports/TurnaroundCharts";
+import {
+  turnaroundByProblemType,
+  turnaroundByTechnician,
+  registrationsByWeek,
+  registrationsByMonth,
+} from "@/lib/reports/turnaround";
 
 /**
  * Ported from app/pages/reports/reports.php. Admin only (requireRoles(['Admin'])
@@ -57,6 +64,14 @@ export default async function ReportsPage({
       }),
     ]);
 
+  const [problemTypeTurnaround, technicianTurnaround, weeklyRegistrations, monthlyRegistrations] =
+    await Promise.all([
+      turnaroundByProblemType(),
+      turnaroundByTechnician(),
+      registrationsByWeek(),
+      registrationsByMonth(),
+    ]);
+
   const stats = [
     { label: "Repair Jobs", value: repairJobs },
     { label: "Status Changes", value: statusHistory },
@@ -98,6 +113,13 @@ export default async function ReportsPage({
           </div>
         ))}
       </div>
+
+      <TurnaroundCharts
+        byProblemType={problemTypeTurnaround}
+        byTechnician={technicianTurnaround}
+        weekly={weeklyRegistrations}
+        monthly={monthlyRegistrations}
+      />
 
       <div className="card mt-6">
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-stone-100 px-5 py-4">

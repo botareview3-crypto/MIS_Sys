@@ -4,6 +4,68 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-27 (30) — Improvements bundle, part 5: turnaround/volume charts on Reports (item 6)
+
+**Scope:** Item 6 only. Item 7 (Admin 2FA) is being scoped as a plan for
+sign-off in the same conversation, not coded yet — it touches
+`src/lib/auth.ts` and the `users` table, both flagged sensitive in
+CLAUDE.md.
+
+**Changed:**
+- `package.json` — added `recharts` (`^2.13.0`) as a new dependency.
+  Checked first per the project owner's note: no charting library was
+  present. **`package-lock.json` was NOT regenerated this session** — this
+  sandbox has no npm registry access (same restriction noted in prior
+  sessions), so `npm install` here 403s immediately. Render's build
+  command is `npm install --include=dev && npm run build` (not `npm ci`,
+  see `render.yaml`), so an out-of-sync lockfile doesn't hard-fail the
+  build — Render will resolve and rewrite the lockfile itself on the next
+  deploy. Recommend running `npm install` locally once and committing the
+  refreshed `package-lock.json`, but it isn't blocking.
+- `src/lib/reports/turnaround.ts` — new. Four aggregation functions, all
+  plain JS grouping over a `findMany` (matching how Work Queue already
+  totals statuses, rather than raw SQL `GROUP BY`):
+  - `turnaroundByProblemType()` — avg `deliveredAt - receivedAt` in days
+    for `Delivered` jobs, grouped by the literal `reportedProblem` text
+    (there's no real enum — see `src/lib/reported-problems.ts`, it's one
+    fixed string or free-text "Other"). Top 6 groups by job count; the
+    rest fold into a single "Other" bar so free-text spam can't blow up
+    the chart.
+  - `turnaroundByTechnician()` — same average, grouped by the
+    *currently*-assigned technician (`assignedTechnicianId`) — this schema
+    doesn't snapshot who was assigned at delivery time, so that's the best
+    available proxy. Jobs with no technician assigned are excluded, not
+    lumped into "Unassigned".
+  - `registrationsByWeek()` / `registrationsByMonth()` — device count per
+    calendar week (last 12) / month (last 6), UTC-bucketed, oldest first.
+- `src/components/reports/TurnaroundCharts.tsx` — new client component
+  (`"use client"`, recharts needs browser measurement). Two bar charts
+  (by problem type, by technician) plus a line chart for registration
+  volume with a Weekly/Monthly toggle (styled to match the existing
+  List/Board segmented control on Work Queue). Each chart shows a plain
+  "Not enough data yet." state instead of an empty plot when there's
+  nothing to show yet (e.g. no `Delivered` jobs).
+- `src/app/(app)/reports/page.tsx` — fetches the four aggregates
+  alongside the existing stat counts and renders `TurnaroundCharts` between
+  the stats grid and the Recent Audit Activity table. Admin-only, same as
+  the rest of the page (no new role check needed).
+- `docs/commit-log.md` — this entry.
+
+**Verified:** Manual review only, same standing sandbox limitation as
+recent sessions — no npm registry access means `npx tsc --noEmit` /
+`npm run build` can't run here. Traced every recharts prop against its
+documented shape (`ResponsiveContainer`/`BarChart`/`LineChart`/`Tooltip`
+`formatter` returning a `[value, name]` tuple) and left `Tooltip`
+formatter callback parameters untyped so TypeScript's contextual typing
+from recharts' own prop types applies, rather than risking a mismatched
+explicit annotation.
+
+**Not verified:** `npx tsc --noEmit`, `npm run build`, `package-lock.json`
+not regenerated (see note above), no live-browser check of the charts
+themselves or the Weekly/Monthly toggle.
+
+---
+
 ## 2026-09-27 (29) — Improvements bundle, part 4: global search + recently-viewed devices (items 5 & 8)
 
 **Scope:** Items 5 and 8 of the project owner's remaining-improvements list
