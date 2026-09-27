@@ -4,6 +4,82 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-27 (28) — Improvements bundle, part 3: Kanban view + one-click "Ready" WhatsApp (items 3 & 4)
+
+**Scope:** Items 3 and 4 of the project owner's remaining-improvements list,
+delivered together since item 4's drag-triggered case only exists once item
+3's drag-and-drop lands. No schema change, no new API routes — both reuse
+pieces already built in earlier sessions.
+
+**Confirmed with the project owner before coding:** the Kanban board ships
+with the same 4 columns as the rest of Work Queue (Received / Repairing /
+Ready / Delivered) — **not** the 5 the original request listed. `Diagnosing`
+remains completely out of Work Queue for now (not shown, not a drop target)
+per the project owner's explicit choice, rather than the "visible but not
+droppable" middle option. Session 26/27's flagged gap (no status-change path
+can ever produce a `Diagnosing` job) is therefore still open by design, not
+accidentally reintroduced — revisit if that decision changes.
+
+**Changed:**
+- `src/app/(app)/work-queue/page.tsx` — added a `view` search param
+  (`list` default / `board`), a List/Board segmented toggle next to the
+  status chips (preserves `search`/`status` via query string, and via a
+  hidden field on the filter form), and a `canSendWhatsapp` flag computed
+  with the exact same role expression `UpdateRepairForm`'s caller already
+  uses (`["Admin","Reception","Technician"].includes(session.role)` —
+  Secondary Admin excluded, matching deviation #14's established pattern).
+  Both are passed down to `WorkQueueBoard`.
+- `src/components/work-queue/WorkQueueBoard.tsx` — added the `view` and
+  `canSendWhatsapp` props. `view === "list"` renders the exact same
+  checkbox/bulk-bar grid as before, untouched. `view === "board"` is new:
+  native HTML5 drag-and-drop (no new dependency — none was installed, and
+  the project owner asked to check `package.json` first per item 6's note
+  anyway) between the same 4 columns. Dropping a card on a new column calls
+  `PATCH /api/repairs/bulk/status` with a single-job `ids` array — the same
+  endpoint the multi-select bar already calls, and whose own code comment
+  (written back in session 27, before this session existed) already
+  earmarked it for exactly this: *"reused by the Kanban drag-and-drop
+  status change."* Same role/ownership scoping, same
+  StatusHistory + Receipt + AuditLog writes as every other status change on
+  this page — deliberately not the single-job `PATCH /api/repairs/[id]`
+  route, since that one requires a full diagnosis/notes/accessories payload
+  a drag gesture doesn't have on hand. Optimistic-ish: shows a moving/pulse
+  state on the dragged card, rolls back to server truth via
+  `router.refresh()` either way, and surfaces a dismissible error banner on
+  failure (job no longer accessible, etc).
+- Item 4, wired into the same drop handler: when a drag lands on Received,
+  Ready, or Delivered (the same three `WHATSAPP_MESSAGE_TYPES` in
+  `src/lib/whatsapp.ts`) and the signed-in user is WhatsApp-eligible, a
+  small dismissible banner appears above the board — *"{hostname} moved to
+  {status}"* with a **Send {status} WhatsApp message** button linking to
+  `/devices/[id]/whatsapp?type=...`, the exact same page/flow
+  `UpdateRepairForm`'s inline prompt (session 25) already opens. No new
+  backend logic; this is the same "offer, don't auto-send" convenience
+  wired into a second entry point. Bulk multi-select (List view) does not
+  get this prompt — it can apply to many jobs at once, and there's no
+  single device to link to, so it's deliberately left as-is.
+- Kanban cards keep the existing Update/Assign links, since HTML5 drag-and-
+  drop has no native touch-device fallback; a footnote under the board says
+  as much.
+- `docs/commit-log.md` — this entry.
+
+**Verified:** `npx tsc --noEmit` — clean for both touched files (this
+sandbox's npm registry access worked this session, unlike prior ones, so
+`node_modules` could actually be installed with `--ignore-scripts`; full
+type-checking against the generated Prisma client is still blocked —
+`prisma generate` still can't reach `binaries.prisma.sh`, same standing
+issue as deviation #4/#15 in `docs/status.md` — but the 15 errors that
+remain are 100% pre-existing ones in files this session didn't touch,
+confirmed by diffing the error list against a run before these changes).
+Reviewed the drag-and-drop interaction by hand (not run in an actual
+browser — no display in this sandbox).
+
+**Not verified:** `npm run build` (blocked on the same Prisma engine
+download restriction as always); no live-browser check of the drag
+interaction itself.
+
+---
+
 ## 2026-09-27 (27) — Improvements bundle, part 2: bulk actions on Work Queue
 
 **Scope:** Item 2 of the improvements list — multi-select checkboxes on

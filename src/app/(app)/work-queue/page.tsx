@@ -14,7 +14,7 @@ const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 export default async function WorkQueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -38,6 +38,19 @@ export default async function WorkQueuePage({
   const params = await searchParams;
   const search = (params.search ?? "").trim();
   const statusFilter = STATUSES.includes(params.status as (typeof STATUSES)[number]) ? params.status! : "";
+  const view = params.view === "board" ? "board" : "list";
+  const baseQuery: Record<string, string> = {
+    ...(search ? { search } : {}),
+    ...(statusFilter ? { status: statusFilter } : {}),
+  };
+  const listHref = `?${new URLSearchParams({ ...baseQuery, view: "list" }).toString()}`;
+  const boardHref = `?${new URLSearchParams({ ...baseQuery, view: "board" }).toString()}`;
+  // Same role list the device-detail page's WhatsApp button already uses
+  // (UpdateRepairForm's canSendWhatsapp, repairs/[id]/page.tsx) — Secondary
+  // Admin excluded, matching the established WhatsApp-access pattern.
+  // Reception can't reach Work Queue at all, but the expression is kept
+  // identical to that other call site on purpose rather than hand-simplified.
+  const canSendWhatsapp = (["Admin", "Reception", "Technician"] as string[]).includes(session.role);
 
   // Barcode scanners type the scanned code then send Enter, which submits
   // this search form. When the scanned value is an exact match for one
@@ -144,18 +157,39 @@ export default async function WorkQueuePage({
       <h1 className="text-lg font-semibold text-stone-900">Work Queue</h1>
       <p className="mt-1 text-sm text-stone-500">All Registered Devices</p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {Object.entries(statusTotals).map(([status, count]) => (
-          <span key={status} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
-            {status}: {count}
-          </span>
-        ))}
-        {overdueTotal > 0 && (
-          <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Overdue: {overdueTotal}
-          </span>
-        )}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(statusTotals).map(([status, count]) => (
+            <span key={status} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+              {status}: {count}
+            </span>
+          ))}
+          {overdueTotal > 0 && (
+            <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Overdue: {overdueTotal}
+            </span>
+          )}
+        </div>
+
+        <div className="flex rounded-full bg-stone-100 p-1 text-xs font-semibold">
+          <Link
+            href={listHref}
+            className={`rounded-full px-3 py-1.5 transition-colors ${
+              view === "list" ? "bg-white text-ink shadow-sm" : "text-stone-500 hover:text-stone-700"
+            }`}
+          >
+            List
+          </Link>
+          <Link
+            href={boardHref}
+            className={`rounded-full px-3 py-1.5 transition-colors ${
+              view === "board" ? "bg-white text-ink shadow-sm" : "text-stone-500 hover:text-stone-700"
+            }`}
+          >
+            Board
+          </Link>
+        </div>
       </div>
 
       {currentQueueItem && (
@@ -176,6 +210,7 @@ export default async function WorkQueuePage({
       )}
 
       <form className="card mt-6 flex flex-wrap gap-3 p-4" method="GET">
+        <input type="hidden" name="view" value={view} />
         <input
           type="text"
           name="search"
@@ -210,6 +245,8 @@ export default async function WorkQueuePage({
         }))}
         isAdmin={isAdmin}
         technicianOptions={technicianOptions}
+        view={view}
+        canSendWhatsapp={canSendWhatsapp}
       />
     </main>
   );
