@@ -389,7 +389,7 @@ export function WorkQueueBoard({
                     {status}
                   </span>
                   <div className="flex items-center gap-2">
-                    {colJobs.length > 0 && (
+                    {isAdmin && colJobs.length > 0 && (
                       <button
                         type="button"
                         onClick={() => toggleColumn(colJobs.map((j) => j.id))}
@@ -425,13 +425,15 @@ export function WorkQueueBoard({
                       } ${movingId === d.id ? "animate-pulse-soft" : ""}`}
                     >
                       <div className="flex items-start gap-2">
-                      <input
+                      {isAdmin && (
+                        <input
                         type="checkbox"
                         checked={selected.has(d.id)}
                         onChange={() => toggle(d.id)}
                         className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300"
                         aria-label={`Select ${d.hostname || "device"}`}
                       />
+                      )}
                       <Link href={`/devices/${d.id}`} className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
@@ -491,8 +493,9 @@ export function WorkQueueBoard({
         )}
 
         <p className="mt-3 text-xs text-stone-400">
-          Drag a card to another column to change its status, or tick cards (or use Select all on a column) to change
-          many at once. On touch devices, use the checkboxes or the Update link instead.
+          {isAdmin
+            ? "Drag a card to another column to change its status, or tick cards (or use Select all on a column) to change many at once. On touch devices, use the checkboxes or the Update link instead."
+            : "Drag a card to another column to change its status. On touch devices, use the Update link instead."}
         </p>
 
         {bulkBar}
@@ -514,7 +517,7 @@ export function WorkQueueBoard({
                   {status}
                 </span>
                 <div className="flex items-center gap-2">
-                  {colJobs.length > 0 && (
+                  {isAdmin && colJobs.length > 0 && (
                     <button
                       type="button"
                       onClick={() => toggleColumn(colJobs.map((j) => j.id))}
@@ -538,13 +541,15 @@ export function WorkQueueBoard({
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      <input
+                      {isAdmin && (
+                        <input
                         type="checkbox"
                         checked={selected.has(d.id)}
                         onChange={() => toggle(d.id)}
                         className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300"
                         aria-label={`Select ${d.hostname || "device"}`}
                       />
+                      )}
                       <Link href={`/devices/${d.id}`} className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>

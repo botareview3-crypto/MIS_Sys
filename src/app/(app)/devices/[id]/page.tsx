@@ -10,6 +10,7 @@ import { SelfAssignButton } from "@/components/devices/SelfAssignButton";
 import { RecordDeviceView } from "@/components/devices/RecordDeviceView";
 import { BackLink } from "@/components/nav/BackLink";
 import { deviceLabel } from "@/lib/device-label";
+import { hasStoredCredential } from "@/lib/credentials";
 
 function fmt(d: Date | null) {
   if (!d) return "—";
@@ -97,7 +98,10 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
               <div>
                 <dt className="text-xs text-slate-400">Outlook password</dt>
                 <dd className="mt-0.5">
-                  <RevealOutlookPasswordButton deviceId={device.id} />
+                  <RevealOutlookPasswordButton
+                    deviceId={device.id}
+                    hasPassword={hasStoredCredential(device.customer.outlookPasswordEncrypted)}
+                  />
                 </dd>
               </div>
               {device.customer.regionalOffice && <Row label="Regional office" value={device.customer.regionalOffice} />}

@@ -47,6 +47,12 @@ export async function PATCH(req: NextRequest) {
   const { ids, status, changeNote } = parsed.data;
   const uniqueIds = [...new Set(ids)];
 
+  // Multi-select bulk updates are Admin-only. Everyone else may still move
+  // a single card (the Kanban drag-and-drop reuses this endpoint with one id).
+  if (session.role !== "Admin" && uniqueIds.length > 1) {
+    return NextResponse.json({ error: "Only an Admin can update multiple jobs at once." }, { status: 403 });
+  }
+
   const isSecondaryAdmin = session.role === "Secondary Admin";
   const isTechnician = session.role === "Technician";
 
