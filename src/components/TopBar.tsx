@@ -99,7 +99,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
           <Search
             size={16}
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
           />
           <input
             type="search"
@@ -107,7 +107,10 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Search hostname, serial, barcode, customer…"
             aria-label="Search devices"
-            className="input py-2 pl-9 text-sm"
+            // "!" is needed: .input (globals.css) is declared after the
+            // Tailwind utilities layer, so its px-3 would otherwise win over
+            // pl-10 and the search icon would sit on top of the placeholder.
+            className="input !py-2 !pl-10 text-sm"
           />
         </label>
       </form>
