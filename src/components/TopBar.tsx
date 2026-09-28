@@ -107,7 +107,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Search hostname, serial, barcode, customer…"
             aria-label="Search devices"
-            className="input py-2 pl-9 text-sm"
+            className="input !pl-10 py-2 text-sm"
           />
         </label>
       </form>
