@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShieldCheck, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { jobIdsMatchingHostname, loadHostnamesByJobId, withHostnames } from "@/lib/reference-labels";
 
 /** Ported from app/pages/reports/audit-history.php. Admin only. */
 function formatAuditLabel(value: string) {
@@ -48,6 +49,8 @@ export default async function AuditHistoryPage({
   let page = Number.parseInt(params.page ?? "1", 10);
   if (!Number.isInteger(page) || page < 1) page = 1;
 
+  const hostnameJobIds = await jobIdsMatchingHostname(search);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
     ...(search
@@ -56,6 +59,7 @@ export default async function AuditHistoryPage({
             { actionType: { contains: search, mode: "insensitive" } },
             { recordType: { contains: search, mode: "insensitive" } },
             { recordReference: { contains: search, mode: "insensitive" } },
+            ...(hostnameJobIds.length ? [{ recordReference: { in: hostnameJobIds } }] : []),
             { reason: { contains: search, mode: "insensitive" } },
             { performer: { fullName: { contains: search, mode: "insensitive" } } },
             { performer: { username: { contains: search, mode: "insensitive" } } },
@@ -95,6 +99,8 @@ export default async function AuditHistoryPage({
     skip: offset,
     take: RECORDS_PER_PAGE,
   });
+
+  const hostnames = await loadHostnamesByJobId(auditLogs.flatMap((l) => [l.recordReference, l.reason]));
 
   function pageUrl(targetPage: number) {
     const qs = new URLSearchParams({ page: String(targetPage) });
@@ -219,7 +225,7 @@ export default async function AuditHistoryPage({
                       </td>
                       <td className="px-4 py-3">
                         {log.recordReference ? (
-                          <span className="font-semibold text-stone-900">{log.recordReference}</span>
+                          <span className="font-semibold text-stone-900">{withHostnames(log.recordReference, hostnames)}</span>
                         ) : (
                           <span className="text-xs text-stone-400">No reference</span>
                         )}
@@ -233,7 +239,7 @@ export default async function AuditHistoryPage({
                         )}
                       </td>
                       <td className="px-4 py-3 text-stone-500">
-                        {log.reason || <span className="text-xs text-stone-400">No reason provided</span>}
+                        {withHostnames(log.reason, hostnames) || <span className="text-xs text-stone-400">No reason provided</span>}
                       </td>
                       <td className="px-4 py-3">
                         {log.ipAddress ? (

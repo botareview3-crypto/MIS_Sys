@@ -115,11 +115,11 @@ export default async function DashboardPage() {
     if (latestLog.recordType === "repair_job" && latestLog.recordId) {
       const rj = await prisma.repairJob.findUnique({
         where: { id: latestLog.recordId },
-        select: { id: true, jobId: true },
+        select: { id: true, jobId: true, hostname: true },
       });
       if (rj) {
         deviceId = rj.id;
-        jobLabel = rj.jobId ?? jobLabel;
+        jobLabel = rj.hostname?.trim() || jobLabel;
       }
     }
     activity = {

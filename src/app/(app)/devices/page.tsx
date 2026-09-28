@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { deviceLabel } from "@/lib/device-label";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
@@ -130,7 +131,7 @@ export default async function ManageDevicesPage({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
             <tr>
-              <th className="px-4 py-3">Job ID</th>
+              <th className="px-4 py-3">Hostname</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Barcode / Serial</th>
               <th className="px-4 py-3">Status</th>
@@ -143,7 +144,7 @@ export default async function ManageDevicesPage({
               <tr key={d.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50">
                 <td className="px-4 py-3 font-medium text-stone-900">
                   <Link href={`/devices/${d.id}`} className="text-brand-600 hover:underline">
-                    {d.jobId}
+                    {deviceLabel(d.hostname)}
                   </Link>
                 </td>
                 <td className="px-4 py-3">{d.customer.fullName}</td>

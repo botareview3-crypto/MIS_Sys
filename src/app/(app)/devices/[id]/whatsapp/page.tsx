@@ -13,6 +13,7 @@ import {
   type WhatsappMessageType,
 } from "@/lib/whatsapp";
 import { WhatsappMessageForm } from "@/components/devices/WhatsappMessageForm";
+import { deviceLabel } from "@/lib/device-label";
 
 /**
  * Ported from app/pages/receipts/whatsapp-message.php. Lives inside the
@@ -108,7 +109,7 @@ export default async function WhatsappMessagePage({
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {job.jobId}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{deviceLabel(job.hostname)}</p>
             <h1 className="text-lg font-semibold text-slate-900">{messageType} WhatsApp Message</h1>
             <p className="mt-1 text-sm text-slate-500">{customerName}</p>
           </div>

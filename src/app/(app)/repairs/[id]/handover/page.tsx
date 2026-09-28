@@ -11,6 +11,7 @@ import {
 import { WhatsappMessageForm } from "@/components/devices/WhatsappMessageForm";
 import { HandoverForm } from "@/components/receipts/HandoverForm";
 import { PrintReceiptButton } from "@/components/receipts/PrintReceiptButton";
+import { deviceLabel } from "@/lib/device-label";
 
 /**
  * Landing page after saving a repair as Delivered (see UpdateRepairForm).
@@ -93,11 +94,10 @@ export default async function HandoverPage({ params }: { params: Promise<{ id: s
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {job.jobId}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{deviceLabel(job.hostname)}</p>
             <h1 className="text-lg font-semibold text-slate-900">Delivery follow-up</h1>
             <p className="mt-1 text-sm text-slate-500">
               {customerName}
-              {job.hostname ? ` · ${job.hostname}` : ""}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">

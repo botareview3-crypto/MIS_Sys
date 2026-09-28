@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { loadHostnamesByJobId, withHostnames } from "@/lib/reference-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,10 @@ export async function GET() {
     take: 8,
   });
 
+  const hostnames = await loadHostnamesByJobId(
+    notifications.flatMap((n) => [n.title, n.message, n.recordReference]),
+  );
+
   const unreadCount = await prisma.notification.count({
     where: { recipientUserId: session.userId, isRead: false },
   });
@@ -30,9 +35,9 @@ export async function GET() {
     notifications: notifications.map((n) => ({
       id: n.id,
       notificationType: n.notificationType,
-      title: n.title,
-      message: n.message,
-      recordReference: n.recordReference,
+      title: withHostnames(n.title, hostnames),
+      message: withHostnames(n.message, hostnames),
+      recordReference: n.recordReference ? withHostnames(n.recordReference, hostnames) : null,
       isRead: n.isRead,
       createdAt: n.createdAt.toISOString(),
       createdByName: n.creator?.fullName?.trim() || "System",

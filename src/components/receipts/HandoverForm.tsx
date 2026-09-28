@@ -102,8 +102,8 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
 
       <section className="grid grid-cols-3 gap-4 border-b border-slate-100 bg-slate-50 px-8 py-4 text-sm">
         <div>
-          <span className="block text-xs text-slate-400">Permanent Job ID</span>
-          <strong className="text-slate-900">{job.jobId}</strong>
+          <span className="block text-xs text-slate-400">Hostname</span>
+          <strong className="text-slate-900">{job.hostname || "—"}</strong>
         </div>
         <div>
           <span className="block text-xs text-slate-400">Delivered Date</span>

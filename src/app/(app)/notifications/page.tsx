@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
 import { BackLink } from "@/components/nav/BackLink";
+import { jobIdsMatchingHostname, loadHostnamesByJobId, withHostnames } from "@/lib/reference-labels";
 
 /**
  * Ported from app/pages/notifications/notifications.php.
@@ -22,6 +23,8 @@ export default async function NotificationsPage({
   const params = await searchParams;
   const search = (params.search ?? "").trim();
 
+  const hostnameJobIds = await jobIdsMatchingHostname(search);
+
   const notifications = await prisma.notification.findMany({
     where: {
       recipientUserId: session.userId,
@@ -32,6 +35,7 @@ export default async function NotificationsPage({
               { message: { contains: search, mode: "insensitive" } },
               { notificationType: { contains: search, mode: "insensitive" } },
               { recordReference: { contains: search, mode: "insensitive" } },
+              ...(hostnameJobIds.length ? [{ recordReference: { in: hostnameJobIds } }] : []),
               { creator: { fullName: { contains: search, mode: "insensitive" } } },
             ],
           }
@@ -41,6 +45,10 @@ export default async function NotificationsPage({
     orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],
     take: 100,
   });
+
+  const hostnames = await loadHostnamesByJobId(
+    notifications.flatMap((n) => [n.title, n.message, n.recordReference]),
+  );
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -98,9 +106,9 @@ export default async function NotificationsPage({
                 key={n.id}
                 id={n.id}
                 notificationType={n.notificationType}
-                title={n.title}
-                message={n.message}
-                recordReference={n.recordReference}
+                title={withHostnames(n.title, hostnames)}
+                message={withHostnames(n.message, hostnames)}
+                recordReference={n.recordReference ? withHostnames(n.recordReference, hostnames) : null}
                 isRead={n.isRead}
                 createdAt={n.createdAt.toISOString()}
                 createdByName={n.creator?.fullName?.trim() || "System"}

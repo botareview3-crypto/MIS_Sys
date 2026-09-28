@@ -9,6 +9,7 @@ import { RevealOutlookPasswordButton } from "@/components/devices/RevealOutlookP
 import { SelfAssignButton } from "@/components/devices/SelfAssignButton";
 import { RecordDeviceView } from "@/components/devices/RecordDeviceView";
 import { BackLink } from "@/components/nav/BackLink";
+import { deviceLabel } from "@/lib/device-label";
 
 function fmt(d: Date | null) {
   if (!d) return "—";
@@ -64,7 +65,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
       <div className="mx-auto mt-2 max-w-4xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{deviceLabel(device.hostname)}</p>
             <h1 className="text-lg font-semibold text-slate-900">{device.customer.fullName}</h1>
             <span className="mt-1 inline-block rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
               {device.status}
@@ -82,7 +83,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
                 Edit
               </Link>
             )}
-            {canDelete && <DeleteDeviceButton deviceId={device.id} jobId={device.jobId} />}
+            {canDelete && <DeleteDeviceButton deviceId={device.id} label={deviceLabel(device.hostname)} />}
           </div>
         </div>
 

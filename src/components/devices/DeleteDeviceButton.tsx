@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function DeleteDeviceButton({ deviceId, jobId }: { deviceId: number; jobId: string }) {
+export function DeleteDeviceButton({ deviceId, label }: { deviceId: number; label: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -52,7 +52,7 @@ export function DeleteDeviceButton({ deviceId, jobId }: { deviceId: number; jobI
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="card w-full max-w-sm p-5">
-        <h3 className="text-sm font-semibold text-stone-900">Delete device {jobId}?</h3>
+        <h3 className="text-sm font-semibold text-stone-900">Delete device {label}?</h3>
         <p className="mt-1 text-sm text-stone-500">
           This permanently removes the device and its operational records. Audit history is preserved.
         </p>

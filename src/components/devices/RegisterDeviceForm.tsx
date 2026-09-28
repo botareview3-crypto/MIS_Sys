@@ -313,7 +313,7 @@ export function RegisterDeviceForm({
     // earlier device in this same batch before the next device's request
     // goes out, which a setState wouldn't do until the next render.
     let customerId = customer.customerId;
-    const registered: { jobId: string; receiptNumber: string }[] = [];
+    const registered: { hostname: string; receiptNumber: string }[] = [];
     try {
       for (let i = 0; i < devices.length; i++) {
         const payload = { ...customer, ...devices[i], customerId };
@@ -336,10 +336,10 @@ export function RegisterDeviceForm({
           return;
         }
         if (!customerId && data.customerId) customerId = String(data.customerId);
-        registered.push({ jobId: data.jobId, receiptNumber: data.receiptNumber });
+        registered.push({ hostname: devices[i].hostname.trim(), receiptNumber: data.receiptNumber });
       }
 
-      const summary = registered.map((r) => `${r.jobId} (${r.receiptNumber})`).join(", ");
+      const summary = registered.map((r) => `${r.hostname} (${r.receiptNumber})`).join(", ");
       setMessage({
         type: "success",
         text: `${registered.length} device${registered.length > 1 ? "s" : ""} registered successfully: ${summary}. Customer details below are kept for their next device — click "New customer" if the next one is someone else.`,

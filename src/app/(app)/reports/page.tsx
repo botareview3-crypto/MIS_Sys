@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { jobIdsMatchingHostname, loadHostnamesByJobId, withHostnames } from "@/lib/reference-labels";
 import { TurnaroundCharts } from "@/components/reports/TurnaroundCharts";
 import {
   turnaroundByProblemType,
@@ -37,6 +38,8 @@ export default async function ReportsPage({
   const params = await searchParams;
   const search = (params.search ?? "").trim();
 
+  const hostnameJobIds = await jobIdsMatchingHostname(search);
+
   const [repairJobs, statusHistory, receipts, whatsappLogs, auditLogs, deletions, recentAuditLogs] =
     await Promise.all([
       prisma.repairJob.count(),
@@ -52,6 +55,7 @@ export default async function ReportsPage({
                 { actionType: { contains: search, mode: "insensitive" } },
                 { recordType: { contains: search, mode: "insensitive" } },
                 { recordReference: { contains: search, mode: "insensitive" } },
+                ...(hostnameJobIds.length ? [{ recordReference: { in: hostnameJobIds } }] : []),
                 { reason: { contains: search, mode: "insensitive" } },
                 { performer: { fullName: { contains: search, mode: "insensitive" } } },
                 { performer: { username: { contains: search, mode: "insensitive" } } },
@@ -63,6 +67,8 @@ export default async function ReportsPage({
         take: 10,
       }),
     ]);
+
+  const hostnames = await loadHostnamesByJobId(recentAuditLogs.flatMap((l) => [l.recordReference, l.reason]));
 
   const [problemTypeTurnaround, technicianTurnaround, weeklyRegistrations, monthlyRegistrations] =
     await Promise.all([
@@ -187,7 +193,7 @@ export default async function ReportsPage({
                     <td className="px-4 py-3 text-stone-700">{formatAuditAction(log.recordType)}</td>
                     <td className="px-4 py-3">
                       {log.recordReference ? (
-                        <span className="font-semibold text-stone-900">{log.recordReference}</span>
+                        <span className="font-semibold text-stone-900">{withHostnames(log.recordReference, hostnames)}</span>
                       ) : (
                         <span className="text-xs text-stone-400">No reference</span>
                       )}
@@ -196,7 +202,7 @@ export default async function ReportsPage({
                       {log.performer?.fullName ?? "System or Former User"}
                     </td>
                     <td className="px-4 py-3 text-stone-500">
-                      {log.reason || <span className="text-xs text-stone-400">No reason provided</span>}
+                      {withHostnames(log.reason, hostnames) || <span className="text-xs text-stone-400">No reason provided</span>}
                     </td>
                     <td className="px-4 py-3 font-semibold text-stone-700">
                       {log.performedAt.toLocaleString(undefined, {
