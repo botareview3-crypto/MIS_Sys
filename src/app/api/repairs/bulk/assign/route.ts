@@ -115,7 +115,7 @@ export async function PATCH(req: NextRequest) {
       }
 
       return { technicianName: selectedTechnician?.fullName ?? null };
-    });
+    }, { timeout: 60_000, maxWait: 10_000 }); // default 5s would roll back big batches
 
     return NextResponse.json({ ok: true, updated, skipped, ...result });
   } catch (err) {

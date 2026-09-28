@@ -4,6 +4,43 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (34) — Multi-select on the Kanban board
+
+**Scope:** Project owner is cleaning up the database: many PCs were delivered
+but never marked Delivered. The Work Queue's list view already had checkbox
+multi-select + a bulk action bar (session 27); the Kanban board did not.
+No Prisma schema change, no new dependency.
+
+**Changed:**
+- `src/components/work-queue/WorkQueueBoard.tsx`
+  - Board cards get a checkbox (same `selected` state as the list view) and a
+    highlighted ring when selected. Dragging a single card still works as
+    before and still moves only that card.
+  - Each column header (both views) gets a "Select all" / "Deselect all"
+    toggle for that column.
+  - The fixed bottom action bar (Set status / Reassign) is now one shared
+    `bulkBar` element rendered by both views.
+  - Result notice: the bar unmounts once the selection is cleared, so the old
+    success/error message inside it was never visible after applying.
+    Added a dismissible `bulkNotice` banner above the columns for that case.
+- `src/app/api/repairs/bulk/status/route.ts` and `bulk/assign/route.ts` —
+  `$transaction` now has `timeout: 60_000, maxWait: 10_000`. The default 5 s
+  interactive-transaction timeout would roll back a large batch (each job is
+  ~6 DB round trips to a remote Postgres; max batch is 200).
+
+**Behavior notes (unchanged, worth knowing for a backfill):**
+- Bulk "Delivered" stamps `delivered_at` = now (and `ready_at` = now if it was
+  empty), not the real historical date. Reports' turnaround charts use
+  `delivered_at - received_at`, so backfilled jobs will skew them.
+- It creates a Delivery receipt per job, records status history + audit log,
+  and does not set the accessory-returned flags or open WhatsApp.
+
+**Verified:** `npx tsc --noEmit` clean with a generated Prisma client.
+**Not verified:** `next build`, browser behavior (checkbox vs. drag, sticky
+bar over the board).
+
+---
+
 ## 2026-09-28 (33) — Fix Render build failure in bulk status route
 
 **Problem:** Render's build (commit ead8400) failed at "Linting and checking

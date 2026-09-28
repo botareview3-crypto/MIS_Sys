@@ -90,6 +90,19 @@ export function WorkQueueBoard({
     });
   }
 
+  // Select every card in a column, or clear them if they're all already selected.
+  function toggleColumn(ids: number[]) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allSelected = ids.every((id) => next.has(id));
+      for (const id of ids) {
+        if (allSelected) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  }
+
   function clearSelection() {
     setSelected(new Set());
     setMessage(null);
@@ -193,9 +206,86 @@ export function WorkQueueBoard({
     }
   }
 
+  // Shared by the list view and the Kanban board: the fixed bottom action
+  // bar (bulk status change / reassign) shown while anything is selected, and
+  // a plain notice for the result after the selection has been cleared (the
+  // bar itself unmounts at that point, so its inline message can't be seen).
+  const bulkBar =
+    selectedCount > 0 ? (
+<div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 p-4 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
+            <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+              {selectedCount} selected
+              <button type="button" onClick={clearSelection} className="text-stone-400 hover:text-stone-600" aria-label="Clear selection">
+                <X className="h-4 w-4" />
+              </button>
+            </span>
+
+            <div className="flex items-center gap-2">
+              <select
+                className="input w-40"
+                value={statusChoice}
+                onChange={(e) => setStatusChoice(e.target.value as (typeof STATUSES)[number])}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <button type="button" disabled={busy} onClick={applyStatus} className="btn-secondary">
+                Set status
+              </button>
+            </div>
+
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <select
+                  className="input w-48"
+                  value={technicianChoice}
+                  onChange={(e) => setTechnicianChoice(Number(e.target.value))}
+                >
+                  <option value={0}>Unassigned</option>
+                  {technicianOptions.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.fullName} ({t.role})
+                    </option>
+                  ))}
+                </select>
+                <button type="button" disabled={busy} onClick={applyAssign} className="btn-primary">
+                  Reassign
+                </button>
+              </div>
+            )}
+
+            {message && (
+              <span className={`text-xs font-medium ${message.type === "error" ? "text-red-600" : "text-green-700"}`}>
+                {message.text}
+              </span>
+            )}
+          </div>
+        </div>
+    ) : null;
+
+  const bulkNotice =
+    selectedCount === 0 && message ? (
+      <div
+        className={`mt-4 flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ${
+          message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
+        }`}
+        role={message.type === "error" ? "alert" : "status"}
+      >
+        <span>{message.text}</span>
+        <button type="button" onClick={() => setMessage(null)} aria-label="Dismiss" className="opacity-70 hover:opacity-100">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    ) : null;
+
   if (view === "board") {
     return (
-      <div>
+      <div className={selectedCount > 0 ? "pb-24" : ""}>
+        {bulkNotice}
         {boardError && (
           <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
             {boardError}
@@ -258,9 +348,20 @@ export function WorkQueueBoard({
                     <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden />
                     {status}
                   </span>
-                  <span className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}>
-                    {colJobs.length}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {colJobs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleColumn(colJobs.map((j) => j.id))}
+                        className="text-[11px] font-medium text-brand-600 hover:underline"
+                      >
+                        {colJobs.every((j) => selected.has(j.id)) ? "Deselect all" : "Select all"}
+                      </button>
+                    )}
+                    <span className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}>
+                      {colJobs.length}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="min-h-[80px] space-y-2.5">
@@ -279,9 +380,19 @@ export function WorkQueueBoard({
                       }}
                       className={`card-interactive cursor-grab p-3.5 active:cursor-grabbing ${
                         d.overdue ? "ring-1 ring-inset ring-red-200" : ""
-                      } ${draggingId === d.id ? "opacity-40" : ""} ${movingId === d.id ? "animate-pulse-soft" : ""}`}
+                      } ${selected.has(d.id) ? "ring-2 ring-inset ring-brand-400" : ""} ${
+                        draggingId === d.id ? "opacity-40" : ""
+                      } ${movingId === d.id ? "animate-pulse-soft" : ""}`}
                     >
-                      <Link href={`/devices/${d.id}`} className="block min-w-0">
+                      <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(d.id)}
+                        onChange={() => toggle(d.id)}
+                        className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300"
+                        aria-label={`Select ${d.hostname || "device"}`}
+                      />
+                      <Link href={`/devices/${d.id}`} className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <strong className="block truncate text-sm text-ink">{d.hostname || "Device"}</strong>
                           {d.overdue && (
@@ -296,8 +407,9 @@ export function WorkQueueBoard({
                           {d.serialNumber || d.aucAssetBarcode || "—"}
                         </p>
                       </Link>
+                      </div>
 
-                      <div className="mt-3 flex items-center justify-between">
+                      <div className="mt-3 flex items-center justify-between pl-6">
                         <span className={`text-[11px] ${d.overdue ? "font-semibold text-red-600" : "text-stone-400"}`}>
                           {d.expectedCompletionDate ? d.expectedCompletionDate.toISOString().slice(0, 10) : "No deadline"}
                         </span>
@@ -311,7 +423,7 @@ export function WorkQueueBoard({
                         )}
                       </div>
 
-                      <div className="mt-2.5 flex gap-3 border-t border-stone-100 pt-2.5 text-xs">
+                      <div className="mt-2.5 flex gap-3 border-t border-stone-100 pt-2.5 pl-6 text-xs">
                         <Link href={`/repairs/${d.id}`} className="font-medium text-brand-600 hover:underline">
                           Update
                         </Link>
@@ -339,14 +451,18 @@ export function WorkQueueBoard({
         )}
 
         <p className="mt-3 text-xs text-stone-400">
-          Drag a card to another column to change its status. On touch devices, use the Update link instead.
+          Drag a card to another column to change its status, or tick cards (or use Select all on a column) to change
+          many at once. On touch devices, use the checkboxes or the Update link instead.
         </p>
+
+        {bulkBar}
       </div>
     );
   }
 
   return (
     <div className={selectedCount > 0 ? "pb-24" : ""}>
+      {bulkNotice}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {columns.map(({ status, jobs: colJobs }) => {
           const meta = COLUMN_META[status];
@@ -357,9 +473,20 @@ export function WorkQueueBoard({
                   <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden />
                   {status}
                 </span>
-                <span className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}>
-                  {colJobs.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  {colJobs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleColumn(colJobs.map((j) => j.id))}
+                      className="text-[11px] font-medium text-brand-600 hover:underline"
+                    >
+                      {colJobs.every((j) => selected.has(j.id)) ? "Deselect all" : "Select all"}
+                    </button>
+                  )}
+                  <span className={`data-mono rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${meta.chip}`}>
+                    {colJobs.length}
+                  </span>
+                </div>
               </div>
 
               <div className="min-h-[80px] space-y-2.5">
@@ -432,61 +559,7 @@ export function WorkQueueBoard({
         <div className="card mt-4 p-8 text-center text-sm text-stone-400">No devices match these filters.</div>
       )}
 
-      {selectedCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white/95 p-4 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
-            <span className="flex items-center gap-2 text-sm font-semibold text-ink">
-              {selectedCount} selected
-              <button type="button" onClick={clearSelection} className="text-stone-400 hover:text-stone-600" aria-label="Clear selection">
-                <X className="h-4 w-4" />
-              </button>
-            </span>
-
-            <div className="flex items-center gap-2">
-              <select
-                className="input w-40"
-                value={statusChoice}
-                onChange={(e) => setStatusChoice(e.target.value as (typeof STATUSES)[number])}
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <button type="button" disabled={busy} onClick={applyStatus} className="btn-secondary">
-                Set status
-              </button>
-            </div>
-
-            {isAdmin && (
-              <div className="flex items-center gap-2">
-                <select
-                  className="input w-48"
-                  value={technicianChoice}
-                  onChange={(e) => setTechnicianChoice(Number(e.target.value))}
-                >
-                  <option value={0}>Unassigned</option>
-                  {technicianOptions.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.fullName} ({t.role})
-                    </option>
-                  ))}
-                </select>
-                <button type="button" disabled={busy} onClick={applyAssign} className="btn-primary">
-                  Reassign
-                </button>
-              </div>
-            )}
-
-            {message && (
-              <span className={`text-xs font-medium ${message.type === "error" ? "text-red-600" : "text-green-700"}`}>
-                {message.text}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {bulkBar}
     </div>
   );
 }

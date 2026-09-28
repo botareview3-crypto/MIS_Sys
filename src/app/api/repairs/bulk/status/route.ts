@@ -150,6 +150,12 @@ export async function PATCH(req: NextRequest) {
 
         updated.push(id);
       }
+    }, {
+      // Default interactive-transaction timeout is 5s; each job costs ~6
+      // round trips to the (remote) database, so a big batch (up to 200) would
+      // be rolled back mid-way with "Transaction already closed".
+      timeout: 60_000,
+      maxWait: 10_000,
     });
 
     return NextResponse.json({ ok: true, updated, skipped });
