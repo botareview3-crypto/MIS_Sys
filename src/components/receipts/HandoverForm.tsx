@@ -193,12 +193,6 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
           </div>
         </div>
       </section>
-
-      <footer className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-8 py-3 text-xs text-slate-400">
-        <span>{receipt.receiptReference}</span>
-        <span>© 2026 AUC MIS Repair Management System</span>
-        <span>Developed by Hindiya Jemal</span>
-      </footer>
     </article>
   );
 }

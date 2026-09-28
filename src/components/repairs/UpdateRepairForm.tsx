@@ -70,7 +70,7 @@ export function UpdateRepairForm({
       setMessage({ type: "success", text });
 
       // Received / Ready / Delivered each have a follow-up page (WhatsApp
-      // message; for Delivered also the printable handover form) so those
+      // message; Ready and Delivered also a printable for signature) so those
       // actions aren't crammed above this form. Received and Ready open it
       // only when the status actually changed, so re-saving notes on a Ready
       // job doesn't bounce staff to a WhatsApp page. Delivered always opens
@@ -78,8 +78,10 @@ export function UpdateRepairForm({
       // job. Only for roles that can use it (Admin, Reception, the assigned
       // Technician); Secondary Admin has no WhatsApp/receipt access and stays here.
       const opensFollowUp =
-        (form.status === "Delivered" && canSendWhatsapp && canPrintReceipt) ||
-        (["Received", "Ready"].includes(form.status) && data.statusChanged && canSendWhatsapp);
+        canSendWhatsapp &&
+        ((form.status === "Delivered" && canPrintReceipt) ||
+          (form.status === "Ready" && data.statusChanged && canPrintReceipt) ||
+          (form.status === "Received" && data.statusChanged));
       if (opensFollowUp) {
         router.push(`/repairs/${deviceId}/follow-up`);
         return;

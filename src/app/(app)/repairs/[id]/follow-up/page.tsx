@@ -14,13 +14,16 @@ import {
 } from "@/lib/whatsapp";
 import { WhatsappMessageForm } from "@/components/devices/WhatsappMessageForm";
 import { HandoverForm } from "@/components/receipts/HandoverForm";
+import { ReceiptDocument } from "@/components/receipts/ReceiptDocument";
 import { PrintReceiptButton } from "@/components/receipts/PrintReceiptButton";
 import { deviceLabel } from "@/lib/device-label";
 
 /**
  * Landing page after saving a repair as Received, Ready or Delivered (see
  * UpdateRepairForm). Keeps the follow-up actions off the edit form:
- *   - Received / Ready: the WhatsApp message for that status.
+ *   - Received: the WhatsApp message.
+ *   - Ready: the WhatsApp message, then the Ready receipt (same document as
+ *     /receipts/[id]) with a Print button, for the customer to sign.
  *   - Delivered: the WhatsApp message, then the customer-signed Equipment
  *     Handover Form (same document as the Delivery receipt at
  *     /receipts/[id]) with a Print button.
@@ -31,7 +34,8 @@ import { deviceLabel } from "@/lib/device-label";
  *
  * Access: Admin, Reception, Technician — what the WhatsApp page allows
  * (Secondary Admin has no WhatsApp access). For Delivered, a Technician is
- * scoped to jobs assigned to them, following the receipt page's stricter rule.
+ * scoped to jobs assigned to them, following the receipt page's stricter rule
+ * (applied for Ready and Delivered, the two statuses that show a printable).
  */
 export default async function FollowUpPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -51,14 +55,18 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
   if (!isWhatsappMessageType(job.status)) redirect(`/devices/${job.id}`);
   const messageType: WhatsappMessageType = job.status;
   const isDelivered = messageType === "Delivered";
+  const hasPrintable = messageType === "Ready" || isDelivered;
 
-  // Only Delivered shows the printable form, so only Delivered applies the
+  // Only Ready and Delivered show a printable, so only they apply the
   // Technician-assigned scoping.
-  if (isDelivered && session.role === "Technician" && job.assignedTechnicianId !== session.userId) notFound();
+  if (hasPrintable && session.role === "Technician" && job.assignedTechnicianId !== session.userId) notFound();
 
-  const receipt = isDelivered
+  const receipt = hasPrintable
     ? await prisma.receipt.findFirst({
-        where: { repairJobId: job.id, receiptType: { equals: "Delivery", mode: "insensitive" } },
+        where: {
+          repairJobId: job.id,
+          receiptType: { equals: isDelivered ? "Delivery" : "Ready", mode: "insensitive" },
+        },
         orderBy: { id: "desc" },
         include: { creator: true },
       })
@@ -111,7 +119,7 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
       {/* Print only the handover form: hide everything else on the page
           (sidebar, top bar, WhatsApp section, buttons) via visibility so it
           works regardless of the surrounding layout. */}
-      {isDelivered && (
+      {hasPrintable && (
         <style>{`
           @media print {
             body * { visibility: hidden !important; }
@@ -142,12 +150,14 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
           Repair saved as {messageType}.{" "}
           {isDelivered
             ? "Send the WhatsApp message below, then print the handover form for the customer to sign."
-            : "Send the WhatsApp message below to let the customer know."}
+            : hasPrintable
+              ? "Send the WhatsApp message below, then print the receipt for the customer to sign."
+              : "Send the WhatsApp message below to let the customer know."}
         </div>
 
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
-            {isDelivered ? "1. WhatsApp message" : "WhatsApp message"}
+            {hasPrintable ? "1. WhatsApp message" : "WhatsApp message"}
           </h2>
           {whatsappError && (
             <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
@@ -163,34 +173,49 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
           />
         </section>
 
-        {isDelivered && (
+        {hasPrintable && (
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-sm font-semibold text-slate-900">2. Handover form (for signature)</h2>
+              <h2 className="text-sm font-semibold text-slate-900">
+                {isDelivered ? "2. Handover form (for signature)" : "2. Ready receipt (for signature)"}
+              </h2>
               {receipt && (
                 <PrintReceiptButton
                   receiptId={receipt.id}
                   initialPrintCount={receipt.printCount}
-                  baseLabel="Print Handover Form"
+                  baseLabel={isDelivered ? "Print Handover Form" : "Print Receipt"}
                 />
               )}
             </div>
 
             {receipt ? (
               <div id="handover-print">
-                <HandoverForm
-                  job={job}
-                  receipt={{
-                    receiptReference: receipt.receiptReference,
-                    generatedAt: receipt.generatedAt,
-                    creatorName: receipt.creator?.fullName ?? null,
-                  }}
-                />
+                {isDelivered ? (
+                  <HandoverForm
+                    job={job}
+                    receipt={{
+                      receiptReference: receipt.receiptReference,
+                      generatedAt: receipt.generatedAt,
+                      creatorName: receipt.creator?.fullName ?? null,
+                    }}
+                  />
+                ) : (
+                  <ReceiptDocument
+                    job={job}
+                    receipt={{
+                      receiptType: receipt.receiptType,
+                      receiptReference: receipt.receiptReference,
+                      generatedAt: receipt.generatedAt,
+                      creatorName: receipt.creator?.fullName ?? null,
+                    }}
+                  />
+                )}
               </div>
             ) : (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                No delivery receipt exists for this job yet. Set the status to Repairing, save, then set it back to
-                Delivered and save to generate it.
+                {isDelivered
+                  ? "No delivery receipt exists for this job yet. Set the status to Repairing, save, then set it back to Delivered and save to generate it."
+                  : "No Ready receipt exists for this job yet. Set the status to Repairing, save, then set it back to Ready and save to generate it."}
               </div>
             )}
           </section>

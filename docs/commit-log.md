@@ -4,6 +4,43 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (38) — Removed footer strip from printed receipts
+
+**Scope:** Project owner asked to remove the bottom strip (receipt reference,
+"© 2026 AUC MIS Repair Management System", "Developed by Hindiya Jemal").
+
+**Changed:** removed the `<footer>` from `src/components/receipts/ReceiptDocument.tsx`
+(Received/Ready receipts) and `src/components/receipts/HandoverForm.tsx`
+(Delivered handover form), so it is gone on `/receipts/[id]`, the follow-up
+page and the printout. The receipt reference still appears in each document's header.
+
+**Verified:** grep shows no footer left in `components/receipts`. **Not verified:** build/browser.
+
+---
+
+## 2026-09-28 (37) — Ready follow-up page also shows the printable receipt
+
+**Scope:** Project owner wanted the Ready follow-up page to include a printable
+file for signature too (not just Delivered). No Prisma change.
+
+**Changed:**
+- `src/components/receipts/ReceiptDocument.tsx` — new. The Received/Ready
+  receipt document extracted from `/receipts/[id]` so both pages print the
+  identical document.
+- `src/app/receipts/[id]/page.tsx` — non-Delivery receipts now render
+  `ReceiptDocument` (no visual change).
+- `src/app/(app)/repairs/[id]/follow-up/page.tsx` — Ready now shows section 2,
+  the Ready receipt with a "Print Receipt" button (same `PrintReceiptButton`,
+  so print count + audit apply). Technician scoping to assigned jobs now
+  applies to Ready as well as Delivered. Received stays WhatsApp-only.
+- `src/components/repairs/UpdateRepairForm.tsx` — Ready redirect now also
+  requires `canPrintReceipt` (the page would 404 otherwise).
+
+**Verified:** `npx tsc --noEmit` — only the pre-existing Prisma-untyped errors.
+**Not verified:** `next build`, browser, print layout.
+
+---
+
 ## 2026-09-28 (36) — Follow-up page for Received / Ready / Delivered
 
 **Scope:** Project owner wanted the WhatsApp button off the top of the Update
