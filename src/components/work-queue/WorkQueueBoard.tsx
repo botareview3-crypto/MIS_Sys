@@ -7,6 +7,9 @@ import { AlertTriangle, MessageCircle, X } from "lucide-react";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
+// Jobs per bulk request — see sendInChunks.
+const BULK_CHUNK_SIZE = 15;
+
 const COLUMN_META: Record<(typeof STATUSES)[number], { dot: string; chip: string }> = {
   Received: { dot: "bg-status-received", chip: "bg-status-received" },
   Repairing: { dot: "bg-status-repairing", chip: "bg-status-repairing" },
@@ -108,59 +111,96 @@ export function WorkQueueBoard({
     setMessage(null);
   }
 
+  // Bulk actions are sent in small batches, one request each. A single request
+  // for many jobs runs inside one interactive DB transaction on the server
+  // (~6 round trips per job to a remote Postgres) and can time out or exceed
+  // the host's request limit, which rolls the whole batch back. Small batches
+  // keep every request short, show progress, and mean a failure part-way only
+  // affects the batch it happened in — everything before it is already saved.
+  async function sendInChunks(url: string, ids: number[], extra: Record<string, unknown>, label: string) {
+    const processed: number[] = []; // updated OR skipped by the server — nothing left to do for these
+    let updatedCount = 0;
+    let skippedCount = 0;
+    let technicianName: string | null = null;
+
+    for (let i = 0; i < ids.length; i += BULK_CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + BULK_CHUNK_SIZE);
+      if (ids.length > BULK_CHUNK_SIZE) {
+        setMessage({ type: "success", text: `${label}… ${i} of ${ids.length} done` });
+      }
+      try {
+        const res = await fetch(url, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: chunk, ...extra }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { processed, updatedCount, skippedCount, technicianName, error: (data.error as string) ?? "The change could not be saved." };
+        }
+        processed.push(...chunk);
+        updatedCount += data.updated?.length ?? 0;
+        skippedCount += data.skipped?.length ?? 0;
+        if (data.technicianName) technicianName = data.technicianName;
+      } catch {
+        return { processed, updatedCount, skippedCount, technicianName, error: "Could not reach the server. Please try again." };
+      }
+    }
+    return { processed, updatedCount, skippedCount, technicianName, error: null as string | null };
+  }
+
+  // Drop finished ids from the selection so a retry only covers what's left.
+  function keepUnprocessed(processed: number[]) {
+    const done = new Set(processed);
+    setSelected((prev) => new Set([...prev].filter((id) => !done.has(id))));
+  }
+
   async function applyStatus() {
     setBusy(true);
     setMessage(null);
-    try {
-      const res = await fetch("/api/repairs/bulk/status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: [...selected], status: statusChoice }),
+    const ids = [...selected];
+    const r = await sendInChunks("/api/repairs/bulk/status", ids, { status: statusChoice }, "Updating");
+    keepUnprocessed(r.processed);
+    const skippedNote = r.skippedCount ? ` (${r.skippedCount} skipped — no access or already that status.)` : "";
+    if (r.error) {
+      setMessage({
+        type: "error",
+        text: `Updated ${r.updatedCount} of ${ids.length} job(s) to ${statusChoice} before an error: ${r.error} The rest are still selected — try again.${skippedNote}`,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "The bulk status change could not be saved." });
-        return;
-      }
-      const skippedNote = data.skipped?.length ? ` (${data.skipped.length} skipped — no access or already that status.)` : "";
-      setMessage({ type: "success", text: `Updated ${data.updated.length} job(s) to ${statusChoice}.${skippedNote}` });
-      setSelected(new Set());
-      router.refresh();
-    } catch {
-      setMessage({ type: "error", text: "Could not reach the server. Please try again." });
-    } finally {
-      setBusy(false);
+    } else {
+      setMessage({ type: "success", text: `Updated ${r.updatedCount} job(s) to ${statusChoice}.${skippedNote}` });
     }
+    router.refresh();
+    setBusy(false);
   }
 
   async function applyAssign() {
     setBusy(true);
     setMessage(null);
-    try {
-      const res = await fetch("/api/repairs/bulk/assign", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: [...selected], technicianId: technicianChoice, secondaryAdminId: null }),
+    const ids = [...selected];
+    const r = await sendInChunks(
+      "/api/repairs/bulk/assign",
+      ids,
+      { technicianId: technicianChoice, secondaryAdminId: null },
+      "Reassigning",
+    );
+    keepUnprocessed(r.processed);
+    const skippedNote = r.skippedCount ? ` (${r.skippedCount} skipped.)` : "";
+    if (r.error) {
+      setMessage({
+        type: "error",
+        text: `Reassigned ${r.updatedCount} of ${ids.length} job(s) before an error: ${r.error} The rest are still selected — try again.${skippedNote}`,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "The bulk technician assignment could not be saved." });
-        return;
-      }
-      const skippedNote = data.skipped?.length ? ` (${data.skipped.length} skipped.)` : "";
+    } else {
       setMessage({
         type: "success",
-        text: data.technicianName
-          ? `Reassigned ${data.updated.length} job(s) to ${data.technicianName}.${skippedNote}`
-          : `Unassigned ${data.updated.length} job(s).${skippedNote}`,
+        text: r.technicianName
+          ? `Reassigned ${r.updatedCount} job(s) to ${r.technicianName}.${skippedNote}`
+          : `Unassigned ${r.updatedCount} job(s).${skippedNote}`,
       });
-      setSelected(new Set());
-      router.refresh();
-    } catch {
-      setMessage({ type: "error", text: "Could not reach the server. Please try again." });
-    } finally {
-      setBusy(false);
     }
+    router.refresh();
+    setBusy(false);
   }
 
   // Dragging a card to a new column performs the same status-change action

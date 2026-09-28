@@ -4,6 +4,29 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (35) — Bulk actions sent in batches (fix "Transaction not found")
+
+**Problem:** Bulk "Set status → Delivered" on 11 jobs failed with `Invalid
+prisma.receipt.findFirst() invocation: Transaction API error: Transaction not
+found...` — Prisma's default 5 s interactive-transaction timeout expired
+mid-batch (each job is ~6 sequential round trips to a remote Postgres) and
+the whole batch rolled back, so nothing was saved.
+
+**Changed:**
+- `src/components/work-queue/WorkQueueBoard.tsx` — Set status and Reassign now
+  send the selection in batches of 15 (`BULK_CHUNK_SIZE`), one request each,
+  via `sendInChunks`. Progress shows in the action bar ("Updating… 15 of 60
+  done"). A failure part-way keeps everything already saved and leaves only
+  the unprocessed jobs selected, with a message saying how many were done, so
+  retrying doesn't redo work. No API contract change.
+- (Session 34's `timeout: 60_000` on both bulk routes stays as a second
+  safety net.)
+
+**Verified:** `npx tsc --noEmit` clean with a generated Prisma client.
+**Not verified:** `next build`, live behavior against the real database.
+
+---
+
 ## 2026-09-28 (34) — Multi-select on the Kanban board
 
 **Scope:** Project owner is cleaning up the database: many PCs were delivered
