@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Bell, Loader2, Search } from "lucide-react";
+import { Bell, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 
 type NotificationSummary = {
   id: number;
@@ -19,7 +19,15 @@ type NotificationSummary = {
  * full /notifications page. Badges the unread count in red and shakes
  * while there's anything unread.
  */
-export function TopBar({ unreadNotifications }: { unreadNotifications: number }) {
+export function TopBar({
+  unreadNotifications,
+  onToggleSidebar,
+  sidebarOpen = true,
+}: {
+  unreadNotifications: number;
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -93,8 +101,25 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
   const active = pathname.startsWith("/notifications");
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-white/60 bg-white/60 px-6 backdrop-blur-xl">
-      <form onSubmit={handleSearchSubmit} className="hidden max-w-sm flex-1 sm:block">
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-white/60 bg-white/60 px-3 backdrop-blur-xl sm:gap-4 sm:px-6">
+      {onToggleSidebar && (
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-expanded={sidebarOpen}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-500 transition-all duration-200 hover:bg-white hover:text-brand-600 hover:shadow-candy"
+        >
+          {/* Phones: hamburger opens the drawer. Desktop: panel icon collapses the rail. */}
+          <Menu size={20} aria-hidden className="md:hidden" />
+          {sidebarOpen ? (
+            <PanelLeftClose size={20} aria-hidden className="hidden md:block" />
+          ) : (
+            <PanelLeftOpen size={20} aria-hidden className="hidden md:block" />
+          )}
+        </button>
+      )}
+      <form onSubmit={handleSearchSubmit} className="min-w-0 max-w-sm flex-1">
         <label className="relative block">
           <Search
             size={16}
@@ -112,7 +137,7 @@ export function TopBar({ unreadNotifications }: { unreadNotifications: number })
         </label>
       </form>
 
-      <div ref={containerRef} className="relative">
+      <div ref={containerRef} className="relative ml-auto shrink-0">
         <button
           type="button"
           onClick={toggleOpen}

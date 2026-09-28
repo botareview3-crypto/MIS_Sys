@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/Sidebar";
-import { TopBar } from "@/components/TopBar";
+import { AppShell } from "@/components/AppShell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -13,12 +12,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar session={session} />
-      <div className="no-scrollbar flex h-full flex-1 flex-col overflow-y-auto overflow-x-hidden">
-        <TopBar unreadNotifications={unreadNotifications} />
-        {children}
-      </div>
-    </div>
+    <AppShell session={session} unreadNotifications={unreadNotifications}>
+      {children}
+    </AppShell>
   );
 }
