@@ -126,7 +126,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       let workflowReceiptReference: string | null = null;
       let workflowReceiptId: number | null = null;
 
-      if (statusChanged && (data.status === "Ready" || data.status === "Delivered")) {
+      // Ready: only when the status just changed. Delivered: whenever the saved
+      // result is Delivered, so the handover page always has a receipt even if
+      // the job was already Delivered before receipts existed.
+      if ((statusChanged && data.status === "Ready") || data.status === "Delivered") {
         workflowReceiptType = data.status === "Ready" ? "Ready" : "Delivery";
         const existingReceipt = await tx.receipt.findFirst({
           where: { repairJobId: deviceId, receiptType: { equals: workflowReceiptType, mode: "insensitive" } },

@@ -44,7 +44,6 @@ export function UpdateRepairForm({
   });
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [whatsappPromptStatus, setWhatsappPromptStatus] = useState<string | null>(null);
-  const [handoverReceiptId, setHandoverReceiptId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -55,7 +54,6 @@ export function UpdateRepairForm({
     e.preventDefault();
     setMessage(null);
     setWhatsappPromptStatus(null);
-    setHandoverReceiptId(null);
     setLoading(true);
     try {
       const res = await fetch(`/api/repairs/${deviceId}`, {
@@ -80,10 +78,13 @@ export function UpdateRepairForm({
       if (!data.noChanges && canSendWhatsapp && ["Received", "Ready", "Delivered"].includes(form.status)) {
         setWhatsappPromptStatus(form.status);
       }
-      // Marking Delivered creates the Delivery receipt, which doubles as the
-      // customer-signed equipment handover form — offer to print it now.
-      if (canPrintReceipt && data.workflowReceiptType === "Delivery" && data.workflowReceiptId) {
-        setHandoverReceiptId(data.workflowReceiptId);
+      // Saved as Delivered: go to the follow-up page that has the Delivered
+      // WhatsApp message and the printable handover form together. Only for
+      // roles that can use both (Admin, Reception, the assigned Technician);
+      // Secondary Admin has no WhatsApp/receipt access, so they stay here.
+      if (form.status === "Delivered" && canSendWhatsapp && canPrintReceipt) {
+        router.push(`/repairs/${deviceId}/handover`);
+        return;
       }
       router.refresh();
     } catch {
@@ -102,27 +103,13 @@ export function UpdateRepairForm({
           }`}
         >
           <span>{message.text}</span>
-          {(whatsappPromptStatus || handoverReceiptId) && (
-            <div className="flex flex-wrap items-center gap-2">
-              {whatsappPromptStatus && (
-                <Link
-                  href={`/devices/${deviceId}/whatsapp?type=${whatsappPromptStatus}`}
-                  className="btn-primary shrink-0 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
-                >
-                  Send {whatsappPromptStatus} WhatsApp message
-                </Link>
-              )}
-              {handoverReceiptId && (
-                <Link
-                  href={`/receipts/${handoverReceiptId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary shrink-0 bg-slate-700 px-3 py-1.5 text-xs hover:bg-slate-800"
-                >
-                  Print handover form
-                </Link>
-              )}
-            </div>
+          {whatsappPromptStatus && (
+            <Link
+              href={`/devices/${deviceId}/whatsapp?type=${whatsappPromptStatus}`}
+              className="btn-primary shrink-0 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
+            >
+              Send {whatsappPromptStatus} WhatsApp message
+            </Link>
           )}
         </div>
       )}

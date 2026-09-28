@@ -4,6 +4,55 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (32) — Delivered → follow-up page (WhatsApp message + handover form together)
+
+**Scope:** Follow-up to session 31. Project owner wanted Save on Update Repair
+to move to a separate page holding both the Delivered WhatsApp message and the
+printable handover form, instead of a button in the success bar. No Prisma
+schema change, no new dependency.
+
+**Changed:**
+- `src/app/(app)/repairs/[id]/handover/page.tsx` — new page. Section 1: the
+  Delivered WhatsApp message (reuses `WhatsappMessageForm`, same
+  `POST /api/devices/[id]/whatsapp`, same phone/message builders from
+  `src/lib/whatsapp.ts`). Section 2: the handover form with a
+  "Print Handover Form" button (reuses `PrintReceiptButton`, so
+  `print_count` + the `receipt_printed` audit entry still apply). A print
+  stylesheet hides everything except the form (sidebar, top bar, WhatsApp
+  section, buttons). Roles: Admin, Reception, Technician — the intersection
+  of what the WhatsApp page and receipt page allow; a Technician is scoped to
+  jobs assigned to them (the receipt page's stricter rule). Secondary Admin
+  is redirected to the dashboard.
+- `src/components/receipts/HandoverForm.tsx` — new. The handover document
+  extracted from `/receipts/[id]` so the standalone receipt page and the new
+  page print the identical form.
+- `src/app/receipts/[id]/page.tsx` — now renders `HandoverForm` for Delivery
+  receipts; all other receipt types render as before.
+- `src/components/repairs/UpdateRepairForm.tsx` — saving with status
+  Delivered now `router.push`es to `/repairs/[id]/handover` (only when the
+  viewer has both `canSendWhatsapp` and `canPrintReceipt`; otherwise, e.g.
+  Secondary Admin, it stays on the form as before). The session-31 inline
+  "Print handover form" button is removed. Received/Ready still show the
+  in-place WhatsApp button.
+- `src/app/api/repairs/[id]/route.ts` — the Delivery receipt is now ensured
+  whenever the saved status is Delivered (previously only on the change to
+  Delivered), so the new page always has a receipt to print. Ready is
+  unchanged (created on change only).
+
+**Verified:** `npx tsc --noEmit` — no errors beyond the pre-existing
+Prisma-client ones (engine download blocked in this sandbox). Because the
+Prisma client can't be generated here, query results are untyped, so the
+HandoverForm props were checked against `schema.prisma` by hand.
+`package-lock.json` untouched.
+
+**Not verified:** `npm run build`, no live DB, no browser — the redirect, the
+page layout, and the print-only-the-form CSS have not been exercised.
+
+**Still open (from session 31):** Work Queue bulk / Kanban "Delivered" does
+not set the accessory-returned flags and does not redirect to this page.
+
+---
+
 ## 2026-09-28 (31) — Delivery handover form (customer-signed equipment list)
 
 **Scope:** When a job is marked Delivered, staff already get the "Send Delivered
