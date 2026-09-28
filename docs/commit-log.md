@@ -4,6 +4,36 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (33) — Fix Render build failure in bulk status route
+
+**Problem:** Render's build (commit ead8400) failed at "Linting and checking
+validity of types": `src/app/api/repairs/bulk/status/route.ts:139` —
+`Parameter 'a' implicitly has an 'any' type`. The route runs inside
+`prisma.$transaction(async (tx: any) => ...)`, so `admins` is `any` and the
+untyped `.map((a) => ...)` callback is an implicit-any error under
+`strict`. Introduced in session 27 (bulk actions); never caught because
+earlier sandboxes couldn't run `next build`/a real `prisma generate`.
+Consequence: **no deploy since session 27 has gone live** — Render kept
+serving the last successful build, which is why the session 31/32 handover
+changes appeared to do nothing.
+
+**Changed:**
+- `src/app/api/repairs/bulk/status/route.ts` — `admins.map((a: { id: number }) => ...)`,
+  the same annotation already used in `api/repairs/[id]/route.ts`.
+
+**Verified:** this session the Prisma client WAS generated (stubbing the
+engine path via `PRISMA_QUERY_ENGINE_LIBRARY`, which is enough for types) and
+`npx tsc --noEmit` ran clean across the whole project — first time with real
+Prisma types. Not verified: `next build` itself (Google Fonts fetch is
+blocked in this sandbox), runtime behavior.
+
+**Note:** the Render log shows the dashboard Build Command still includes
+`npx puppeteer browsers install chrome` (leftover from the removed WhatsApp
+auto-send, session 25) — harmless but slows every build; `render.yaml`
+already dropped it, the dashboard field hasn't (same drift as session 21).
+
+---
+
 ## 2026-09-28 (32) — Delivered → follow-up page (WhatsApp message + handover form together)
 
 **Scope:** Follow-up to session 31. Project owner wanted Save on Update Repair

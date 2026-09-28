@@ -136,7 +136,7 @@ export async function PATCH(req: NextRequest) {
           });
           if (admins.length > 0) {
             await tx.notification.createMany({
-              data: admins.map((a) => ({
+              data: admins.map((a: { id: number }) => ({
                 recipientUserId: a.id,
                 createdBy: session.userId,
                 notificationType: "technician_repair_update",
