@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-26 (session 18)
+Last updated: 2026-09-28 (session 31)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -127,6 +127,12 @@ exactly what's changed, in order. This file is the current snapshot.
       commit-log. Remaining from the bundle: Kanban drag-and-drop view,
       one-click "Ready" WhatsApp prefill, global search bar (folds into
       the item below), Reports charts, Admin 2FA, recently-viewed devices.
+- [x] Delivery handover form (session 31) — the `Delivery` receipt at
+      `/receipts/[id]` now renders as a customer-signed equipment list (PC +
+      returned charger / network cable (NIC) / bag), with a "Print handover
+      form" button after marking Delivered on Update Repair. Known gap:
+      Work Queue bulk/Kanban Delivered doesn't set the accessory-returned
+      flags or offer the print button — see commit-log session 31.
 - [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
       search across the admin UI. Not the same as the per-page search boxes
       already ported on Audit History / Reports. Genuinely not started;

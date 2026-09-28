@@ -13,13 +13,16 @@ import { useState } from "react";
 export function PrintReceiptButton({
   receiptId,
   initialPrintCount,
+  baseLabel = "Print Receipt",
 }: {
   receiptId: number;
   initialPrintCount: number;
+  /** Button text before the print count is appended, e.g. "Print Handover Form". */
+  baseLabel?: string;
 }) {
   const [printCount, setPrintCount] = useState(initialPrintCount);
   const [label, setLabel] = useState(
-    initialPrintCount > 0 ? `Print Receipt · Count ${initialPrintCount}` : "Print Receipt",
+    initialPrintCount > 0 ? `${baseLabel} · Count ${initialPrintCount}` : baseLabel,
   );
   const [loading, setLoading] = useState(false);
 
@@ -33,11 +36,11 @@ export function PrintReceiptButton({
         throw new Error(data.message || "The print could not be recorded.");
       }
       setPrintCount(data.printCount);
-      setLabel(`Print Receipt · Count ${data.printCount}`);
+      setLabel(`${baseLabel} · Count ${data.printCount}`);
       window.print();
     } catch (err) {
       alert(err instanceof Error ? err.message : "The receipt print could not be recorded.");
-      setLabel(printCount > 0 ? `Print Receipt · Count ${printCount}` : "Print Receipt");
+      setLabel(printCount > 0 ? `${baseLabel} · Count ${printCount}` : baseLabel);
     } finally {
       setLoading(false);
     }

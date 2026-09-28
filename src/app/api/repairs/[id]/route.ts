@@ -124,6 +124,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
       let workflowReceiptType: "Ready" | "Delivery" | null = null;
       let workflowReceiptReference: string | null = null;
+      let workflowReceiptId: number | null = null;
 
       if (statusChanged && (data.status === "Ready" || data.status === "Delivered")) {
         workflowReceiptType = data.status === "Ready" ? "Ready" : "Delivery";
@@ -133,10 +134,11 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         });
         if (existingReceipt) {
           workflowReceiptReference = existingReceipt.receiptReference;
+          workflowReceiptId = existingReceipt.id;
         } else {
           const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
           workflowReceiptReference = `REC-${today}-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
-          await tx.receipt.create({
+          const createdReceipt = await tx.receipt.create({
             data: {
               repairJobId: deviceId,
               receiptType: workflowReceiptType,
@@ -144,6 +146,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
               createdBy: session.userId,
             },
           });
+          workflowReceiptId = createdReceipt.id;
         }
       }
 
@@ -193,7 +196,14 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         }
       }
 
-      return { noChanges: false, workflowReceiptType, workflowReceiptReference, statusChanged, newStatus: data.status };
+      return {
+        noChanges: false,
+        workflowReceiptType,
+        workflowReceiptReference,
+        workflowReceiptId,
+        statusChanged,
+        newStatus: data.status,
+      };
     });
 
     // Fire-and-forget: auto-send the "Ready" WhatsApp notification, only

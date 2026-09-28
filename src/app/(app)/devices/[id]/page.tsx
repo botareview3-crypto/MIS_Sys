@@ -203,7 +203,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
                       <span className="text-slate-400">{fmt(r.generatedAt)}</span>
                       {["Admin", "Reception", "Technician"].includes(session.role) && (
                         <Link href={`/receipts/${r.id}`} className="text-brand-600 hover:underline">
-                          Preview
+                          {r.receiptType.toLowerCase() === "delivery" ? "Handover form" : "Preview"}
                         </Link>
                       )}
                     </span>

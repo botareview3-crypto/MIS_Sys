@@ -4,6 +4,73 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (31) — Delivery handover form (customer-signed equipment list)
+
+**Scope:** When a job is marked Delivered, staff already get the "Send Delivered
+WhatsApp message" button. This adds the paper side: a printable form listing
+exactly what the customer is taking, with staff + customer signature lines.
+No Prisma schema change, no new route, no new dependency.
+
+**Approach:** The `Delivery` receipt is already auto-created on Delivered
+(single-job route and bulk/Kanban route). Rather than building a parallel
+document, `/receipts/[id]` now renders a `Delivery` receipt as an **Equipment
+Handover Form**; every other receipt type (Ready, etc.) renders exactly as
+before. Reuses the existing print tracking (`print_count`, `receipt_printed`
+audit log) and the existing role/Technician-scoping rules.
+
+**Changed:**
+- `src/app/receipts/[id]/page.tsx` — for `receiptType` = Delivery (compared
+  case-insensitively, like the creation queries): header reads "Equipment
+  Handover Form"; top strip shows Delivered Date; the "Accessories Received"
+  block is replaced by an "Equipment Handed Over" table. Rows: PC / Laptop
+  (always; barcode, serial, hostname) plus **only** the accessories flagged
+  *returned* — Charger, Network Cable (NIC) (with its barcode), Computer Bag.
+  Anything received but not flagged returned is listed under the table as
+  "still held by MIS" so the customer isn't signing for it. Signature
+  section: acknowledgement sentence, staff (Released By) and customer
+  (Received By) each with signature + date lines. Also added
+  `print-color-adjust: exact` on the header so the dark header (white text)
+  doesn't print as white-on-white when the browser's "Background graphics"
+  option is off — applies to all receipt types.
+- `src/components/receipts/PrintReceiptButton.tsx` — optional `baseLabel`
+  prop (default unchanged: "Print Receipt"); Delivery uses "Print Handover Form".
+- `src/app/api/repairs/[id]/route.ts` — PATCH response now also returns
+  `workflowReceiptId` (existing or newly created receipt). Additive only.
+- `src/components/repairs/UpdateRepairForm.tsx` — new `canPrintReceipt` prop.
+  After saving a status change to Delivered, the success bar shows a
+  "Print handover form" button (opens the receipt in a new tab) next to the
+  WhatsApp button.
+- `src/app/(app)/repairs/[id]/page.tsx` — passes `canPrintReceipt`: Admin and
+  Reception always, Technician only for jobs assigned to them (the receipt
+  page 404s otherwise), Secondary Admin never (no receipt access).
+- `src/app/(app)/devices/[id]/page.tsx` — Delivery receipts in the Receipts
+  list link as "Handover form" instead of "Preview".
+
+**Decisions worth a look:**
+1. "NIC" is treated as the existing **Network Cable** accessory
+   (`network_cable_*` columns) — the schema has no separate NIC item. Label
+   on the form: "Network Cable (NIC)".
+2. The form reflects the accessory *returned* flags at print time. Ticking
+   the "Accessory returns" boxes on Update Repair (same save as Delivered, or
+   before printing) is what puts charger/cable/bag on the form.
+3. **Gap, not fixed:** marking Delivered via the Work Queue bulk action or
+   Kanban drag never sets the returned flags (that route doesn't touch
+   accessories), so a job delivered that way prints with the PC only and the
+   received accessories under "still held by MIS". Its handover form is
+   reachable from the device page's Receipts list; the Kanban/bulk prompt has
+   no print button yet.
+
+**Verified:** `npx tsc --noEmit` after `npm install --ignore-scripts`: no
+errors in any touched file. Remaining errors are the pre-existing ones from
+the Prisma client not being generatable in this sandbox
+(`binaries.prisma.sh` blocked, deviation #4). `package-lock.json` left as it
+was in the uploaded zip.
+
+**Not verified:** `npm run build`, no live database, no browser print
+preview — the page layout and the paper output have not been looked at.
+
+---
+
 ## 2026-09-27 (30) — Improvements bundle, part 5: turnaround/volume charts on Reports (item 6)
 
 **Scope:** Item 6 only. Item 7 (Admin 2FA) is being scoped as a plan for

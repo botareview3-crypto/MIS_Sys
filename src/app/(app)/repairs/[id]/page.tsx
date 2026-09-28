@@ -28,6 +28,13 @@ export default async function UpdateRepairPage({ params }: { params: Promise<{ i
           <UpdateRepairForm
             deviceId={device.id}
             canSendWhatsapp={["Admin", "Reception", "Technician"].includes(session.role)}
+            // /receipts/[id] allows Admin/Reception/Technician, and scopes a
+            // Technician to jobs assigned to them — don't offer a link that 404s.
+            canPrintReceipt={
+              session.role === "Admin" ||
+              session.role === "Reception" ||
+              (session.role === "Technician" && device.assignedTechnicianId === session.userId)
+            }
             initial={{
               technicianDiagnosis: device.technicianDiagnosis ?? "",
               repairNotes: device.repairNotes ?? "",
