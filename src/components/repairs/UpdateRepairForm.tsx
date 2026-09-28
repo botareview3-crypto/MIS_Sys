@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
@@ -43,7 +42,6 @@ export function UpdateRepairForm({
     bagReturned: initial.bagReturned,
   });
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
-  const [whatsappPromptStatus, setWhatsappPromptStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -53,7 +51,6 @@ export function UpdateRepairForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
-    setWhatsappPromptStatus(null);
     setLoading(true);
     try {
       const res = await fetch(`/api/repairs/${deviceId}`, {
@@ -71,19 +68,20 @@ export function UpdateRepairForm({
         text += ` ${data.workflowReceiptType} receipt available: ${data.workflowReceiptReference}.`;
       }
       setMessage({ type: "success", text });
-      // The status actually just changed (not "no changes"), and it's one
-      // of the statuses that has a WhatsApp message template — surface the
-      // "send it" button right here instead of making the technician
-      // scroll down to the WhatsApp messages section to find it.
-      if (!data.noChanges && canSendWhatsapp && ["Received", "Ready", "Delivered"].includes(form.status)) {
-        setWhatsappPromptStatus(form.status);
-      }
-      // Saved as Delivered: go to the follow-up page that has the Delivered
-      // WhatsApp message and the printable handover form together. Only for
-      // roles that can use both (Admin, Reception, the assigned Technician);
-      // Secondary Admin has no WhatsApp/receipt access, so they stay here.
-      if (form.status === "Delivered" && canSendWhatsapp && canPrintReceipt) {
-        router.push(`/repairs/${deviceId}/handover`);
+
+      // Received / Ready / Delivered each have a follow-up page (WhatsApp
+      // message; for Delivered also the printable handover form) so those
+      // actions aren't crammed above this form. Received and Ready open it
+      // only when the status actually changed, so re-saving notes on a Ready
+      // job doesn't bounce staff to a WhatsApp page. Delivered always opens
+      // it, so the handover form is reachable even on an already-Delivered
+      // job. Only for roles that can use it (Admin, Reception, the assigned
+      // Technician); Secondary Admin has no WhatsApp/receipt access and stays here.
+      const opensFollowUp =
+        (form.status === "Delivered" && canSendWhatsapp && canPrintReceipt) ||
+        (["Received", "Ready"].includes(form.status) && data.statusChanged && canSendWhatsapp);
+      if (opensFollowUp) {
+        router.push(`/repairs/${deviceId}/follow-up`);
         return;
       }
       router.refresh();
@@ -103,14 +101,6 @@ export function UpdateRepairForm({
           }`}
         >
           <span>{message.text}</span>
-          {whatsappPromptStatus && (
-            <Link
-              href={`/devices/${deviceId}/whatsapp?type=${whatsappPromptStatus}`}
-              className="btn-primary shrink-0 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
-            >
-              Send {whatsappPromptStatus} WhatsApp message
-            </Link>
-          )}
         </div>
       )}
 

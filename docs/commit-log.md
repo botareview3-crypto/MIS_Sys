@@ -4,6 +4,37 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-28 (36) — Follow-up page for Received / Ready / Delivered
+
+**Scope:** Project owner wanted the WhatsApp button off the top of the Update
+Repair form for Received and Ready too, not just Delivered. Saving now opens a
+separate page for all three. No Prisma schema change, no new dependency.
+
+**Changed:**
+- `src/app/(app)/repairs/[id]/follow-up/page.tsx` — new. Message type comes from
+  the job's saved status. Received / Ready: the WhatsApp message only (Ready
+  keeps the multi-device "wait until all ready" block and combined message from
+  `/devices/[id]/whatsapp`). Delivered: WhatsApp message + printable handover
+  form, as the old handover page. Other statuses redirect to the device page.
+  Roles: Admin, Reception, Technician; Technician scoped to assigned jobs for
+  Delivered only.
+- `src/app/(app)/repairs/[id]/handover/page.tsx` — now just redirects to
+  `/follow-up` so old links keep working.
+- `src/components/repairs/UpdateRepairForm.tsx` — redirects to `/follow-up`
+  for Delivered (any save, as before) and for Received/Ready when the status
+  actually changed. The in-form "Send … WhatsApp message" button is removed.
+  Secondary Admin still stays on the form.
+
+**Verified:** `npx tsc --noEmit` — only the pre-existing Prisma-client-untyped
+errors (same one appears in `devices/[id]/whatsapp/page.tsx`).
+
+**Not verified:** `npm run build`, no live DB, no browser.
+
+**Still open:** Work Queue Kanban drag / bulk status still shows its own inline
+WhatsApp prompt and does not open the follow-up page.
+
+---
+
 ## 2026-09-28 (35) — Bulk actions sent in batches (fix "Transaction not found")
 
 **Problem:** Bulk "Set status → Delivered" on 11 jobs failed with `Invalid
