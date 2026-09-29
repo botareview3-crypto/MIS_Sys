@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, MessageCircle, X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
@@ -74,9 +74,6 @@ export function WorkQueueBoard({
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<number | null>(null);
   const [boardError, setBoardError] = useState<string | null>(null);
-  const [whatsappPrompt, setWhatsappPrompt] = useState<{ jobId: number; hostname: string; status: string } | null>(
-    null,
-  );
 
   const selectedCount = selected.size;
   const columns = useMemo(
@@ -119,6 +116,7 @@ export function WorkQueueBoard({
   // affects the batch it happened in — everything before it is already saved.
   async function sendInChunks(url: string, ids: number[], extra: Record<string, unknown>, label: string) {
     const processed: number[] = []; // updated OR skipped by the server — nothing left to do for these
+    const updatedIds: number[] = [];
     let updatedCount = 0;
     let skippedCount = 0;
     let technicianName: string | null = null;
@@ -136,17 +134,18 @@ export function WorkQueueBoard({
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          return { processed, updatedCount, skippedCount, technicianName, error: (data.error as string) ?? "The change could not be saved." };
+          return { processed, updatedIds, updatedCount, skippedCount, technicianName, error: (data.error as string) ?? "The change could not be saved." };
         }
         processed.push(...chunk);
+        updatedIds.push(...((data.updated as number[] | undefined) ?? []));
         updatedCount += data.updated?.length ?? 0;
         skippedCount += data.skipped?.length ?? 0;
         if (data.technicianName) technicianName = data.technicianName;
       } catch {
-        return { processed, updatedCount, skippedCount, technicianName, error: "Could not reach the server. Please try again." };
+        return { processed, updatedIds, updatedCount, skippedCount, technicianName, error: "Could not reach the server. Please try again." };
       }
     }
-    return { processed, updatedCount, skippedCount, technicianName, error: null as string | null };
+    return { processed, updatedIds, updatedCount, skippedCount, technicianName, error: null as string | null };
   }
 
   // Drop finished ids from the selection so a retry only covers what's left.
@@ -169,6 +168,13 @@ export function WorkQueueBoard({
       });
     } else {
       setMessage({ type: "success", text: `Updated ${r.updatedCount} job(s) to ${statusChoice}.${skippedNote}` });
+    }
+    // Received / Ready / Delivered: go straight to the follow-up page (the
+    // WhatsApp message) for the first updated job, with the rest queued.
+    if (canSendWhatsapp && WHATSAPP_STATUSES.has(statusChoice) && r.updatedIds.length > 0) {
+      const [first, ...rest] = r.updatedIds;
+      router.push(`/repairs/${first}/follow-up${rest.length > 0 ? `?queue=${rest.join(",")}` : ""}`);
+      return;
     }
     router.refresh();
     setBusy(false);
@@ -230,13 +236,11 @@ export function WorkQueueBoard({
         setBoardError("That job could not be moved (no access, or it changed elsewhere first).");
         return;
       }
-      // Same "offer to send it" convenience UpdateRepairForm already gives
-      // on the device page — surface it here too so a drag on the Kanban
-      // board doesn't require a separate trip to the device's WhatsApp tab.
+      // Received / Ready / Delivered: go straight to the follow-up page
+      // (the pre-filled WhatsApp message), same as saving from the repair form.
       if (canSendWhatsapp && WHATSAPP_STATUSES.has(newStatus)) {
-        setWhatsappPrompt({ jobId: job.id, hostname: job.hostname || "Device", status: newStatus });
-      } else {
-        setWhatsappPrompt(null);
+        router.push(`/repairs/${job.id}/follow-up`);
+        return;
       }
       router.refresh();
     } catch {
@@ -329,31 +333,6 @@ export function WorkQueueBoard({
         {boardError && (
           <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
             {boardError}
-          </div>
-        )}
-
-        {whatsappPrompt && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            <span className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 shrink-0" />
-              {whatsappPrompt.hostname} moved to {whatsappPrompt.status}.
-            </span>
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/devices/${whatsappPrompt.jobId}/whatsapp?type=${whatsappPrompt.status}`}
-                className="btn-primary shrink-0 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
-              >
-                Send {whatsappPrompt.status} WhatsApp message
-              </Link>
-              <button
-                type="button"
-                onClick={() => setWhatsappPrompt(null)}
-                className="text-emerald-700/70 hover:text-emerald-900"
-                aria-label="Dismiss"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
           </div>
         )}
 

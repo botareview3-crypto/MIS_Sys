@@ -22,13 +22,10 @@ export function UpdateRepairForm({
   deviceId,
   initial,
   canSendWhatsapp,
-  canPrintReceipt,
 }: {
   deviceId: number;
   initial: Initial;
   canSendWhatsapp: boolean;
-  /** Whether this viewer may open /receipts/[id] (Admin, Reception, or the assigned Technician). */
-  canPrintReceipt: boolean;
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -79,8 +76,8 @@ export function UpdateRepairForm({
       // Technician); Secondary Admin has no WhatsApp/receipt access and stays here.
       const opensFollowUp =
         canSendWhatsapp &&
-        ((form.status === "Delivered" && canPrintReceipt) ||
-          (form.status === "Ready" && data.statusChanged && canPrintReceipt) ||
+        (form.status === "Delivered" ||
+          (form.status === "Ready" && data.statusChanged) ||
           (form.status === "Received" && data.statusChanged));
       if (opensFollowUp) {
         router.push(`/repairs/${deviceId}/follow-up`);

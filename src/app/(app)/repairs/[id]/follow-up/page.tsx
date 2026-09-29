@@ -73,11 +73,12 @@ export default async function FollowUpPage({
   if (!isWhatsappMessageType(job.status)) redirect(`/devices/${job.id}`);
   const messageType: WhatsappMessageType = job.status;
   const isDelivered = messageType === "Delivered";
-  const hasPrintable = messageType === "Ready" || isDelivered;
-
-  // Only Ready and Delivered show a printable, so only they apply the
-  // Technician-assigned scoping.
-  if (hasPrintable && session.role === "Technician" && job.assignedTechnicianId !== session.userId) notFound();
+  // Ready and Delivered show a printable, but /receipts/[id] scopes a
+  // Technician to jobs assigned to them. A Technician who isn't the
+  // assigned one still lands here for the WhatsApp message; the printable
+  // section is just left out rather than the whole page 404ing.
+  const canSeePrintable = !(session.role === "Technician" && job.assignedTechnicianId !== session.userId);
+  const hasPrintable = (messageType === "Ready" || isDelivered) && canSeePrintable;
 
   const receipt = hasPrintable
     ? await prisma.receipt.findFirst({
