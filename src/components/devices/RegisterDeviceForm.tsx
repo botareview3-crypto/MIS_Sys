@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ScanLine, Trash2 } from "lucide-react";
+import { MessageCircle, Plus, ScanLine, Trash2 } from "lucide-react";
 
 type Technician = { id: number; fullName: string; role: string };
 
@@ -123,6 +123,12 @@ export function RegisterDeviceForm({
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  // Devices registered in the most recent submit, kept so each one can get
+  // a "Prepare Received Message" button right after registering (same
+  // WhatsApp page the device details screen links to).
+  const [justRegistered, setJustRegistered] = useState<
+    { repairJobId: number; hostname: string; receiptNumber: string }[]
+  >([]);
 
   const [suggestions, setSuggestions] = useState<CustomerSuggestion[]>([]);
   const [suggestionsFor, setSuggestionsFor] = useState<"phone" | "outlook" | null>(null);
@@ -211,6 +217,7 @@ export function RegisterDeviceForm({
     setSuggestionsFor(null);
     setDraftRestored(false);
     setMessage(null);
+    setJustRegistered([]);
   }
 
   // --- Returning-customer autocomplete (phone number / Outlook username) ---
@@ -307,13 +314,14 @@ export function RegisterDeviceForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
+    setJustRegistered([]);
     setLoading(true);
 
     // Local, not state — needs to reflect a customer created/matched by an
     // earlier device in this same batch before the next device's request
     // goes out, which a setState wouldn't do until the next render.
     let customerId = customer.customerId;
-    const registered: { hostname: string; receiptNumber: string }[] = [];
+    const registered: { repairJobId: number; hostname: string; receiptNumber: string }[] = [];
     try {
       for (let i = 0; i < devices.length; i++) {
         const payload = { ...customer, ...devices[i], customerId };
@@ -331,12 +339,19 @@ export function RegisterDeviceForm({
               : "";
           setMessage({ type: "error", text: `${prefix}${data.error ?? "Device registration failed."}` });
           // Drop the devices that already registered so resubmitting doesn't duplicate them.
-          if (doneCount > 0) setDevices((ds) => ds.slice(doneCount));
+          if (doneCount > 0) {
+            setDevices((ds) => ds.slice(doneCount));
+            setJustRegistered(registered);
+          }
           if (customerId !== customer.customerId) setCustomer((c) => ({ ...c, customerId }));
           return;
         }
         if (!customerId && data.customerId) customerId = String(data.customerId);
-        registered.push({ hostname: devices[i].hostname.trim(), receiptNumber: data.receiptNumber });
+        registered.push({
+          repairJobId: data.repairJobId,
+          hostname: devices[i].hostname.trim(),
+          receiptNumber: data.receiptNumber,
+        });
       }
 
       const summary = registered.map((r) => `${r.hostname} (${r.receiptNumber})`).join(", ");
@@ -349,6 +364,16 @@ export function RegisterDeviceForm({
       setDevices((ds) => [emptyDevice(ds[ds.length - 1])]);
       setDupChecks({});
       setDraftRestored(false);
+
+      // Same landing page as saving a repair as Received: the pre-filled
+      // WhatsApp message. For a multi-device batch, the first device's
+      // page carries the rest in ?queue= so staff can step through them.
+      const ids = registered.map((r) => r.repairJobId).filter((n) => Number.isInteger(n));
+      if (ids.length > 0) {
+        const rest = ids.slice(1);
+        router.push(`/repairs/${ids[0]}/follow-up${rest.length > 0 ? `?queue=${rest.join(",")}` : ""}`);
+        return;
+      }
     } catch {
       setMessage({ type: "error", text: "Could not reach the server. Please try again." });
     } finally {
@@ -365,6 +390,28 @@ export function RegisterDeviceForm({
           }`}
         >
           {message.text}
+        </div>
+      )}
+
+      {justRegistered.length > 0 && (
+        <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-sm font-medium text-emerald-900">These devices were registered — send their Received message:</p>
+          <ul className="space-y-2">
+            {justRegistered.map((r) => (
+              <li key={r.repairJobId} className="flex items-center justify-between gap-3 text-sm text-emerald-900">
+                <span>
+                  {r.hostname} <span className="text-emerald-700">({r.receiptNumber})</span>
+                </span>
+                <a
+                  href={`/repairs/${r.repairJobId}/follow-up`}
+                  className="btn-primary flex items-center gap-1.5 bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
+                >
+                  <MessageCircle size={14} />
+                  Send WhatsApp Message
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

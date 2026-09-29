@@ -37,7 +37,13 @@ import { deviceLabel } from "@/lib/device-label";
  * scoped to jobs assigned to them, following the receipt page's stricter rule
  * (applied for Ready and Delivered, the two statuses that show a printable).
  */
-export default async function FollowUpPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FollowUpPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ queue?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/login");
   if (!["Admin", "Reception", "Technician"].includes(session.role)) redirect("/dashboard");
@@ -45,6 +51,18 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const deviceId = Number(id);
   if (!Number.isInteger(deviceId) || deviceId < 1) notFound();
+
+  // Devices still waiting for their follow-up after this one (set by the
+  // register form when a batch of devices was registered together).
+  const { queue } = await searchParams;
+  const queueIds = (queue ?? "")
+    .split(",")
+    .filter((v) => /^\d+$/.test(v))
+    .map(Number);
+  const nextQueueHref =
+    queueIds.length > 0
+      ? `/repairs/${queueIds[0]}/follow-up${queueIds.length > 1 ? `?queue=${queueIds.slice(1).join(",")}` : ""}`
+      : null;
 
   const job = await prisma.repairJob.findUnique({
     where: { id: deviceId },
@@ -154,6 +172,17 @@ export default async function FollowUpPage({ params }: { params: Promise<{ id: s
               ? "Send the WhatsApp message below, then print the receipt for the customer to sign."
               : "Send the WhatsApp message below to let the customer know."}
         </div>
+
+        {nextQueueHref && (
+          <div className="flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <span>
+              {queueIds.length} more device{queueIds.length > 1 ? "s" : ""} registered in this batch.
+            </span>
+            <Link href={nextQueueHref} className="font-medium underline hover:no-underline">
+              Next device →
+            </Link>
+          </div>
+        )}
 
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
