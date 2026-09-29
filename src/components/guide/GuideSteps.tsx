@@ -9,6 +9,11 @@ export type GuideStep = {
   image?: string;
   /** Alt text for the image. Falls back to the step title if omitted. */
   imageAlt?: string;
+  /**
+   * Optional additional images shown under `image` (same path rules). Used
+   * when one step needs more than one photo. Alt text is the step title.
+   */
+  images?: string[];
 };
 
 export function GuideSteps({
@@ -48,6 +53,15 @@ export function GuideSteps({
                   className="mt-3 w-full max-w-md rounded-lg border border-stone-200"
                 />
               )}
+              {step.images?.map((src, k) => (
+                // eslint-disable-next-line @next/next/no-img-element -- see above
+                <img
+                  key={k}
+                  src={src}
+                  alt={`${step.title} (photo ${k + 2})`}
+                  className="mt-3 w-full max-w-md rounded-lg border border-stone-200"
+                />
+              ))}
             </div>
           </li>
         ))}

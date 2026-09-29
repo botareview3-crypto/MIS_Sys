@@ -98,8 +98,8 @@ exactly what's changed, in order. This file is the current snapshot.
 - [x] Local / Intra split (session 18) — Register/Manage remain identical
       shared routes between the two groups (unchanged decision from
       2026-09-25). What now differs: Guide content points at separate
-      `/guide/local` / `/guide/intra` routes (still placeholder — **waiting
-      on project owner to bring the actual content**), and the shared
+      `/guide/local` / `/guide/intra` routes (Local now has real content as of
+      session 39; Intra is still placeholder — **waiting on project owner**), and the shared
       Register Device form gained one optional field, Regional Office,
       wired to the previously-unused `Customer.regionalOffice` column.
 
@@ -140,8 +140,9 @@ exactly what's changed, in order. This file is the current snapshot.
       flagging rather than silently dropping it.
 - Everything else from the original PHP page list has a ported equivalent
   as of session 18. What's left otherwise is content, not code: the
-  Local/Intra Guide pages are empty placeholders until the project owner
-  supplies the actual guide content.
+  Local Guide has real content (session 39, from the PC Configuration PDF —
+  project owner will keep editing steps); the Intra Guide page is still an
+  empty placeholder until the project owner supplies its content.
 
 ## Known deviations / decisions needed from project owner
 1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~

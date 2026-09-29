@@ -4,6 +4,31 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
+## 2026-09-29 (39) — Local guide content (107 steps with screenshots)
+
+**Scope:** Project owner supplied "PC Configuration 1 - Described" (107-page PDF,
+one screenshot + caption per page) to use as the Local guide, to be edited
+afterwards. No Prisma change.
+
+**Changed:**
+- `src/lib/guide-content.ts` — `localGuideSteps` replaced with 107 steps (step N =
+  PDF page N). Descriptions are the PDF's captions; titles are short labels added.
+  Step 101's caption was corrected: its screenshot shows a "sync wasn't fully
+  successful" warning, not a success. Intra steps untouched (still placeholder).
+- `src/components/guide/GuideSteps.tsx` — `GuideStep` gained optional `images?: string[]`
+  for steps with more than one photo (PDF pages 1, 19 and 90 have two).
+- `src/app/(app)/guide/local/page.tsx` — intro text no longer says "placeholder".
+- `public/guide/local-step-NNN.jpg` (+ `-b` for second photos) — 110 screenshots,
+  re-rendered upright from the PDF at ~1000px wide (~13 MB total). `/guide/*` images
+  sit behind the session middleware like every other non-public path.
+- Redaction: step 20's screenshot showed a support account's username and a revealed
+  password; that area is blacked out in `local-step-020.jpg`.
+
+**Verified:** step count (107), image count (110), all image paths exist.
+**Not verified:** `next build`, browser rendering.
+
+---
+
 ## 2026-09-28 (38) — Removed footer strip from printed receipts
 
 **Scope:** Project owner asked to remove the bottom strip (receipt reference,
