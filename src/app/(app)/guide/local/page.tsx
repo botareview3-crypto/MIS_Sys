@@ -13,7 +13,7 @@ export default async function LocalGuidePage() {
   return (
     <GuideSteps
       heading="Local Guide"
-      intro="Step-by-step PC configuration for Local devices."
+      intro="Step-by-step PC configuration for Local devices. Search for an issue or pick a group below."
       steps={localGuideSteps}
     />
   );

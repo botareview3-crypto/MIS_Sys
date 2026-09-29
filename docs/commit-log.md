@@ -2051,3 +2051,16 @@ this matters to the project owner):**
   CSRF token. Decide if that's still needed here.
 - Forgot-password flow not yet migrated (`/forgot-password` link is a dead
   route for now).
+
+## Guide: search + category groups (2026-09-29)
+- `src/components/guide/GuideSteps.tsx` is now a client component: search box
+  (all words must match; searches title, description, category and step
+  number), category filter chips with counts, Grouped / In order toggle,
+  collapsible group sections, match highlighting, lazy-loaded images. Step
+  numbers always follow the original order, whatever the grouping.
+- `GuideStep` gained an optional `category`. All 107 Local steps are tagged in
+  `src/lib/guide-content.ts`: Configuration (1-22, 87-107), Cisco (23-52),
+  SAP (53-64), Applications to be installed (65-86). Intra (placeholder) has no
+  categories, so it just gets the search box.
+- Not verified here: `npm run build` / `tsc` (no node_modules in the sandbox);
+  only a syntax check was run.
