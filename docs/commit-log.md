@@ -2080,3 +2080,8 @@ this matters to the project owner):**
   chevron, start collapsed, and there are Expand all / Collapse all links.
   While searching or filtering by chip, matching groups stay open.
 - Not verified here: build/tsc (syntax check only).
+
+## Guide: Local step 1 replaced (2026-09-30)
+- Step 1 (temporary NEXT account sign-in) replaced with "Get the PC hostname
+  from the sign-in screen", new photo `public/guide/local-step-001-hostname.jpg`.
+  Old images `local-step-001.jpg` and `local-step-001-b.jpg` deleted.

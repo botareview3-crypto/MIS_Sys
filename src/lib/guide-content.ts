@@ -26,11 +26,11 @@ import type { GuideStep } from "@/components/guide/GuideSteps";
 // remove steps freely; steps are numbered automatically by their order here.
 export const localGuideSteps: GuideStep[] = [
   {
-    title: "Sign in with the temporary NEXT account",
+    title: "Get the PC hostname from the sign-in screen",
     category: "Configuration",
-    description: "Windows sign-in screen showing the temporary NEXT account and password field before configuration begins.",
-    image: "/guide/local-step-001.jpg",
-    images: ["/guide/local-step-001-b.jpg"],
+    description: "On the Windows sign-in screen, the \"Sign in to:\" line under the password box shows the PC's hostname (AUC-HQ-000849 in this example). Note it down.",
+    image: "/guide/local-step-001-hostname.jpg",
+    imageAlt: "Windows sign-in screen with the hostname shown after \"Sign in to:\"",
   },
   {
     title: "Press the startup-options key during reboot",
