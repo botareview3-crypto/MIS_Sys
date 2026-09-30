@@ -1,21 +1,26 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { GuideSteps } from "@/components/guide/GuideSteps";
-import { intraGuideSteps } from "@/lib/guide-content";
+import { loadGuide } from "@/lib/guide-store";
 
-// Split from the shared /guide placeholder on 2026-09-26 — Local and Intra
-// are meant to get their own guide content later; this is the Intra half.
-// Steps are placeholder data in src/lib/guide-content.ts until the project
-// owner supplies the real content.
+// Split from the shared /guide placeholder on 2026-09-26. The built-in Intra
+// steps are still placeholders (src/lib/guide-content.ts); admins can now
+// replace them by adding/deleting steps in the app (2026-09-30).
 export default async function IntraGuidePage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
+  const { steps, customized } = await loadGuide("intra");
+  const canEdit = session.role === "Admin" || session.role === "Secondary Admin";
+
   return (
     <GuideSteps
+      guide="intra"
       heading="Intra Guide"
-      intro="Step-by-step setup for Intra devices. Content below is a placeholder."
-      steps={intraGuideSteps}
+      intro="Step-by-step setup for Intra devices."
+      steps={steps}
+      canEdit={canEdit}
+      customized={customized}
     />
   );
 }

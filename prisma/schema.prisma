@@ -245,3 +245,26 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
 }
+
+// NEW TABLES (2026-09-30): in-app editing of the Local/Intra guides.
+// Not auto-applied (no db push in the deploy pipeline) - run
+// docs/sql/2026-09-30-guide-editing.sql against production once. Until then
+// the guide pages simply keep showing the built-in content from
+// src/lib/guide-content.ts. No relations to other tables on purpose.
+model GuideContent {
+  guide     String   @id @db.VarChar(30) // "local" | "intra"
+  steps     Json // full ordered step list, each with a stable string id
+  updatedAt DateTime @default(now()) @map("updated_at")
+  updatedBy Int?     @map("updated_by")
+
+  @@map("guide_contents")
+}
+
+model GuideImage {
+  id        Int      @id @default(autoincrement())
+  mimeType  String   @map("mime_type") @db.VarChar(50)
+  imageData String   @map("image_data") // base64, same approach as user_profile_images
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("guide_images")
+}

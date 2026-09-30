@@ -2096,3 +2096,24 @@ this matters to the project owner):**
   after the Task Sequence variables step. No screenshot yet - owner will supply
   one later; add it as `image:` on that step (see TODO in guide-content.ts).
   Later steps renumber automatically (Local guide is now 107 steps).
+
+## Guide: edit in the app - add between steps, delete, auto-renumber (2026-09-30)
+- Admin / Secondary Admin see an "Edit guide" button on /guide/local and
+  /guide/intra. Edit mode shows the steps in order with a "+ Add step here"
+  divider between every pair (title, optional description, group, optional
+  photo) and a Delete button on each step. Numbers are just list positions, so
+  they renumber automatically.
+- Storage: new tables `guide_contents` (whole step list as JSON, one row per
+  guide) and `guide_images` (uploaded photos, base64 like profile images).
+  **Must be created once in production with docs/sql/2026-09-30-guide-editing.sql**
+  (no db push in the deploy pipeline). Until then the guide keeps working from
+  src/lib/guide-content.ts, and edit attempts show an explanatory error.
+- The first in-app edit copies the built-in steps into the table; from then on
+  the table wins and edits to src/lib/guide-content.ts no longer show until
+  someone clicks "Reset to built-in content" (edit mode, only shown once
+  customized).
+- New: src/lib/guide-store.ts, src/app/api/guide/[guide]/route.ts,
+  src/app/api/guide/images/route.ts, src/app/api/guide/images/[id]/route.ts.
+  Steps carry stable ids (built-in: d1, d2...; new: n...).
+- Not verified here: prisma generate / tsc / build (no node_modules in the
+  sandbox); syntax check only.

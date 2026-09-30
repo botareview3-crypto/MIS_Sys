@@ -12,6 +12,13 @@ import type { GuideStep } from "@/components/guide/GuideSteps";
  * shown commented-out below. A step with no `image` just renders title +
  * description as before; images are optional per step, not all-or-nothing.
  *
+ * IMPORTANT (2026-09-30): admins can now add/delete steps inside the app
+ * (Guide page -> "Edit guide"). The first in-app edit copies the whole list
+ * into the guide_contents table, and from then on that copy is what people
+ * see - edits made to THIS file no longer show up until an admin uses "Reset
+ * to built-in content" on the guide page. This file remains the starting
+ * point / fallback.
+ *
  * Categories (2026-09-29): each step can carry a `category` (e.g. "Cisco").
  * The guide page turns these into filter chips + grouped sections, and the
  * search box searches title, description and category. Use the same spelling

@@ -1,20 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export type GuideStep = {
+  /**
+   * Stable id used by the in-app editor (add/delete). Built-in steps get
+   * "d1", "d2", ... from their position; steps added in the app get "n...".
+   * Optional so guide-content.ts doesn't have to spell them out.
+   */
+  id?: string;
   title: string;
   description: string;
   /**
    * Group this step belongs to (e.g. "Configuration", "Cisco", "SAP",
-   * "Applications to be installed"). Optional — a guide whose steps have no
+   * "Applications to be installed"). Optional - a guide whose steps have no
    * category just shows a flat list with search, same as before.
    */
   category?: string;
   /**
-   * Path under /public (e.g. "/guide/local-step-1.png") or a full URL.
-   * Optional — a step with no image just shows title + description, same
-   * as before this field existed.
+   * Path under /public (e.g. "/guide/local-step-1.png"), an uploaded photo
+   * ("/api/guide/images/12") or a full URL. Optional - a step with no image
+   * just shows title + description.
    */
   image?: string;
   /** Alt text for the image. Falls back to the step title if omitted. */
@@ -59,6 +66,13 @@ const styleFor = (category: string) => CATEGORY_STYLES[category] ?? FALLBACK_STY
 
 type Numbered = { step: GuideStep; number: number };
 
+type NewStepInput = {
+  title: string;
+  description: string;
+  category: string;
+  file: File | null;
+};
+
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -83,7 +97,42 @@ function Highlight({ text, terms }: { text: string; terms: string[] }) {
   );
 }
 
-function StepCard({ item, terms, showBadge }: { item: Numbered; terms: string[]; showBadge: boolean }) {
+/**
+ * Phone photos are several MB; shrink to at most 1200px on the long side as
+ * JPEG before uploading. Throws if the browser can't decode the file (e.g.
+ * HEIC) - the caller then uploads the original and lets the server decide.
+ */
+async function shrinkImage(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is not available.");
+  ctx.fillStyle = "#ffffff"; // PNGs with transparency would otherwise turn black
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not encode image."))), "image/jpeg", 0.82);
+  });
+}
+
+function StepCard({
+  item,
+  terms,
+  showBadge,
+  onDelete,
+  deleting,
+}: {
+  item: Numbered;
+  terms: string[];
+  showBadge: boolean;
+  onDelete?: () => void;
+  deleting?: boolean;
+}) {
   const { step, number } = item;
   return (
     <li id={`step-${number}`} className="card flex gap-3 p-4 sm:gap-4 sm:p-5">
@@ -91,9 +140,21 @@ function StepCard({ item, terms, showBadge }: { item: Numbered; terms: string[];
         {number}
       </span>
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-semibold text-stone-900">
-          <Highlight text={step.title} terms={terms} />
-        </h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-semibold text-stone-900">
+            <Highlight text={step.title} terms={terms} />
+          </h3>
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleting}
+              className="shrink-0 rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          ) : null}
+        </div>
         {showBadge && step.category ? (
           <span
             className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${styleFor(step.category).badge}`}
@@ -101,9 +162,11 @@ function StepCard({ item, terms, showBadge }: { item: Numbered; terms: string[];
             {step.category}
           </span>
         ) : null}
-        <p className="mt-1 text-sm text-stone-500">
-          <Highlight text={step.description} terms={terms} />
-        </p>
+        {step.description ? (
+          <p className="mt-1 text-sm text-stone-500">
+            <Highlight text={step.description} terms={terms} />
+          </p>
+        ) : null}
         {step.image && (
           // eslint-disable-next-line @next/next/no-img-element -- plain
           // <img> deliberately: these are static files under /public
@@ -131,15 +194,145 @@ function StepCard({ item, terms, showBadge }: { item: Numbered; terms: string[];
   );
 }
 
+/** The dashed "+ Add step here" divider shown between steps in edit mode. */
+function InsertRow({ onClick }: { onClick: () => void }) {
+  return (
+    <li className="flex items-center gap-3 py-0.5">
+      <span className="h-px flex-1 bg-stone-200" aria-hidden />
+      <button
+        type="button"
+        onClick={onClick}
+        className="rounded-full border border-dashed border-brand-300 bg-white/70 px-3 py-1 text-xs font-semibold text-brand-600 transition hover:bg-brand-50"
+      >
+        + Add step here
+      </button>
+      <span className="h-px flex-1 bg-stone-200" aria-hidden />
+    </li>
+  );
+}
+
+function AddStepForm({
+  categories,
+  defaultCategory,
+  onCancel,
+  onSubmit,
+}: {
+  categories: string[];
+  defaultCategory: string;
+  onCancel: () => void;
+  onSubmit: (input: NewStepInput) => Promise<string | null>;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState(defaultCategory);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    const message = await onSubmit({ title, description, category, file });
+    // On success the parent closes this form; only stay busy-free on error.
+    if (message) {
+      setError(message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li>
+      <form onSubmit={handleSubmit} className="card space-y-3 border-2 border-dashed border-brand-300 p-4 sm:p-5">
+        <h3 className="text-sm font-semibold text-stone-900">New step</h3>
+        {error ? <div className="rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-stone-700">
+            Title
+            <input
+              className="input mt-1.5"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              required
+              autoFocus
+            />
+          </label>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-stone-700">
+            Description <span className="font-normal text-stone-400">(optional)</span>
+            <textarea
+              className="input mt-1.5 min-h-[5rem]"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={2000}
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-stone-700">
+            Group
+            <input
+              className="input mt-1.5"
+              list="guide-category-options"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              maxLength={60}
+              placeholder="Pick one or type a new group"
+            />
+            <datalist id="guide-category-options">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </label>
+          <label className="block text-sm font-medium text-stone-700">
+            Photo <span className="font-normal text-stone-400">(optional)</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="input mt-1.5 file:mr-3 file:rounded-full file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" disabled={busy} className="btn-primary">
+            {busy ? "Saving…" : "Add step"}
+          </button>
+          <button type="button" onClick={onCancel} disabled={busy} className="btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </li>
+  );
+}
+
 export function GuideSteps({
+  guide,
   heading,
   intro,
   steps,
+  canEdit = false,
+  customized = false,
 }: {
+  /** Which guide this is ("local" | "intra"); used by the edit API. */
+  guide: string;
   heading: string;
   intro?: string;
   steps: GuideStep[];
+  /** Admin / Secondary Admin only: shows the "Edit guide" button. */
+  canEdit?: boolean;
+  /** True once the guide has been edited in the app (enables "Reset"). */
+  customized?: boolean;
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [grouped, setGrouped] = useState(true);
@@ -147,8 +340,17 @@ export function GuideSteps({
   // groups; click a group (or "Expand all") to see its steps.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  const [editMode, setEditMode] = useState(false);
+  // Where the "new step" form is open: the id of the step to insert after,
+  // "__start" for the very top, or null when closed.
+  const [insertKey, setInsertKey] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState("");
+
   // Numbers come from the original order and never change with filtering or
-  // grouping, so "step 45" always means the same step.
+  // grouping, so "step 45" always means the same step. Add/delete simply
+  // changes the list, so every later number follows automatically.
   const numbered: Numbered[] = useMemo(
     () => steps.map((step, i) => ({ step, number: i + 1 })),
     [steps],
@@ -180,7 +382,8 @@ export function GuideSteps({
   }, [numbered, activeCategory, terms]);
 
   const filtering = terms.length > 0 || activeCategory !== null;
-  const showGroups = hasCategories && grouped;
+  // Editing always uses the plain in-order list so "between steps" is unambiguous.
+  const showGroups = hasCategories && grouped && !editMode;
 
   const sections = useMemo(() => {
     if (!showGroups) return [];
@@ -207,16 +410,181 @@ export function GuideSteps({
     setActiveCategory(null);
   }
 
+  function toggleEditMode() {
+    setEditMode((on) => !on);
+    setInsertKey(null);
+    setNotice("");
+    setActionError("");
+  }
+
+  async function postAction(body: unknown): Promise<{ ok: boolean; data: { error?: string; number?: number } }> {
+    const res = await fetch(`/api/guide/${guide}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  }
+
+  /** Returns an error message, or null when the step was added. */
+  async function addStep(afterId: string | null, input: NewStepInput): Promise<string | null> {
+    setNotice("");
+    setActionError("");
+    try {
+      let image: string | undefined;
+      if (input.file) {
+        let blob: Blob = input.file;
+        try {
+          blob = await shrinkImage(input.file);
+        } catch {
+          // Could not decode in the browser; send the original and let the server validate it.
+        }
+        const fd = new FormData();
+        fd.append("image", blob, "step.jpg");
+        const up = await fetch("/api/guide/images", { method: "POST", body: fd });
+        const upData = await up.json().catch(() => ({}));
+        if (!up.ok || !upData.url) return upData.error ?? "The photo could not be uploaded.";
+        image = upData.url as string;
+      }
+
+      const { ok, data } = await postAction({
+        action: "insert",
+        afterId,
+        step: {
+          title: input.title,
+          description: input.description,
+          category: input.category.trim() || undefined,
+          image,
+        },
+      });
+      if (!ok) return data.error ?? "The step could not be added.";
+
+      setInsertKey(null);
+      setNotice(`Step added as step ${data.number}. Later steps were renumbered.`);
+      router.refresh();
+      return null;
+    } catch {
+      return "Could not reach the server. Please try again.";
+    }
+  }
+
+  async function deleteStep(item: Numbered) {
+    const id = item.step.id;
+    if (!id) return;
+    const ok = window.confirm(
+      `Delete step ${item.number} "${item.step.title}"?\n\nLater steps will be renumbered.`,
+    );
+    if (!ok) return;
+
+    setNotice("");
+    setActionError("");
+    setDeletingId(id);
+    try {
+      const result = await postAction({ action: "delete", id });
+      if (!result.ok) {
+        setActionError(result.data.error ?? "The step could not be deleted.");
+        return;
+      }
+      setNotice(`Step ${item.number} deleted. Later steps were renumbered.`);
+      router.refresh();
+    } catch {
+      setActionError("Could not reach the server. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function resetGuide() {
+    const ok = window.confirm(
+      "Reset this guide to its built-in content?\n\nEvery step you added or deleted in the app, and any photos you uploaded, will be lost.",
+    );
+    if (!ok) return;
+    setNotice("");
+    setActionError("");
+    try {
+      const result = await postAction({ action: "reset" });
+      if (!result.ok) {
+        setActionError(result.data.error ?? "The guide could not be reset.");
+        return;
+      }
+      setInsertKey(null);
+      setNotice("The guide was reset to its built-in content.");
+      router.refresh();
+    } catch {
+      setActionError("Could not reach the server. Please try again.");
+    }
+  }
+
   const chipBase =
     "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition";
 
+  const categoryNames = categories.map((c) => c.name);
+
+  /** The form (if open at this spot) or the "+ Add step here" divider. */
+  function renderInsertSpot(afterId: string | null, defaultCategory: string) {
+    const key = afterId ?? "__start";
+    if (insertKey === key) {
+      return (
+        <AddStepForm
+          key={`form-${key}`}
+          categories={categoryNames}
+          defaultCategory={defaultCategory}
+          onCancel={() => setInsertKey(null)}
+          onSubmit={(input) => addStep(afterId, input)}
+        />
+      );
+    }
+    return <InsertRow key={`insert-${key}`} onClick={() => setInsertKey(key)} />;
+  }
+
   return (
     <main className="p-4 sm:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Guide</p>
-        <h1 className="mt-1 text-lg font-semibold text-stone-900">{heading}</h1>
-        {intro ? <p className="mt-1 max-w-xl text-sm text-stone-500">{intro}</p> : null}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Guide</p>
+          <h1 className="mt-1 text-lg font-semibold text-stone-900">{heading}</h1>
+          {intro ? <p className="mt-1 max-w-xl text-sm text-stone-500">{intro}</p> : null}
+        </div>
+        {canEdit ? (
+          <button
+            type="button"
+            onClick={toggleEditMode}
+            className={editMode ? "btn-primary" : "btn-secondary"}
+          >
+            {editMode ? "Done editing" : "Edit guide"}
+          </button>
+        ) : null}
       </div>
+
+      {editMode ? (
+        <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50/80 px-4 py-3 text-sm text-brand-700">
+          <strong className="font-semibold">Editing.</strong> Use “+ Add step here” between steps to insert a new
+          one, or “Delete” on a step to remove it. Step numbers update automatically.
+          {customized ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={resetGuide}
+                className="font-semibold text-red-600 underline underline-offset-2"
+              >
+                Reset to built-in content
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+      {notice ? (
+        <div role="status" className="mt-3 rounded-2xl bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+          {notice}
+        </div>
+      ) : null}
+      {actionError ? (
+        <div role="alert" className="mt-3 rounded-2xl bg-red-50 px-4 py-2 text-sm text-red-700">
+          {actionError}
+        </div>
+      ) : null}
 
       <div className="card mt-6 space-y-3 p-4">
         <div className="relative">
@@ -280,7 +648,7 @@ export function GuideSteps({
           <span aria-live="polite">
             {filtering
               ? `${matches.length} of ${steps.length} steps`
-              : `${steps.length} steps`}
+              : `${steps.length} ${steps.length === 1 ? "step" : "steps"}`}
             {filtering ? (
               <button
                 type="button"
@@ -291,7 +659,7 @@ export function GuideSteps({
               </button>
             ) : null}
           </span>
-          {hasCategories ? (
+          {hasCategories && !editMode ? (
             <div className="flex flex-wrap items-center gap-2">
               {showGroups && !filtering ? (
                 <>
@@ -338,14 +706,48 @@ export function GuideSteps({
         </div>
       </div>
 
-      {matches.length === 0 ? (
-        <div className="card mt-4 p-6 text-center text-sm text-stone-500">
-          No steps match{query ? ` “${query.trim()}”` : ""}. Try fewer or different words.
-          <div className="mt-3">
-            <button type="button" onClick={clearAll} className="btn-secondary">
-              Clear filters
-            </button>
+      {editMode ? (
+        matches.length === 0 && filtering ? (
+          <div className="card mt-4 p-6 text-center text-sm text-stone-500">
+            No steps match{query ? ` “${query.trim()}”` : ""}.
+            <div className="mt-3">
+              <button type="button" onClick={clearAll} className="btn-secondary">
+                Clear filters
+              </button>
+            </div>
           </div>
+        ) : (
+          <ol className="mt-4 space-y-3">
+            {/* Top of the guide. With a search/filter on, the list is partial, so only offer spots after a shown step. */}
+            {!filtering ? renderInsertSpot(null, numbered[0]?.step.category ?? "") : null}
+            {matches.map((item) => (
+              <Fragment key={item.step.id ?? item.number}>
+                <StepCard
+                  item={item}
+                  terms={terms}
+                  showBadge
+                  onDelete={item.step.id ? () => deleteStep(item) : undefined}
+                  deleting={deletingId === item.step.id}
+                />
+                {item.step.id ? renderInsertSpot(item.step.id, item.step.category ?? "") : null}
+              </Fragment>
+            ))}
+          </ol>
+        )
+      ) : matches.length === 0 ? (
+        <div className="card mt-4 p-6 text-center text-sm text-stone-500">
+          {steps.length === 0 ? (
+            "This guide has no steps yet."
+          ) : (
+            <>
+              No steps match{query ? ` “${query.trim()}”` : ""}. Try fewer or different words.
+              <div className="mt-3">
+                <button type="button" onClick={clearAll} className="btn-secondary">
+                  Clear filters
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ) : showGroups ? (
         <div className="mt-4 space-y-3">
@@ -378,7 +780,7 @@ export function GuideSteps({
                 {isOpen ? (
                   <ol className="mt-3 space-y-3">
                     {items.map((item) => (
-                      <StepCard key={item.number} item={item} terms={terms} showBadge={false} />
+                      <StepCard key={item.step.id ?? item.number} item={item} terms={terms} showBadge={false} />
                     ))}
                   </ol>
                 ) : null}
@@ -390,7 +792,7 @@ export function GuideSteps({
               <h2 className="text-sm font-semibold text-stone-900">Other</h2>
               <ol className="mt-3 space-y-3">
                 {uncategorized.map((item) => (
-                  <StepCard key={item.number} item={item} terms={terms} showBadge={false} />
+                  <StepCard key={item.step.id ?? item.number} item={item} terms={terms} showBadge={false} />
                 ))}
               </ol>
             </section>
@@ -399,7 +801,7 @@ export function GuideSteps({
       ) : (
         <ol className="mt-4 space-y-3">
           {matches.map((item) => (
-            <StepCard key={item.number} item={item} terms={terms} showBadge />
+            <StepCard key={item.step.id ?? item.number} item={item} terms={terms} showBadge />
           ))}
         </ol>
       )}
