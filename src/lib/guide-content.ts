@@ -75,6 +75,13 @@ export const localGuideSteps: GuideStep[] = [
     image: "/guide/local-step-009.jpg",
   },
   {
+    // TODO: screenshot to be added by the project owner (e.g.
+    // image: "/guide/local-step-hostname-entry.jpg") once the photo is available.
+    title: "Enter the hostname for the PC",
+    category: "Configuration",
+    description: "After clicking Edit on OSDCOMPUTERNAME, enter the hostname for this PC (the one noted in step 1) and continue.",
+  },
+  {
     title: "Task sequence starts",
     category: "Configuration",
     description: "Microsoft Configuration Manager starts the selected operating-system task sequence.",

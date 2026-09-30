@@ -2090,3 +2090,9 @@ this matters to the project owner):**
 - Removed "Confirm the startup key press" (duplicate keyboard close-up) and
   its image `public/guide/local-step-003.jpg`. Later steps renumber
   automatically (Local guide is now 106 steps).
+
+## Guide: hostname entry step added (2026-09-30)
+- New Local step 9 "Enter the hostname for the PC" (Configuration), placed right
+  after the Task Sequence variables step. No screenshot yet - owner will supply
+  one later; add it as `image:` on that step (see TODO in guide-content.ts).
+  Later steps renumber automatically (Local guide is now 107 steps).
