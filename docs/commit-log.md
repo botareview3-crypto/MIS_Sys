@@ -2148,3 +2148,20 @@ this matters to the project owner):**
   Device Information and in the PC row), item table is # / Item+details /
   Received, and Signature + Date share one row. Estimated height now ~120 mm.
 - Still NOT test-printed (no browser in the sandbox) - confirm on the printer.
+
+## Handover form: equipment + signatures only (2026-09-30)
+- Request: the delivery Equipment Handover Form is too big; drop the top half
+  (header, hostname/dates strip, Customer Information, Device Information) and
+  keep only the equipment list and the signatures.
+- `src/components/receipts/HandoverForm.tsx`: removed `SheetHeader`,
+  `MetaStrip` and the customer/device section. Kept "Equipment Handed Over"
+  table, the "still held by MIS" note, the "I, <name>, confirm..." statement
+  and Staff / Customer signature + Date. Hostname now appears in the PC row
+  detail (it used to live only in the removed strip).
+- `src/app/globals.css`: new `.a6-compact` modifier (screen `min-height: 0`) so
+  the shorter handover sheet isn't shown as a tall blank A6 sheet. Print page
+  size is unchanged (A6, 105 x 148 mm).
+- The Received / Ready receipts (`ReceiptDocument`) are unchanged.
+- Not verified here: no browser / node_modules in the sandbox, so the layout
+  was NOT test-printed and tsc/build were not run - check one printed handover
+  form on the real printer.

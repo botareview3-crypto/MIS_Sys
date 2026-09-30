@@ -4,6 +4,9 @@
  * /repairs/[id]/handover (WhatsApp message + printable form on one page),
  * so both always print the exact same document.
  *
+ * Compact: only the equipment list, the confirmation statement and the two
+ * signatures (no header / customer / device blocks).
+ *
  * Contents: the PC always, plus ONLY the accessories flagged *returned*
  * (charger, network cable / NIC, bag). Anything received but not returned is
  * listed as "still held by MIS" so the customer never signs for it.
@@ -14,7 +17,7 @@
  * Plain server-renderable component (no hooks) — no "use client".
  */
 
-import { Field, FieldList, MetaStrip, SectionTitle, SheetHeader, SignatureAndDate, fmtDateTime } from "./sheet-parts";
+import { SectionTitle, SignatureAndDate } from "./sheet-parts";
 
 export type HandoverFormJob = {
   jobId: string;
@@ -52,8 +55,9 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
   const handoverItems: { label: string; detail: string }[] = [
     {
       label: "PC / Laptop",
-      // The hostname is already shown in the strip at the top of the sheet.
-      detail: [`Barcode ${job.aucAssetBarcode}`, `S/N ${job.serialNumber}`].join(" · "),
+      detail: [`Barcode ${job.aucAssetBarcode}`, `S/N ${job.serialNumber}`, job.hostname ? `Host ${job.hostname}` : null]
+        .filter(Boolean)
+        .join(" · "),
     },
   ];
   if (acc?.chargerReturned) handoverItems.push({ label: "Charger", detail: "" });
@@ -71,43 +75,8 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
   if (acc?.bagReceived && !acc.bagReturned) stillHeld.push("Computer Bag");
 
   return (
-    <article className="a6-sheet overflow-hidden rounded-lg border border-slate-200 bg-white text-[7pt] leading-tight text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
-      <SheetHeader
-        subtitle="Equipment Handover Form"
-        reference={receipt.receiptReference}
-        generatedAt={receipt.generatedAt}
-      />
-
-      <MetaStrip
-        items={[
-          { label: "Hostname", value: job.hostname || "—" },
-          { label: "Delivered Date", value: fmtDateTime(job.deliveredAt ?? receipt.generatedAt) },
-          { label: "Received Date", value: fmtDateTime(job.receivedAt) },
-        ]}
-      />
-
-      <section className="grid grid-cols-2 gap-[3mm] px-[4mm] py-[2.5mm]">
-        <div className="min-w-0">
-          <SectionTitle>Customer Information</SectionTitle>
-          <FieldList>
-            <Field label="Full Name" value={customerDisplayName} />
-            <Field label="Phone Number" value={customer.phoneNumber} />
-            <Field label="Outlook Email" value={customer.outlookEmail} />
-            <Field label="Device Given By" value={job.givenByName} />
-          </FieldList>
-        </div>
-        <div className="min-w-0">
-          <SectionTitle>Device Information</SectionTitle>
-          <FieldList>
-            <Field label="PC Barcode" value={job.aucAssetBarcode} />
-            <Field label="Serial Number" value={job.serialNumber} />
-            <Field label="MAC Address" value={job.macAddress || "Not provided"} />
-            <Field label="Reported Problem" value={job.reportedProblem} />
-          </FieldList>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-100 px-[4mm] py-[2.5mm]">
+    <article className="a6-sheet a6-compact overflow-hidden rounded-lg border border-slate-200 bg-white text-[7pt] leading-tight text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
+      <section className="px-[4mm] pb-[2.5mm] pt-[4mm]">
         <SectionTitle>Equipment Handed Over</SectionTitle>
         <table className="w-full border-collapse text-[7pt]">
           <thead>

@@ -159,6 +159,10 @@ h1, h2, h3, h4 {
   .a6-sheet {
     min-height: 148mm;
   }
+  /* Compact handover form: equipment list + signatures only, so let it be as short as its content. */
+  .a6-sheet.a6-compact {
+    min-height: 0;
+  }
 }
 @media print {
   .a6-sheet {
