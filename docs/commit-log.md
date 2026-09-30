@@ -2085,3 +2085,8 @@ this matters to the project owner):**
 - Step 1 (temporary NEXT account sign-in) replaced with "Get the PC hostname
   from the sign-in screen", new photo `public/guide/local-step-001-hostname.jpg`.
   Old images `local-step-001.jpg` and `local-step-001-b.jpg` deleted.
+
+## Guide: Local step 3 removed (2026-09-30)
+- Removed "Confirm the startup key press" (duplicate keyboard close-up) and
+  its image `public/guide/local-step-003.jpg`. Later steps renumber
+  automatically (Local guide is now 106 steps).

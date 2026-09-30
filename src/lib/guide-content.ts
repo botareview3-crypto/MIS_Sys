@@ -39,12 +39,6 @@ export const localGuideSteps: GuideStep[] = [
     image: "/guide/local-step-002.jpg",
   },
   {
-    title: "Confirm the startup key press",
-    category: "Configuration",
-    description: "A second keyboard close-up confirming the startup-key action during reboot.",
-    image: "/guide/local-step-003.jpg",
-  },
-  {
     title: "Choose UEFI IPv4 Network in the HP Startup Menu",
     category: "Configuration",
     description: "HP Startup Menu with the UEFI IPv4 Network option selected for network boot.",
