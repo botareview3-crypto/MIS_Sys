@@ -2117,3 +2117,22 @@ this matters to the project owner):**
   Steps carry stable ids (built-in: d1, d2...; new: n...).
 - Not verified here: prisma generate / tsc / build (no node_modules in the
   sandbox); syntax check only.
+
+## Printables resized to A6 = 1/4 of A4 (2026-09-30)
+- Boss's requirement: printable files are a quarter of an A4 page. That is A6,
+  105 x 148 mm, portrait. `@page { size: 105mm 148mm; margin: 0 }` is in
+  `src/app/globals.css` (applies to every print from this app; only receipts and
+  the handover form are printed).
+- `ReceiptDocument` and `HandoverForm` were re-laid-out compactly in mm/pt using
+  the new shared parts in `src/components/receipts/sheet-parts.tsx`. Same
+  content and wording as before, smaller type (about 6-8 pt).
+- On screen the sheet is shown at real proportions, enlarged 1.6x (`.a6-sheet`
+  in globals.css) so it is readable; the zoom does not apply when printing.
+- `/repairs/[id]/follow-up` print CSS now uses `position: fixed` + a one-sheet
+  height cap so the hidden rest of the page can't print as blank A6 pages.
+- If a long "Reported Problem" pushes the sheet past 148 mm it continues on a
+  second A6 page rather than being cut off.
+- Not verified here: no browser in the sandbox, so the layout was NOT test-
+  printed; build/tsc also not run (syntax check only). Check one printed
+  receipt and one handover form on the real printer (Print dialog: paper size
+  A6, scale 100% / "Default", margins "None").

@@ -143,7 +143,10 @@ export default async function FollowUpPage({
           @media print {
             body * { visibility: hidden !important; }
             #handover-print, #handover-print * { visibility: visible !important; }
-            #handover-print { position: absolute; left: 0; top: 0; width: 100%; }
+            #handover-print { position: fixed; left: 0; top: 0; width: 105mm; }
+            /* Everything else is only hidden, not removed, so cap the page
+               to one A6 sheet or the hidden layout prints as blank pages. */
+            html, body { height: 148mm !important; overflow: hidden !important; }
           }
         `}</style>
       )}

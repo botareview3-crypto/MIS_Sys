@@ -60,7 +60,7 @@ export default async function ReceiptPreviewPage({ params }: { params: Promise<{
   const isDelivery = receipt.receiptType.toLowerCase() === "delivery";
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 print:bg-white print:p-0">
+    <main className="min-h-screen bg-slate-100 px-4 py-8 print:min-h-0 print:bg-white print:p-0">
       <div className="mx-auto max-w-3xl">
         <div className="mb-5 flex items-center justify-between print:hidden">
           <Link href={`/devices/${job.id}`} className="btn-primary bg-slate-700 hover:bg-slate-800">
