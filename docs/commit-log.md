@@ -2136,3 +2136,15 @@ this matters to the project owner):**
   printed; build/tsc also not run (syntax check only). Check one printed
   receipt and one handover form on the real printer (Print dialog: paper size
   A6, scale 100% / "Default", margins "None").
+
+## A6 printables - real size + shorter (2026-09-30, follow-up)
+- Screen preview of the receipt/handover sheet is now true physical size
+  (105 mm wide, no 1.6x zoom) - the zoomed preview looked far bigger than a
+  quarter of A4.
+- The handover sheet was also taller than 148 mm (estimate ~160 mm), so it would
+  have spilled onto a second page. Compacted: line-height tightened, customer /
+  device details now "label  value" rows instead of label-over-value, the
+  hostname is no longer repeated (it stays in the strip at the top; it was in
+  Device Information and in the PC row), item table is # / Item+details /
+  Received, and Signature + Date share one row. Estimated height now ~120 mm.
+- Still NOT test-printed (no browser in the sandbox) - confirm on the printer.

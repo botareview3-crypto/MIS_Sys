@@ -14,7 +14,7 @@
  * Plain server-renderable component (no hooks) — no "use client".
  */
 
-import { Field, MetaStrip, SectionTitle, SheetHeader, SignatureLine, fmtDateTime } from "./sheet-parts";
+import { Field, FieldList, MetaStrip, SectionTitle, SheetHeader, SignatureAndDate, fmtDateTime } from "./sheet-parts";
 
 export type HandoverFormJob = {
   jobId: string;
@@ -52,13 +52,8 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
   const handoverItems: { label: string; detail: string }[] = [
     {
       label: "PC / Laptop",
-      detail: [
-        `Barcode ${job.aucAssetBarcode}`,
-        `S/N ${job.serialNumber}`,
-        job.hostname ? `Hostname ${job.hostname}` : null,
-      ]
-        .filter(Boolean)
-        .join(" · "),
+      // The hostname is already shown in the strip at the top of the sheet.
+      detail: [`Barcode ${job.aucAssetBarcode}`, `S/N ${job.serialNumber}`].join(" · "),
     },
   ];
   if (acc?.chargerReturned) handoverItems.push({ label: "Charger", detail: "" });
@@ -76,7 +71,7 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
   if (acc?.bagReceived && !acc.bagReturned) stillHeld.push("Computer Bag");
 
   return (
-    <article className="a6-sheet overflow-hidden rounded-lg border border-slate-200 bg-white text-[7.5pt] text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
+    <article className="a6-sheet overflow-hidden rounded-lg border border-slate-200 bg-white text-[7pt] leading-tight text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
       <SheetHeader
         subtitle="Equipment Handover Form"
         reference={receipt.receiptReference}
@@ -94,27 +89,21 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
       <section className="grid grid-cols-2 gap-[3mm] px-[4mm] py-[2.5mm]">
         <div className="min-w-0">
           <SectionTitle>Customer Information</SectionTitle>
-          <dl>
+          <FieldList>
             <Field label="Full Name" value={customerDisplayName} />
             <Field label="Phone Number" value={customer.phoneNumber} />
             <Field label="Outlook Email" value={customer.outlookEmail} />
             <Field label="Device Given By" value={job.givenByName} />
-          </dl>
+          </FieldList>
         </div>
         <div className="min-w-0">
           <SectionTitle>Device Information</SectionTitle>
-          <dl>
+          <FieldList>
             <Field label="PC Barcode" value={job.aucAssetBarcode} />
             <Field label="Serial Number" value={job.serialNumber} />
             <Field label="MAC Address" value={job.macAddress || "Not provided"} />
-            <Field label="Hostname" value={job.hostname || "Not provided"} />
-            <div>
-              <dt className="text-[6pt] text-slate-400">Reported Problem</dt>
-              <dd className="whitespace-pre-line break-words text-[7.5pt] leading-tight text-slate-700">
-                {job.reportedProblem}
-              </dd>
-            </div>
-          </dl>
+            <Field label="Reported Problem" value={job.reportedProblem} />
+          </FieldList>
         </div>
       </section>
 
@@ -123,19 +112,22 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
         <table className="w-full border-collapse text-[7pt]">
           <thead>
             <tr className="border-b border-slate-300 text-left text-[6pt] uppercase tracking-wide text-slate-400">
-              <th className="w-[5mm] py-[0.8mm] font-medium">#</th>
-              <th className="py-[0.8mm] font-medium">Item</th>
-              <th className="py-[0.8mm] font-medium">Details</th>
-              <th className="w-[12mm] py-[0.8mm] text-center font-medium">Received</th>
+              <th className="w-[5mm] py-[0.6mm] font-medium">#</th>
+              <th className="py-[0.6mm] font-medium">Item</th>
+              <th className="w-[12mm] py-[0.6mm] text-center font-medium">Received</th>
             </tr>
           </thead>
           <tbody>
             {handoverItems.map((item, i) => (
               <tr key={item.label} className="border-b border-slate-100 align-top">
-                <td className="py-[1mm] text-slate-400">{i + 1}</td>
-                <td className="py-[1mm] pr-[1mm] font-semibold leading-tight text-slate-900">{item.label}</td>
-                <td className="break-words py-[1mm] pr-[1mm] leading-tight text-slate-600">{item.detail || "—"}</td>
-                <td className="py-[1mm] text-center">
+                <td className="py-[0.8mm] text-slate-400">{i + 1}</td>
+                <td className="py-[0.8mm] pr-[1mm]">
+                  <span className="block font-semibold text-slate-900">{item.label}</span>
+                  {item.detail ? (
+                    <span className="block text-[6.5pt] text-slate-600 [overflow-wrap:anywhere]">{item.detail}</span>
+                  ) : null}
+                </td>
+                <td className="py-[0.8mm] text-center">
                   <span className="inline-grid h-[3.5mm] w-[3.5mm] place-items-center border border-slate-700 text-[6pt] font-bold leading-none text-slate-900">
                     ✓
                   </span>
@@ -162,16 +154,14 @@ export function HandoverForm({ job, receipt }: { job: HandoverFormJob; receipt: 
             <strong className="block break-words text-[7pt] leading-tight text-slate-900">
               {receipt.creatorName || "Authorized staff"}
             </strong>
-            <SignatureLine>Staff Signature</SignatureLine>
-            <div className="mt-[5mm] border-t border-slate-300 pt-[0.5mm] text-[6pt] text-slate-400">Date</div>
+            <SignatureAndDate signatureLabel="Staff Signature" />
           </div>
           <div className="min-w-0">
             <span className="block text-[6pt] text-slate-400">Received By (Customer)</span>
             <strong className="block break-words text-[7pt] leading-tight text-slate-900">
               {customerDisplayName}
             </strong>
-            <SignatureLine>Customer Signature</SignatureLine>
-            <div className="mt-[5mm] border-t border-slate-300 pt-[0.5mm] text-[6pt] text-slate-400">Date</div>
+            <SignatureAndDate signatureLabel="Customer Signature" />
           </div>
         </div>
       </section>

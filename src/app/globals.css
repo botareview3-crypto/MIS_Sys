@@ -141,8 +141,7 @@ h1, h2, h3, h4 {
    Printables (receipts + handover form) are a quarter of an A4 page: A6,
    105 x 148 mm, portrait. Set once here; the sheets themselves are laid out
    in mm/pt (see src/components/receipts/sheet-parts.tsx).
-   On screen the sheet is shown at its real proportions but enlarged so it is
-   readable; print ignores the zoom.
+   On screen the sheet is shown at its true physical size (105 mm wide).
 ------------------------------------------------------------------------ */
 @page {
   size: 105mm 148mm;
@@ -158,7 +157,6 @@ h1, h2, h3, h4 {
 }
 @media screen {
   .a6-sheet {
-    zoom: 1.6;
     min-height: 148mm;
   }
 }

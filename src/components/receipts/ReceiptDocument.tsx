@@ -9,7 +9,7 @@
  * Plain server-renderable component (no hooks) — no "use client".
  */
 
-import { Field, MetaStrip, SectionTitle, SheetHeader, SignatureLine, fmtDateTime } from "./sheet-parts";
+import { Field, FieldList, MetaStrip, SectionTitle, SheetHeader, SignatureLine, fmtDateTime } from "./sheet-parts";
 
 export type ReceiptDocJob = {
   status: string;
@@ -41,7 +41,7 @@ export function ReceiptDocument({ job, receipt }: { job: ReceiptDocJob; receipt:
   const receiptTypeLabel = receipt.receiptType.replace(/[_-]/g, " ");
 
   return (
-    <article className="a6-sheet overflow-hidden rounded-lg border border-slate-200 bg-white text-[7.5pt] text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
+    <article className="a6-sheet overflow-hidden rounded-lg border border-slate-200 bg-white text-[7pt] leading-tight text-slate-700 shadow-lg print:rounded-none print:border-0 print:shadow-none">
       <SheetHeader
         subtitle={`Device Repair ${receiptTypeLabel}`}
         reference={receipt.receiptReference}
@@ -56,30 +56,24 @@ export function ReceiptDocument({ job, receipt }: { job: ReceiptDocJob; receipt:
         ]}
       />
 
-      <section className="grid grid-cols-2 gap-[3mm] px-[4mm] py-[3mm]">
+      <section className="grid grid-cols-2 gap-[3mm] px-[4mm] py-[2.5mm]">
         <div className="min-w-0">
           <SectionTitle>Customer Information</SectionTitle>
-          <dl>
+          <FieldList>
             <Field label="Full Name" value={customerDisplayName} />
             <Field label="Phone Number" value={customer.phoneNumber} />
             <Field label="Outlook Email" value={customer.outlookEmail} />
             <Field label="Device Given By" value={job.givenByName} />
-          </dl>
+          </FieldList>
         </div>
         <div className="min-w-0">
           <SectionTitle>Device Information</SectionTitle>
-          <dl>
+          <FieldList>
             <Field label="PC Barcode" value={job.aucAssetBarcode} />
             <Field label="Serial Number" value={job.serialNumber} />
             <Field label="MAC Address" value={job.macAddress || "Not provided"} />
-            <Field label="Hostname" value={job.hostname || "Not provided"} />
-            <div>
-              <dt className="text-[6pt] text-slate-400">Reported Problem</dt>
-              <dd className="whitespace-pre-line break-words text-[7.5pt] leading-tight text-slate-700">
-                {job.reportedProblem}
-              </dd>
-            </div>
-          </dl>
+            <Field label="Reported Problem" value={job.reportedProblem} />
+          </FieldList>
         </div>
       </section>
 
