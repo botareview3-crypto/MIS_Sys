@@ -143,7 +143,9 @@ export function GuideSteps({
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [grouped, setGrouped] = useState(true);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Groups start collapsed so the page opens as a short overview of the
+  // groups; click a group (or "Expand all") to see its steps.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Numbers come from the original order and never change with filtering or
   // grouping, so "step 45" always means the same step.
@@ -189,13 +191,16 @@ export function GuideSteps({
   const uncategorized = showGroups ? matches.filter((m) => !m.step.category) : [];
 
   function toggleSection(name: string) {
-    setCollapsed((prev) => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
       return next;
     });
   }
+
+  const expandAll = () => setExpanded(new Set(categories.map((c) => c.name)));
+  const collapseAll = () => setExpanded(new Set());
 
   function clearAll() {
     setQuery("");
@@ -287,27 +292,47 @@ export function GuideSteps({
             ) : null}
           </span>
           {hasCategories ? (
-            <div className="inline-flex rounded-full border border-stone-200 bg-white p-0.5">
-              <button
-                type="button"
-                onClick={() => setGrouped(true)}
-                aria-pressed={grouped}
-                className={`rounded-full px-3 py-1 font-semibold ${
-                  grouped ? "bg-stone-800 text-white" : "text-stone-500 hover:text-stone-800"
-                }`}
-              >
-                Grouped
-              </button>
-              <button
-                type="button"
-                onClick={() => setGrouped(false)}
-                aria-pressed={!grouped}
-                className={`rounded-full px-3 py-1 font-semibold ${
-                  !grouped ? "bg-stone-800 text-white" : "text-stone-500 hover:text-stone-800"
-                }`}
-              >
-                In order
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {showGroups && !filtering ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={expandAll}
+                    className="rounded-full px-2 py-1 font-semibold text-brand-600 hover:underline"
+                  >
+                    Expand all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={collapseAll}
+                    className="rounded-full px-2 py-1 font-semibold text-brand-600 hover:underline"
+                  >
+                    Collapse all
+                  </button>
+                </>
+              ) : null}
+              <div className="inline-flex rounded-full border border-stone-200 bg-white p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setGrouped(true)}
+                  aria-pressed={grouped}
+                  className={`rounded-full px-3 py-1 font-semibold ${
+                    grouped ? "bg-stone-800 text-white" : "text-stone-500 hover:text-stone-800"
+                  }`}
+                >
+                  Grouped
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGrouped(false)}
+                  aria-pressed={!grouped}
+                  className={`rounded-full px-3 py-1 font-semibold ${
+                    !grouped ? "bg-stone-800 text-white" : "text-stone-500 hover:text-stone-800"
+                  }`}
+                >
+                  In order
+                </button>
+              </div>
             </div>
           ) : null}
         </div>
@@ -323,10 +348,10 @@ export function GuideSteps({
           </div>
         </div>
       ) : showGroups ? (
-        <div className="mt-4 space-y-6">
+        <div className="mt-4 space-y-3">
           {sections.map(({ name, items }) => {
             // While searching or filtering, always show the matches.
-            const isOpen = filtering || !collapsed.has(name);
+            const isOpen = filtering || expanded.has(name);
             return (
               <section key={name}>
                 <button
@@ -334,16 +359,21 @@ export function GuideSteps({
                   onClick={() => toggleSection(name)}
                   aria-expanded={isOpen}
                   disabled={filtering}
-                  className="flex w-full items-center gap-2 text-left disabled:cursor-default"
+                  className="card flex w-full items-center gap-3 px-4 py-3 text-left transition hover:border-brand-200 disabled:cursor-default"
                 >
-                  <span className={`h-2.5 w-2.5 rounded-full ${styleFor(name).dot}`} />
-                  <h2 className="text-sm font-semibold text-stone-900">{name}</h2>
-                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
-                    {items.length}
+                  <svg
+                    className={`h-4 w-4 shrink-0 text-stone-400 transition-transform ${isOpen ? "rotate-90" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden
+                  >
+                    <path d="M7.05 4.55a1 1 0 0 1 1.4 0l4.75 4.75a1 1 0 0 1 0 1.4l-4.75 4.75a1 1 0 1 1-1.4-1.4L11.1 10 7.05 5.95a1 1 0 0 1 0-1.4Z" />
+                  </svg>
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${styleFor(name).dot}`} />
+                  <h2 className="min-w-0 flex-1 text-sm font-semibold text-stone-900">{name}</h2>
+                  <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
+                    {items.length} {items.length === 1 ? "step" : "steps"}
                   </span>
-                  {!filtering ? (
-                    <span className="ml-auto text-xs text-stone-400">{isOpen ? "Hide" : "Show"}</span>
-                  ) : null}
                 </button>
                 {isOpen ? (
                   <ol className="mt-3 space-y-3">

@@ -2074,3 +2074,9 @@ this matters to the project owner):**
   remembered sessions only (deactivated/deleted account => signed out at once).
   Role changes are still read from the token, so they apply at next sign-in.
 - Not verified here: build/tsc (no node_modules in the sandbox), syntax check only.
+
+## Guide: groups collapsible + collapsed by default (2026-09-30)
+- Group headers in the grouped guide view are now full-width cards with a
+  chevron, start collapsed, and there are Expand all / Collapse all links.
+  While searching or filtering by chip, matching groups stay open.
+- Not verified here: build/tsc (syntax check only).
