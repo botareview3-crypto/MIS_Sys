@@ -2064,3 +2064,13 @@ this matters to the project owner):**
   categories, so it just gets the search box.
 - Not verified here: `npm run build` / `tsc` (no node_modules in the sandbox);
   only a syntax check was run.
+
+## Login: "Remember me" (2026-09-30)
+- Login page has a "Remember me for 30 days" checkbox (unchecked by default).
+  Checked: session JWT + cookie last 30 days. Unchecked: unchanged 12 hours.
+- `createSession(payload, remember)` in `src/lib/auth.ts`; the JWT carries a
+  `remember` claim. `/api/auth/login` accepts an optional `remember` boolean.
+- Because 30 days is long, `getSession()` re-checks the user row for
+  remembered sessions only (deactivated/deleted account => signed out at once).
+  Role changes are still read from the token, so they apply at next sign-in.
+- Not verified here: build/tsc (no node_modules in the sandbox), syntax check only.

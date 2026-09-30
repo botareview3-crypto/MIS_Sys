@@ -15,6 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +27,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, remember }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -151,6 +152,17 @@ export default function LoginPage() {
                 required
               />
             </div>
+
+            <label htmlFor="remember" className="flex cursor-pointer items-center gap-2 text-sm text-stone-600">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-400"
+              />
+              Remember me for 30 days
+            </label>
 
             <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? "Signing in..." : "Sign in"}
