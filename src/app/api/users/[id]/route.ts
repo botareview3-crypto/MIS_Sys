@@ -61,8 +61,16 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       if (duplicate) throw new Error("That username is already being used by another account.");
 
       if (user.role === "Admin" && data.role !== "Admin") {
-        const adminCount = await tx.user.count({ where: { role: "Admin" } });
+        const adminCount = await tx.user.count({ where: { role: "Admin", isActive: true, deletedAt: null } });
         if (adminCount <= 1) throw new Error("The final Admin account cannot be changed to another role.");
+      }
+
+      // Same one-account limit the Add User route enforces.
+      if (data.role === "Secondary Admin" && user.role !== "Secondary Admin") {
+        const existingSecondary = await tx.user.findFirst({
+          where: { role: "Secondary Admin", deletedAt: null, id: { not: userId } },
+        });
+        if (existingSecondary) throw new Error("Only one Secondary Admin account can be created.");
       }
 
       const changedFields: string[] = [];

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { resolveReportedProblem } from "@/lib/reported-problems";
+import { validExpectedCompletionDate } from "@/lib/repair-deadlines";
 
 const EditDeviceSchema = z.object({
   title: z.string().default(""),
@@ -57,6 +58,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   if (data.outlookEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.outlookEmail)) {
     return NextResponse.json({ error: "Please enter a valid Outlook email address." }, { status: 400 });
   }
+  if (!validExpectedCompletionDate(data.expectedCompletionDate)) {
+    return NextResponse.json({ error: "Please enter a valid expected completion date." }, { status: 400 });
+  }
   const phoneDigits = data.phoneNumber.replace(/\D/g, "");
   if (data.phoneNumber && phoneDigits.length < 7) {
     return NextResponse.json({ error: "Please enter a valid customer phone number." }, { status: 400 });
@@ -95,6 +99,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       if ((job.macAddress ?? "") !== data.macAddress) changedFields.push("mac_address");
       if ((job.hostname ?? "") !== data.hostname) changedFields.push("hostname");
       if (job.reportedProblem !== reportedProblem) changedFields.push("reported_problem");
+      const previousDeadline = job.expectedCompletionDate ? job.expectedCompletionDate.toISOString().slice(0, 10) : "";
+      if (previousDeadline !== data.expectedCompletionDate) changedFields.push("expected_completion_date");
+      if ((job.accessories?.networkCableBarcode ?? "") !== data.networkCableBarcode) changedFields.push("network_cable_barcode");
       if (job.accessories?.chargerReceived !== data.chargerReceived) changedFields.push("charger_received");
       if (job.accessories?.bagReceived !== data.bagReceived) changedFields.push("bag_received");
 
