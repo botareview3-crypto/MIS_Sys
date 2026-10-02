@@ -346,7 +346,7 @@ export function RegisterDeviceForm({
           if (customerId !== customer.customerId) setCustomer((c) => ({ ...c, customerId }));
           return;
         }
-        if (!customerId && data.customerId) customerId = String(data.customerId);
+        if (data.customerId) customerId = String(data.customerId); // the server may have split off a new customer row
         registered.push({
           repairJobId: data.repairJobId,
           hostname: devices[i].hostname.trim(),

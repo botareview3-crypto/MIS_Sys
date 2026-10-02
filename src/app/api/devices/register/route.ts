@@ -155,25 +155,56 @@ export async function POST(req: NextRequest) {
       // carried over from an earlier device in the same batch/session)
       // instead of always inserting a new row — keeps one customer from
       // accumulating a duplicate row per visit or per device in a batch.
-      // Their editable details still get updated to whatever's on the form
-      // now; the password is only overwritten if a new one was typed.
+      // If their details were changed on the form and they already have
+      // devices on file, a new customer row is created for this device so the
+      // older devices keep their original details. The password is only
+      // overwritten if a new one was typed.
       let customer;
       if (data.customerId) {
         const existingCustomer = await tx.customer.findUnique({ where: { id: Number(data.customerId) } });
         if (!existingCustomer) {
           throw new Error("The selected customer no longer exists. Please search again or start a new customer.");
         }
-        customer = await tx.customer.update({
-          where: { id: existingCustomer.id },
-          data: {
-            title: data.title || null,
-            fullName: data.customerFullName,
-            phoneNumber: data.phoneNumber,
-            outlookEmail: normalizedEmail,
-            regionalOffice: data.regionalOffice || null,
-            ...(data.outlookPassword ? { outlookPasswordEncrypted: encryptedOutlookPassword } : {}),
-          },
-        });
+        const newDetails = {
+          title: data.title || null,
+          fullName: data.customerFullName,
+          phoneNumber: data.phoneNumber,
+          outlookEmail: normalizedEmail,
+          regionalOffice: data.regionalOffice || null,
+        };
+        const detailsChanged =
+          (existingCustomer.title ?? null) !== newDetails.title ||
+          existingCustomer.fullName !== newDetails.fullName ||
+          existingCustomer.phoneNumber !== newDetails.phoneNumber ||
+          existingCustomer.outlookEmail.toLowerCase() !== newDetails.outlookEmail.toLowerCase() ||
+          (existingCustomer.regionalOffice ?? null) !== newDetails.regionalOffice;
+        const otherDevices = detailsChanged
+          ? await tx.repairJob.count({ where: { customerId: existingCustomer.id } })
+          : 0;
+
+        if (otherDevices > 0) {
+          // The customer already has devices on file. Changing their name,
+          // phone etc. here must not rewrite those older devices, so this
+          // device gets its own customer row with the new details.
+          customer = await tx.customer.create({
+            data: {
+              ...newDetails,
+              outlookPasswordEncrypted: data.outlookPassword
+                ? encryptedOutlookPassword
+                : existingCustomer.outlookPasswordEncrypted,
+              personalEmail: existingCustomer.personalEmail,
+              createdBy: session.userId,
+            },
+          });
+        } else {
+          customer = await tx.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              ...newDetails,
+              ...(data.outlookPassword ? { outlookPasswordEncrypted: encryptedOutlookPassword } : {}),
+            },
+          });
+        }
       } else {
         customer = await tx.customer.create({
           data: {

@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
@@ -59,22 +60,32 @@ export async function getSession(): Promise<SessionPayload | null> {
     const { payload } = await jwtVerify(token, secret());
     const session = payload as unknown as SessionPayload;
 
-    // A 30-day "Remember me" session must not outlive the account: if the
-    // user was deactivated or deleted since signing in, end the session now
-    // instead of waiting for the token to expire.
-    if (session.remember) {
-      const user = await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { isActive: true, deletedAt: true },
-      });
-      if (!user || !user.isActive || user.deletedAt) return null;
-    }
+    // Re-check the account on every request, not just for "Remember me"
+    // sessions: a deactivated or deleted user is signed out immediately, and
+    // a changed role / name takes effect right away instead of staying frozen
+    // in the token until it expires (12 hours, or 30 days with Remember me).
+    const user = await currentUser(session.userId);
+    if (!user || !user.isActive || user.deletedAt) return null;
 
-    return session;
+    return {
+      ...session,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role as SessionPayload["role"],
+    };
   } catch {
     return null;
   }
 }
+
+// One lookup per request even though layouts, pages and components each call
+// getSession() (React's cache() dedupes within a single server render).
+const currentUser = cache(async (userId: number) =>
+  prisma.user.findUnique({
+    where: { id: userId },
+    select: { isActive: true, deletedAt: true, role: true, fullName: true, username: true },
+  }),
+);
 
 export async function destroySession() {
   (await cookies()).delete(SESSION_COOKIE);
