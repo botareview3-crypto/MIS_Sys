@@ -20,7 +20,9 @@ export function UserRowActions({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [modal, setModal] = useState<"reset" | "delete" | null>(null);
+  const [modal, setModal] = useState<"reset" | "link" | "delete" | null>(null);
+  const [resetLink, setResetLink] = useState("");
+  const [copied, setCopied] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -67,6 +69,35 @@ export function UserRowActions({
     }
   }
 
+  async function generateLink() {
+    setBusy(true);
+    setError("");
+    setCopied(false);
+    try {
+      const res = await fetch(`/api/users/${userId}/reset-link`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "The reset link could not be generated.");
+        setResetLink("");
+      } else {
+        setResetLink(data.resetLink);
+      }
+      setModal("link");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(resetLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard unavailable - the link is still selectable as plain text.
+    }
+  }
+
   async function submitDelete() {
     setBusy(true);
     setError("");
@@ -98,6 +129,11 @@ export function UserRowActions({
         <button type="button" onClick={() => setModal("reset")} className="text-brand-600 hover:underline">
           Reset password
         </button>
+        {isActive && (
+          <button type="button" disabled={busy} onClick={generateLink} className="text-brand-600 hover:underline">
+            Reset link
+          </button>
+        )}
         {role === "Technician" && !isSelf && (
           <button type="button" onClick={() => setModal("delete")} className="text-red-600 hover:underline">
             Delete
@@ -108,7 +144,47 @@ export function UserRowActions({
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="card w-full max-w-sm p-5">
-            {modal === "reset" ? (
+            {modal === "link" ? (
+              <>
+                <h3 className="text-sm font-semibold text-stone-900">Reset link for {fullName}</h3>
+                {error ? (
+                  <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+                ) : (
+                  <>
+                    <p className="mt-1 text-sm text-stone-500">
+                      Give this link to {fullName}. It expires in <strong>1 hour</strong>, works once, and replaces
+                      any earlier link for this account.
+                    </p>
+                    <div className="mt-3 break-all rounded-md border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-xs text-stone-700">
+                      {resetLink}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={copyLink}
+                      className="mt-2 rounded-md border border-brand-600 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50"
+                    >
+                      {copied ? "\u2713 Copied!" : "Copy link"}
+                    </button>
+                    <p className="mt-2 text-xs text-amber-700">
+                      Keep it private: anyone with this link can set a new password for this account.
+                    </p>
+                  </>
+                )}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModal(null);
+                      setResetLink("");
+                      setError("");
+                    }}
+                    className="btn-primary"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : modal === "reset" ? (
               <>
                 <h3 className="text-sm font-semibold text-stone-900">Reset password for {fullName}</h3>
                 {error && <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

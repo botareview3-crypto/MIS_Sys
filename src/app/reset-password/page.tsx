@@ -96,7 +96,7 @@ function ResetPasswordForm() {
               <h2 className="text-lg font-semibold text-stone-900">Link invalid</h2>
               <p className="text-sm text-stone-500">{check.message}</p>
               <a href="/forgot-password" className="btn-primary block w-full text-center">
-                Request new link
+                How to get a new link
               </a>
               <a href="/login" className="block text-center text-sm text-brand-600 hover:underline">
                 ← Back to login
