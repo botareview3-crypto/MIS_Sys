@@ -102,15 +102,39 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         return { noChanges: true };
       }
 
-      await tx.customer.update({
-        where: { id: job.customerId },
-        data: {
+      // A customer row can be shared by several devices (the Register Device
+      // form reuses an existing customer). Editing customer details here must
+      // only affect THIS device, so if other devices point at the same
+      // customer row and a customer field changed, give this device its own
+      // copy instead of rewriting the shared row.
+      const customerFieldsChanged = ["title", "customer_name", "phone_number", "outlook_email"].some((f) =>
+        changedFields.includes(f),
+      );
+      if (customerFieldsChanged) {
+        const otherDevices = await tx.repairJob.count({
+          where: { customerId: job.customerId, id: { not: deviceId } },
+        });
+        const customerData = {
           title: data.title || null,
           fullName: data.customerName,
           phoneNumber: data.phoneNumber,
           outlookEmail: data.outlookEmail,
-        },
-      });
+        };
+        if (otherDevices > 0) {
+          const copy = await tx.customer.create({
+            data: {
+              ...customerData,
+              outlookPasswordEncrypted: job.customer.outlookPasswordEncrypted,
+              personalEmail: job.customer.personalEmail,
+              regionalOffice: job.customer.regionalOffice,
+              createdBy: job.customer.createdBy,
+            },
+          });
+          await tx.repairJob.update({ where: { id: deviceId }, data: { customerId: copy.id } });
+        } else {
+          await tx.customer.update({ where: { id: job.customerId }, data: customerData });
+        }
+      }
 
       await tx.repairJob.update({
         where: { id: deviceId },
