@@ -13,13 +13,8 @@ these fixed paths:
 
 - Downloaded zip lands in: `D:\Chrome_Downloads`
 - Local git clone lives at: `D:\Chrome_Downloads\MIS_Sys` — confirmed by the
-  project owner. GitHub repo (the one Render actually deploys from):
-  https://github.com/botareview3-crypto/MIS_Sys, remote name `botareview`.
-  `origin` also points at this same repo now, but pushing `origin` has
-  failed with a 403 (credential mismatch) — always push the `botareview`
-  remote explicitly, which has working embedded credentials. The original
-  `zementaye/MIS_Sys` repo is no longer the deploy source; don't push there
-  expecting it to reach production.
+  project owner. GitHub repo: https://github.com/zementaye/MIS_Sys (active,
+  everything delivered so far has been pushed).
 
 Template to reuse (update `$zipPath` if the filename changes):
 
@@ -32,55 +27,28 @@ $repoPath   = "D:\Chrome_Downloads\MIS_Sys"
 # --- 1. Unzip the download (into its own temp folder first) ---
 Expand-Archive -Path $zipPath -DestinationPath $extractTo -Force
 
-# --- 2. Remove files/folders this delivery deleted (only present when
-# Claude's reply says files were removed this session; empty/omit
-# otherwise — see "Handling deleted files" below) ---
-$toRemove = @(
-    # "path\to\removed\file.ts",
-    # "path\to\removed\folder"
-)
-foreach ($path in $toRemove) {
-    $fullPath = Join-Path $repoPath $path
-    if (Test-Path $fullPath) {
-        Remove-Item -Path $fullPath -Recurse -Force
-        Write-Host "Removed: $fullPath"
-    }
-}
-
-# --- 3. Copy the extracted files into the git repo, overwriting existing ones ---
+# --- 2. Copy the extracted files into the git repo, overwriting existing ones ---
 Copy-Item -Path "$extractTo\*" -Destination $repoPath -Recurse -Force
 
-# --- 4. Clean up the temp extraction folder ---
+# --- 3. Clean up the temp extraction folder ---
 Remove-Item -Path $extractTo -Recurse -Force
 
-# --- 5. Stage, commit, and push ---
+# --- 4. Stage, commit, and push ---
 cd $repoPath
 git status
 git add -A
 git commit -m "Describe the change here"
-git push botareview main   # or master - check with: git branch --show-current
-# (push botareview, not origin - origin's push has 403'd before; botareview
-# has working embedded credentials and is what Render actually deploys from)
+git push origin main   # or master - check with: git branch --show-current
 ```
 
 Notes for Claude to keep in mind:
 - Check the actual downloaded filename in `<DOWNLOADS_FOLDER>` before assuming
   it matches `$zipPath` exactly (browsers append ` (1)`, etc. on repeat
   downloads).
+- `Copy-Item -Force` overwrites files but does not delete files that exist in
+  the repo but not in the new zip.
 - Never assume the default branch name — tell the user to confirm with
   `git branch --show-current` before pushing.
-
-### Handling deleted files
-
-`Copy-Item -Force` overwrites files but never deletes ones that exist in the
-repo but not in the new zip — first hit 2026-09-26 (session 25) when the
-WhatsApp auto-send removal left stale files behind. Whenever Claude's own
-changes this session delete a file or folder from the project (not just
-edit it), Claude must populate the `$toRemove` array in step 2 above with
-every such path (Windows-style backslashes, relative to `$repoPath`) —
-don't leave it commented out/empty in that case. When nothing was deleted
-this session, leave `$toRemove` empty and say so briefly, so the user
-knows step 2 is a no-op rather than wondering if something was missed.
 
 ## File naming
 
@@ -141,11 +109,11 @@ $zipPath = Get-ChildItem "D:\Chrome_Downloads\arp-next-*.zip" |
   deployed on Render (the `railway.json` looks like a leftover from an
   earlier or abandoned Railway attempt). This rewrite targets Render
   accordingly: native Node runtime via `render.yaml` (no Dockerfile needed
-  — see that file's comment for why), plus a self-ping loop
-  (`src/instrumentation.ts` + `GET /api/health`) ported from the
-  original's `docker-entrypoint.sh` background loop, to stop the free
-  tier's 15-minute idle spin-down. See commit-log session 14 for the full
-  deploy steps.
+  — see that file's comment for why), plus `GET /api/health`
+  for an external pinger. The self-ping loop (`src/instrumentation.ts`)
+  was removed on 2026-10-23, so the free tier spins down after 15 minutes
+  idle (first request then takes 30-60 s). See commit-log session 14 for
+  the full deploy steps.
 
 ## Things Claude should never do here
 

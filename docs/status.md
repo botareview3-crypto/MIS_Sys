@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-28 (session 32)
+Last updated: 2026-09-25 (session 13)
 
 ## What this project is
 Rewriting `Arp-main` (PHP + PostgreSQL device-repair management system) into
@@ -62,87 +62,62 @@ exactly what's changed, in order. This file is the current snapshot.
 
 - [x] Render deployment prep — `render.yaml` blueprint (native Node
       runtime, no Dockerfile needed), `GET /api/health` (ported from
-      `health.php`), and a self-ping loop (`src/instrumentation.ts`,
-      ported from `docker-entrypoint.sh`'s background loop) to stop
-      Render's free tier from spinning the service down after 15 minutes
-      idle. See commit-log session 14 — also fixes a pre-existing bug
+      `health.php`). A self-ping loop (`src/instrumentation.ts`) was added
+      here and removed again on 2026-10-23, so Render's free tier spins the
+      service down after 15 minutes idle. See commit-log session 14 — also fixes a pre-existing bug
       (`next.config.ts` isn't valid until Next.js 15; this app is on 14.x)
       that would have failed `next build` regardless of hosting target.
       **Not yet actually deployed** — see commit-log session 14 for the
       manual steps still needed (create the Render service, set secrets).
 
-- [x] Receipts: preview page + printed tracking (session 16). See
-      commit-log for exact deviations (Tailwind layout instead of pixel-for-
-      pixel `receipt.css` port; PDF export not included, see below).
-- [x] WhatsApp message prep (session 17) — `/devices/[id]/whatsapp?type=`,
-      `POST /api/devices/[id]/whatsapp`. See commit-log for the one
-      carried-over inconsistency (deviation #14): the "Prepare Message"
-      button is visible to Secondary Admin on the device page but the
-      page/endpoint both deny that role, same pattern as deviation #10.
-- [x] Notifications (list, mark-read, mark-all-read) — `src/app/(app)/notifications`,
-      `src/app/api/notifications`. Previously listed as deprioritized; done.
-- [x] Reports overview + Audit History (filters + pagination) —
-      `src/app/(app)/reports`, `src/app/(app)/audit-history`.
-- [x] Self-service profile page + profile photo upload/remove —
-      `src/app/(app)/profile`, `src/app/api/profile`. `user_profile_images`
-      mapped in Prisma (base64-in-DB, decided rather than moving to object
-      storage).
-- [x] Reports: real server-generated PDF export (session 18, replaces the
-      original's browser-print approach) — `src/lib/reports/generate-report-pdf.ts`,
-      `GET /api/reports/export-pdf` (pdfkit). See commit-log.
-- [x] System backups UI (session 18) — on-demand, stream-only (no local
-      disk — Render free tier has no persistent disk). `src/lib/backups/generate-backup.ts`,
-      `GET /api/system/backup`, `src/app/(app)/system-backups`. No backup
-      history list (decision: Neon's own automated backups cover that
-      need). See commit-log.
-- [x] Local / Intra split (session 18) — Register/Manage remain identical
-      shared routes between the two groups (unchanged decision from
-      2026-09-25). What now differs: Guide content points at separate
-      `/guide/local` / `/guide/intra` routes (Local now has real content as of
-      session 39; Intra is still placeholder — **waiting on project owner**), and the shared
-      Register Device form gained one optional field, Regional Office,
-      wired to the previously-unused `Customer.regionalOffice` column.
-
 ## In progress / not started
-- [x] **WhatsApp auto-send (`whatsapp-web.js`) — attempted session 19,
-      ABANDONED session 25.** Live-tested against a real Render deploy and
-      a real phone: WhatsApp refused to link the device ("couldn't link")
-      on every pairing attempt, regardless of Puppeteer/Chrome setup on
-      Render's free tier. Rather than keep fighting an unofficial client
-      Meta is actively blocking, this was fully removed — `whatsapp-client.ts`,
-      `whatsapp-auto-send.ts`, `WhatsappStatusPanel.tsx`, the
-      `/settings/whatsapp` page, the `whatsapp_sessions` Prisma model, and
-      the Puppeteer/Chrome build step in `render.yaml` are all gone (see
-      commit-log session 25). Replaced with a manual click-to-send flow:
-      the existing "Prepare {Status} Message" `wa.me` button (session 17)
-      now also surfaces directly in `UpdateRepairForm`'s success message
-      right after a status is saved, so staff can send the Received/Ready
-      message with one extra click instead of needing to find it further
-      down the device page. No ban risk, no headless browser, no Render
-      free-tier memory pressure.
-- [x] Overdue flagging on Work Queue + Dashboard (session 26, part 1 of the
-      improvements bundle) — see commit-log.
-- [x] Bulk actions on Work Queue: checkbox multi-select, bulk status
-      change, bulk technician reassignment (session 27, part 2) — see
-      commit-log. Remaining from the bundle: Kanban drag-and-drop view,
-      one-click "Ready" WhatsApp prefill, global search bar (folds into
-      the item below), Reports charts, Admin 2FA, recently-viewed devices.
-- [x] Delivery handover form (session 31) — the `Delivery` receipt at
-      `/receipts/[id]` now renders as a customer-signed equipment list (PC +
-      returned charger / network cable (NIC) / bag). Session 32: saving as
-      Delivered on Update Repair redirects to `/repairs/[id]/handover`, which
-      shows the Delivered WhatsApp message and the printable form together. Known gap:
-      Work Queue bulk/Kanban Delivered doesn't set the accessory-returned
-      flags or offer the print button — see commit-log session 31.
-- [ ] Global admin search bar (`includes/admin-search*.php`) — cross-record
-      search across the admin UI. Not the same as the per-page search boxes
-      already ported on Audit History / Reports. Genuinely not started;
-      flagging rather than silently dropping it.
-- Everything else from the original PHP page list has a ported equivalent
-  as of session 18. What's left otherwise is content, not code: the
-  Local Guide has real content (session 39, from the PC Configuration PDF —
-  project owner will keep editing steps); the Intra Guide page is still an
-  empty placeholder until the project owner supplies its content.
+- [ ] **Local / Intra split** — sidebar groups Register Device / Manage
+      Devices / Guide under two collapsible parent items, "Local" and
+      "Intra" (`src/lib/nav.ts`, `src/components/Sidebar.tsx`). Clarified
+      2026-09-25: the real-world difference is in how the computers
+      themselves get *configured* (different for Local vs. Intra setups) —
+      **not** in how they're registered or managed in this app, which stay
+      identical for now ("we'll update them later to make them quicker").
+      So this is still nav-structure-only: both groups point at the exact
+      same `/devices/register` and `/devices` routes, no separate data or
+      permissions yet. A third child, **Guide** (`/guide`), was added under
+      both groups as an intentionally blank placeholder — content to be
+      written later, no design decision needed yet.
+- [ ] **Deprioritized by project owner (2026-09-25):** Profile image upload
+      and Notifications (list, mark read) — profile photos aren't actually
+      used in practice, and notifications aren't a current priority. Left in
+      this list for completeness but not next up.
+- [ ] Profile image upload (`includes/profile-images.php`,
+      `user_profile_images` table) — blocks add-user/edit-user profile
+      photos. Needs a decision: keep base64-in-DB or move to file/object
+      storage, THEN map `user_profile_images` in Prisma, THEN wire up the
+      upload UI.
+- [ ] Self-service profile page (`profile.php`) — a user editing their own
+      name/password/photo. Different from admin-driven Manage Users.
+- [ ] `user_profile_images` table not yet mapped in Prisma — decide: keep
+      base64-in-DB as-is, or move profile images to filesystem/object
+      storage as part of the rewrite (original: `includes/profile-images.php`)
+- [ ] Notifications (list, mark read/all read) — deprioritized, see above
+      (original: `notifications.php`, `mark-notification-read.php`,
+      `mark-all-notifications-read.php`,
+      `includes/device-change-notifications.php`)
+- [ ] Receipts: preview, printed tracking, PDF export
+      (original: `receipt-preview.php`, `mark-receipt-printed.php`,
+      `export-report-pdf.php`)
+- [ ] WhatsApp message prep (`whatsapp-message.php`)
+- [ ] Reports + audit history (`reports.php`, `audit-history.php`)
+- [ ] Admin search (`includes/admin-search*.php`)
+- [ ] System backups UI (`system-backups.php`, `includes/backup-engine.php`
+      — this one is 24KB, review carefully before touching)
+- [ ] Sidebar/nav → modern layout shell, role-aware
+      (original: `includes/sidebar.php`, 20KB — defines the full nav/role
+      visibility rules, read this before building the new layout shell)
+- [ ] Decide replacement for `whatsapp-message.php` (original stores an
+      encrypted Outlook password per customer via `includes/credentials.php`
+      — that encryption scheme is already ported and in active use, see
+      `src/lib/credentials.ts` — `encryptCredential()` at device
+      registration, `decryptCredential()` at reveal, session 13. This item
+      is now just about the WhatsApp message-prep feature itself.)
 
 ## Known deviations / decisions needed from project owner
 1. ~~`CLAUDE.md`'s `<DOWNLOADS_FOLDER>` and `<LOCAL_REPO_PATH>` placeholders~~
@@ -241,75 +216,17 @@ exactly what's changed, in order. This file is the current snapshot.
     engine binary. Run `npm run build` in a real environment to confirm
     it completes end-to-end.
 
-13. **Receipts preview (session 16) is a Tailwind re-layout, not a pixel
-    port of `assets/css/receipt.css`.** All the same fields, sections, and
-    role/scoping rules are there (Admin/Reception/Technician only, a
-    Technician further scoped to their own assigned jobs — Secondary Admin
-    gets no link and no route access at all, unlike the Outlook-password
-    button's carried-over inconsistency in deviation #10), and it still
-    prints cleanly via the browser (`window.print()`), but the exact visual
-    styling (gradients, spacing, the specific `official-receipt` CSS
-    classes) was rebuilt with Tailwind utilities to match the rest of this
-    app rather than copied line-for-line from the old CSS file. Flag if
-    pixel-identical output is actually required (e.g. printed receipts are
-    compared side-by-side with old ones, or a fixed paper size/margins
-    matters). Also note: the original status-doc line for this item
-    bundled in "PDF export" via `export-report-pdf.php` — that file is
-    actually part of the **Reports** page (`requireRoles(['Admin'])`,
-    builds a full system report, not a single receipt), not a receipts
-    feature. There is no separate receipt-to-PDF endpoint in the original;
-    receipts were only ever printed via the browser dialog. PDF export has
-    been moved to the Reports item accordingly.
-
-14. **WhatsApp message prep (session 17) carries over a Secondary-Admin
-    button/endpoint visibility gap, same pattern as deviation #10.**
-    `view-device.php` allows Secondary Admin (`requireRoles(['Admin',
-    'Secondary Admin', 'Reception', 'Technician'])`) and unconditionally
-    shows the "Prepare Message" action bar when the job's status is
-    Received/Ready/Delivered, but `whatsapp-message.php` itself only allows
-    Admin/Reception/Technician. So a Secondary Admin sees the button on the
-    device page and gets denied on click (page redirect / 403 from the API
-    route) — carried over exactly, not fixed, per CLAUDE.md. Also note: the
-    original's SQL for this feature has **no** Technician-scoping clause
-    (unlike receipts, which does restrict a Technician to their own
-    assigned jobs) — any Technician can prepare a WhatsApp message for any
-    repair job. That's intentional-as-found, not an omission in this port.
-
-15. **`prisma/schema.prisma` disagrees with production Postgres on ID
-    column types — found 2026-09-26, session 22, NOT resolved.**
-    `users.id`, `notifications.id`, `notifications.recipient_user_id`,
-    `notifications.created_by`, and `user_profile_images.user_id` are all
-    declared `Int` in the Prisma schema but are actually `bigint` in
-    production. Invisible until session 22 because `prisma db push` had
-    never actually run against production before then (see deviation
-    below in commit-log session 21/22 for the full story — Render's
-    dashboard Build Command didn't match `render.yaml`). Attempting
-    `db push` hit Prisma's data-loss guard (primary key type change on
-    `users`, the auth table) and was correctly **not** forced through with
-    `--accept-data-loss`. Until this is deliberately investigated —
-    ideally against `Arp-main/database/schema.sql` to confirm which side
-    is actually correct — `db push` must not be re-enabled in the Render
-    Build Command, and any new additive schema change has to be applied
-    manually via direct SQL against production (same as `whatsapp_sessions`
-    was in session 21). This is the highest-priority open item: it blocks
-    the normal "add a model, deploy" workflow for every future feature
-    until resolved.
-
 ## To resume in a new chat
-1. Share this repo (or re-upload the zip) plus `Arp-main` for reference —
-   `Arp-main/database/schema.sql` specifically is needed to resolve
-   deviation #15 below, the current top-priority open item.
+1. Share this repo (or re-upload the zip) plus `Arp-main` for reference.
 2. Point the new chat at this file and `CLAUDE.md`.
 3. Say which item from "In progress / not started" to pick up next.
    Notifications and profile images are explicitly deprioritized (see
-   above). Repair-deadline sync, manufacturer lookup / reveal-outlook-
-   password, Receipts preview/print, and WhatsApp message prep are all
-   built — see deviations #9, #10, #13, and #14 above for what's still open
-   on each. **Deviation #15 (Int/BigInt schema drift) should probably come
-   before any of those** — it's blocking the deploy pipeline's ability to
-   apply schema changes at all. Otherwise, good next candidate: Reports +
-   audit history — decide deviation #8's `audit_logs` naming drift first,
-   since that page is the first thing that would actually query by
-   `action_type`.
+   above). Repair-deadline sync and manufacturer lookup / reveal-outlook-
+   password are both built — see deviations #9 and #10 above for what's
+   still open on each. Good next candidates: Receipts (preview/printed/
+   PDF export), WhatsApp message prep, or Reports + audit history (the
+   latter should probably wait on deciding deviation #8's audit_logs
+   naming drift first, since it's the first feature that would actually
+   query by `action_type`).
 4. Before migrating any feature, read its original PHP file(s) listed above
    — don't reimplement from assumption.

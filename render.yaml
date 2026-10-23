@@ -4,17 +4,6 @@
 # entirely and create the service by hand in the dashboard — see the
 # deploy steps for both paths.
 #
-# ⚠️ IMPORTANT (found 2026-09-26, session 21): if this service was ever
-# created by hand in the dashboard (not via "New -> Blueprint"), Render
-# does NOT auto-sync changes to this file into that service's actual
-# build settings — the dashboard's own "Build Command" field (Settings ->
-# Build & Deploy) wins, and can silently drift out of sync with what's
-# written here. This is exactly how the `npx prisma db push` step added
-# below (session 19) failed to ever run in production: the build logs
-# showed no db-push step at all, only the dashboard's stale command. If
-# you change buildCommand here, also go check/update the dashboard field
-# directly, or re-sync via Blueprint, or this file is just documentation.
-#
 # Native Node runtime, not Docker: unlike the original PHP app (whose
 # Dockerfile/docker-entrypoint.sh exist to run migration scripts and a
 # custom PHP built-in server), this Next.js app only needs `npm install`
@@ -27,33 +16,7 @@ services:
     plan: free
     region: oregon # change to whatever region your Postgres instance is in
     branch: main # confirm with: git branch --show-current
-    # NODE_ENV=production (set below, needed at runtime) makes plain
-    # `npm install` skip devDependencies during the build too - which
-    # strips typescript, @types/*, tailwindcss, postcss, autoprefixer.
-    # Without typescript present, Next can't read tsconfig's path
-    # aliases (@/*) when building the webpack config, even though the
-    # aliases are configured correctly. --include=dev forces them in
-    # for the build; they aren't needed at runtime (npm start).
-    # `prisma db push` was added to the build 2026-09-26 (session 19,
-    # WhatsApp auto-send), then REMOVED again the same day (session 22)
-    # after it hit a data-loss guard on `users`/`notifications`/
-    # `user_profile_images` (Int vs bigint drift, unrelated to WhatsApp —
-    # see docs/status.md deviation #15). Do NOT re-add `npx prisma db
-    # push` here until that drift is deliberately resolved — any new
-    # additive schema change needs to be applied via manual, reviewed SQL
-    # against production instead, same as `whatsapp_sessions` was.
-    #
-    # `npx puppeteer browsers install chrome` (added session 23 for
-    # whatsapp-web.js's headless-Chrome auto-send) was REMOVED again
-    # 2026-09-26 (session 25): WhatsApp itself refused to link the device
-    # ("couldn't link" on every pairing attempt) regardless of the
-    # Chrome/Puppeteer setup, so the whole whatsapp-web.js approach was
-    # dropped in favor of a manual click-to-send wa.me flow (no browser
-    # automation, no ban risk, no ~300-500MB of build weight). See
-    # docs/commit-log.md session 25 and CLAUDE.md if either gets
-    # rewritten with these details. `.puppeteerrc.cjs` was removed too —
-    # nothing in this app uses Puppeteer anymore.
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -68,9 +31,5 @@ services:
         sync: false # MUST equal the original PHP app's CREDENTIAL_KEY, see .env.example
       - key: CRON_SECRET
         sync: false
-      # --- Not a secret: Render sets this automatically, listed here
-      # only so instrumentation.ts's reference to it is self-documenting.
-      # Do not set this by hand.
-      # - RENDER_EXTERNAL_URL (auto)
       - key: NODE_ENV
         value: production
