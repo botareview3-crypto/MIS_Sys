@@ -35,7 +35,6 @@ model User {
   notificationsRecv    Notification[]     @relation("NotificationRecipient")
   notificationsCreated Notification[]     @relation("NotificationCreatedBy")
   passwordResetTokens  PasswordResetToken[]
-  profileImage         UserProfileImage?
 
   @@map("users")
 }
@@ -172,20 +171,6 @@ model WhatsappLog {
   @@map("whatsapp_logs")
 }
 
-// FLAGGED SCHEMA CHANGE (2026-09-26, session 25): the WhatsappSession
-// model (table whatsapp_sessions) that used to live here has been
-// REMOVED from the schema. It stored the whatsapp-web.js RemoteAuth
-// session blob for an auto-send approach that was abandoned the same
-// day — WhatsApp refused to link the device on every pairing attempt.
-// Removing this model from schema.prisma does NOT drop the actual
-// `whatsapp_sessions` table in production — per CLAUDE.md, schema
-// changes here are never auto-applied (no `prisma migrate`/`db push` in
-// the deploy pipeline). If you want the now-unused table gone from the
-// database too, run manually against production:
-//   DROP TABLE IF EXISTS whatsapp_sessions;
-// It's harmless to leave in place if you'd rather not touch prod for
-// this — nothing in the app references it anymore either way.
-
 model AuditLog {
   id               Int      @id @default(autoincrement())
   performedBy      Int?     @map("performed_by")
@@ -221,18 +206,6 @@ model Notification {
   @@map("notifications")
 }
 
-model UserProfileImage {
-  userId     Int      @id @map("user_id")
-  mimeType   String   @map("mime_type") @db.VarChar(50)
-  imageData  String   @map("image_data")
-  checksum   String   @db.Char(64)
-  updatedAt  DateTime @default(now()) @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_profile_images")
-}
-
 model PasswordResetToken {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
@@ -244,27 +217,4 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
-}
-
-// NEW TABLES (2026-09-30): in-app editing of the Local/Intra guides.
-// Not auto-applied (no db push in the deploy pipeline) - run
-// docs/sql/2026-09-30-guide-editing.sql against production once. Until then
-// the guide pages simply keep showing the built-in content from
-// src/lib/guide-content.ts. No relations to other tables on purpose.
-model GuideContent {
-  guide     String   @id @db.VarChar(30) // "local" | "intra"
-  steps     Json // full ordered step list, each with a stable string id
-  updatedAt DateTime @default(now()) @map("updated_at")
-  updatedBy Int?     @map("updated_by")
-
-  @@map("guide_contents")
-}
-
-model GuideImage {
-  id        Int      @id @default(autoincrement())
-  mimeType  String   @map("mime_type") @db.VarChar(50)
-  imageData String   @map("image_data") // base64, same approach as user_profile_images
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("guide_images")
 }

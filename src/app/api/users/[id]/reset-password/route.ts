@@ -15,9 +15,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     session = await requireApiRoles(["Admin"]);
   } catch (e) {
-    const authError = apiAuthErrorResponse(e);
-    if (authError) return authError;
-    throw e;
+    return apiAuthErrorResponse(e)!;
   }
 
   const { id } = await params;

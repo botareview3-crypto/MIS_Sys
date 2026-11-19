@@ -109,11 +109,11 @@ $zipPath = Get-ChildItem "D:\Chrome_Downloads\arp-next-*.zip" |
   deployed on Render (the `railway.json` looks like a leftover from an
   earlier or abandoned Railway attempt). This rewrite targets Render
   accordingly: native Node runtime via `render.yaml` (no Dockerfile needed
-  — see that file's comment for why), plus `GET /api/health`
-  for an external pinger. The self-ping loop (`src/instrumentation.ts`)
-  was removed on 2026-10-23, so the free tier spins down after 15 minutes
-  idle (first request then takes 30-60 s). See commit-log session 14 for
-  the full deploy steps.
+  — see that file's comment for why), plus a self-ping loop
+  (`src/instrumentation.ts` + `GET /api/health`) ported from the
+  original's `docker-entrypoint.sh` background loop, to stop the free
+  tier's 15-minute idle spin-down. See commit-log session 14 for the full
+  deploy steps.
 
 ## Things Claude should never do here
 

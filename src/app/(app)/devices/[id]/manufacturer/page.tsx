@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { loadDeviceForRole } from "@/lib/devices";
 import { manufacturerLookup } from "@/lib/device-manufacturer";
-import { deviceLabel } from "@/lib/device-label";
 
 /**
  * Ported from app/pages/devices/manufacturer-info.php +
@@ -45,7 +44,7 @@ export default async function ManufacturerInfoPage({ params }: { params: Promise
             ← Back to device
           </Link>
           <h1 className="mt-2 text-lg font-semibold text-slate-900">
-            {lookup.manufacturer} device · {deviceLabel(device.hostname)}
+            {lookup.manufacturer} device · {device.jobId}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             The scanned label has been separated into the correct fields before opening manufacturer support.
@@ -58,7 +57,7 @@ export default async function ManufacturerInfoPage({ params }: { params: Promise
             <Row label="Serial number" value={lookup.serial} />
             {lookup.productNumber !== "" && <Row label="Product number" value={lookup.productNumber} />}
             {lookup.warrantyCode !== "" && <Row label="Warranty label" value={lookup.warrantyCode} />}
-            {device.aucAssetBarcode && <Row label="PC barcode" value={device.aucAssetBarcode} />}
+            {device.aucAssetBarcode && <Row label="AUC asset barcode" value={device.aucAssetBarcode} />}
           </dl>
         </section>
 

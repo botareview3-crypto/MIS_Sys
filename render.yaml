@@ -25,11 +25,17 @@ services:
       # store or generate it in this file")
       - key: DATABASE_URL
         sync: false
+      - key: OUTSIDE_TASKS_DATABASE_URL
+        sync: false # separate Neon DB for Outside Tasks logs only
       - key: AUTH_SECRET
         sync: false
       - key: CREDENTIAL_KEY
         sync: false # MUST equal the original PHP app's CREDENTIAL_KEY, see .env.example
       - key: CRON_SECRET
         sync: false
+      # --- Not a secret: Render sets this automatically, listed here
+      # only so instrumentation.ts's reference to it is self-documenting.
+      # Do not set this by hand.
+      # - RENDER_EXTERNAL_URL (auto)
       - key: NODE_ENV
         value: production

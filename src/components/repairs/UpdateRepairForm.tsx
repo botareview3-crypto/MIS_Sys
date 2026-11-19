@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
 
 type Initial = {
   technicianDiagnosis: string;
@@ -18,15 +18,7 @@ type Initial = {
   bagReturned: boolean;
 };
 
-export function UpdateRepairForm({
-  deviceId,
-  initial,
-  canSendWhatsapp,
-}: {
-  deviceId: number;
-  initial: Initial;
-  canSendWhatsapp: boolean;
-}) {
+export function UpdateRepairForm({ deviceId, initial }: { deviceId: number; initial: Initial }) {
   const router = useRouter();
   const [form, setForm] = useState({
     technicianDiagnosis: initial.technicianDiagnosis,
@@ -65,24 +57,6 @@ export function UpdateRepairForm({
         text += ` ${data.workflowReceiptType} receipt available: ${data.workflowReceiptReference}.`;
       }
       setMessage({ type: "success", text });
-
-      // Received / Ready / Delivered each have a follow-up page (WhatsApp
-      // message; Ready and Delivered also a printable for signature) so those
-      // actions aren't crammed above this form. Received and Ready open it
-      // only when the status actually changed, so re-saving notes on a Ready
-      // job doesn't bounce staff to a WhatsApp page. Delivered always opens
-      // it, so the handover form is reachable even on an already-Delivered
-      // job. Only for roles that can use it (Admin, Reception, the assigned
-      // Technician); Secondary Admin has no WhatsApp/receipt access and stays here.
-      const opensFollowUp =
-        canSendWhatsapp &&
-        (form.status === "Delivered" ||
-          (form.status === "Ready" && data.statusChanged) ||
-          (form.status === "Received" && data.statusChanged));
-      if (opensFollowUp) {
-        router.push(`/repairs/${deviceId}/follow-up`);
-        return;
-      }
       router.refresh();
     } catch {
       setMessage({ type: "error", text: "Could not reach the server. Please try again." });
@@ -95,16 +69,16 @@ export function UpdateRepairForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       {message && (
         <div
-          className={`flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ${
+          className={`rounded-lg px-3 py-2 text-sm ${
             message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
           }`}
         >
-          <span>{message.text}</span>
+          {message.text}
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-stone-700">Status</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
         <select className="input" value={form.status} onChange={(e) => set("status", e.target.value)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -124,7 +98,7 @@ export function UpdateRepairForm({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-stone-700">Technician diagnosis</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Technician diagnosis</label>
         <textarea
           className="input"
           rows={4}
@@ -134,7 +108,7 @@ export function UpdateRepairForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-stone-700">Repair notes</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Repair notes</label>
         <textarea
           className="input"
           rows={5}
@@ -144,7 +118,7 @@ export function UpdateRepairForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-stone-700">Expected completion date</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Expected completion date</label>
         <input
           type="date"
           className="input"
@@ -154,9 +128,9 @@ export function UpdateRepairForm({
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-semibold text-stone-900">Accessory returns</legend>
+        <legend className="text-sm font-semibold text-slate-900">Accessory returns</legend>
         {initial.chargerReceived && (
-          <label className="flex items-center gap-2 text-sm text-stone-700">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
               checked={form.chargerReturned}
@@ -166,7 +140,7 @@ export function UpdateRepairForm({
           </label>
         )}
         {initial.networkCableReceived && (
-          <label className="flex items-center gap-2 text-sm text-stone-700">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
               checked={form.networkCableReturned}
@@ -176,13 +150,13 @@ export function UpdateRepairForm({
           </label>
         )}
         {initial.bagReceived && (
-          <label className="flex items-center gap-2 text-sm text-stone-700">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={form.bagReturned} onChange={(e) => set("bagReturned", e.target.checked)} />
             Bag returned to customer
           </label>
         )}
         {!initial.chargerReceived && !initial.networkCableReceived && !initial.bagReceived && (
-          <p className="text-sm text-stone-400">No accessories were received with this device.</p>
+          <p className="text-sm text-slate-400">No accessories were received with this device.</p>
         )}
       </fieldset>
 

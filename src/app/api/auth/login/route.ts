@@ -7,7 +7,6 @@ import { createSession, verifyPassword, lockDurationSeconds } from "@/lib/auth";
 const LoginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
-  remember: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Please enter both your username and password." }, { status: 400 });
   }
-  const { username, password, remember } = parsed.data;
+  const { username, password } = parsed.data;
 
   const clientAddress = req.headers.get("x-forwarded-for") ?? "unknown";
   const attemptKey = crypto
@@ -70,15 +69,12 @@ export async function POST(req: NextRequest) {
   // Successful login clears the attempt counter.
   await prisma.loginAttempt.deleteMany({ where: { attemptKey } });
 
-  await createSession(
-    {
-      userId: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      role: user.role as "Admin" | "Secondary Admin" | "Reception" | "Technician",
-    },
-    remember === true,
-  );
+  await createSession({
+    userId: user.id,
+    username: user.username,
+    fullName: user.fullName,
+    role: user.role as "Admin" | "Secondary Admin" | "Reception" | "Technician",
+  });
 
   return NextResponse.json({ ok: true });
 }

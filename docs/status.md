@@ -62,9 +62,10 @@ exactly what's changed, in order. This file is the current snapshot.
 
 - [x] Render deployment prep — `render.yaml` blueprint (native Node
       runtime, no Dockerfile needed), `GET /api/health` (ported from
-      `health.php`). A self-ping loop (`src/instrumentation.ts`) was added
-      here and removed again on 2026-10-23, so Render's free tier spins the
-      service down after 15 minutes idle. See commit-log session 14 — also fixes a pre-existing bug
+      `health.php`), and a self-ping loop (`src/instrumentation.ts`,
+      ported from `docker-entrypoint.sh`'s background loop) to stop
+      Render's free tier from spinning the service down after 15 minutes
+      idle. See commit-log session 14 — also fixes a pre-existing bug
       (`next.config.ts` isn't valid until Next.js 15; this app is on 14.x)
       that would have failed `next build` regardless of hosting target.
       **Not yet actually deployed** — see commit-log session 14 for the

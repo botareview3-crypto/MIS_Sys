@@ -10,8 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate && prisma generate --schema prisma/outside-tasks/schema.prisma",
+    "prisma:generate": "prisma generate && prisma generate --schema prisma/outside-tasks/schema.prisma",
+    "prisma:outside-push": "prisma db push --schema prisma/outside-tasks/schema.prisma",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
@@ -19,13 +20,10 @@
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.3",
-    "jszip": "^3.10.2",
     "lucide-react": "^1.48.0",
     "next": "^14.2.15",
-    "pdfkit": "^0.20.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.13.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
