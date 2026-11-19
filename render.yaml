@@ -25,6 +25,8 @@ services:
       # store or generate it in this file")
       - key: DATABASE_URL
         sync: false
+      - key: OUTSIDE_TASKS_DATABASE_URL
+        sync: false # separate Neon DB used only by the Outside Tasks logs
       - key: AUTH_SECRET
         sync: false
       - key: CREDENTIAL_KEY

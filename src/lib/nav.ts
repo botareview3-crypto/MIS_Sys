@@ -11,6 +11,7 @@ import {
   MapPin,
   Network,
   BookOpen,
+  Briefcase,
 } from "lucide-react";
 import type { SessionPayload } from "@/lib/auth";
 
@@ -70,6 +71,10 @@ export function getNavGroups(role: SessionPayload["role"]) {
     { label: "Local", icon: MapPin, children: deviceItems("/guide/local") },
     { label: "Intra", icon: Network, children: deviceItems("/guide/intra") },
     { href: "/work-queue", label: "Work Queue", icon: ClipboardList },
+    // Outside Tasks (2026-11-19): every role logs their own outside-office
+    // work here. Admin + Secondary Admin also see everyone's entries — that
+    // rule is enforced server-side in the page query and the API, not here.
+    { href: "/outside-tasks", label: "Outside Tasks", icon: Briefcase },
   ];
 
   const administration: NavItem[] = isAdmin

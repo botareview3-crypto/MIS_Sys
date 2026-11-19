@@ -28,13 +28,26 @@ export const metadata: Metadata = {
   description: "Device repair tracking and workflow management",
 };
 
+// Runs before first paint so the page never flashes the wrong theme.
+// Default is dark; the sun/moon button in the top bar stores "light" in
+// localStorage ("mis-theme") to switch back.
+const THEME_INIT = `try{var t=localStorage.getItem("mis-theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body>
         <div className="app-ambient" aria-hidden>
           <span className="blob-1" />

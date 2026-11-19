@@ -1,5 +1,11 @@
 import type { Config } from "tailwindcss";
 
+// Dark theme (2026-11-19): the neutral `stone` scale and the tinted
+// `brand-50/100/200/300/700` shades now read from CSS variables defined in
+// src/app/globals.css. Light values = the original palette (unchanged);
+// html[data-theme="dark"] swaps them for a charcoal palette. Class names
+// everywhere in the app stay the same. Restyle the dark look by editing the
+// variable values in globals.css, not here.
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
@@ -7,14 +13,14 @@ const config: Config = {
       colors: {
         // Circuit-indigo: primary accent. Replaces the generic SaaS blue.
         brand: {
-          50: "#f2efff",
-          100: "#e5deff",
-          200: "#cabdff",
-          300: "#a68cff",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
           400: "#8a5cff",
           500: "#7c3aed",
           600: "#6b21d8",
-          700: "#5617ad",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
         },
         // Warm solder-orange / candy accents: used for the second and third
         // stops of gradients and for playful highlight moments.
@@ -40,17 +46,18 @@ const config: Config = {
         },
         // Stone: warm-neutral scale replacing the default blue-grey slate,
         // used as the workspace background + hairlines throughout the app.
+        // Values come from CSS variables so the dark theme can flip them.
         stone: {
-          50: "#f7f5fb",
-          100: "#efebf6",
-          200: "#e1d9ee",
-          300: "#c9bede",
-          400: "#a396b8",
-          500: "#7a7089",
-          600: "#5b5266",
-          700: "#42394c",
-          800: "#2b2433",
-          900: "#1a1522",
+          50: "rgb(var(--stone-50) / <alpha-value>)",
+          100: "rgb(var(--stone-100) / <alpha-value>)",
+          200: "rgb(var(--stone-200) / <alpha-value>)",
+          300: "rgb(var(--stone-300) / <alpha-value>)",
+          400: "rgb(var(--stone-400) / <alpha-value>)",
+          500: "rgb(var(--stone-500) / <alpha-value>)",
+          600: "rgb(var(--stone-600) / <alpha-value>)",
+          700: "rgb(var(--stone-700) / <alpha-value>)",
+          800: "rgb(var(--stone-800) / <alpha-value>)",
+          900: "rgb(var(--stone-900) / <alpha-value>)",
         },
         // Status key: one color per repair-job status, used everywhere a
         // status appears (badges, dashboard stats, progress steps). Bumped

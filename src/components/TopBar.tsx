@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Bell, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NotificationSummary = {
   id: number;
@@ -137,7 +138,9 @@ export function TopBar({
         </label>
       </form>
 
-      <div ref={containerRef} className="relative ml-auto shrink-0">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+      <ThemeToggle />
+      <div ref={containerRef} className="relative shrink-0">
         <button
           type="button"
           onClick={toggleOpen}
@@ -223,6 +226,7 @@ export function TopBar({
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );

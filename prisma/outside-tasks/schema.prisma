@@ -1,0 +1,30 @@
+// SEPARATE database from the main app. This schema owns ONLY the Outside Tasks
+// logs and points at its own Neon project via OUTSIDE_TASKS_DATABASE_URL.
+// The main prisma/schema.prisma (and the shared production DB) is untouched.
+//
+// Because it lives in a different database there is no foreign key to `users`:
+// the logging user's id and name are stored as plain values at log time.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/outside-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("OUTSIDE_TASKS_DATABASE_URL")
+}
+
+model OutsideTask {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  userFullName  String   @map("user_full_name") @db.VarChar(150)
+  customerName  String   @map("customer_name") @db.VarChar(150)
+  issue         String   @db.VarChar(120)
+  notes         String?
+  loggedAt      DateTime @default(now()) @map("logged_at")
+
+  @@index([userId, loggedAt])
+  @@index([loggedAt])
+  @@map("outside_tasks")
+}

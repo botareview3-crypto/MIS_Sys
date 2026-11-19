@@ -2,9 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme variables (RGB triplets so Tailwind's /opacity modifiers keep working).
+   :root = the original light palette, unchanged. The dark values live in the
+   "Dark theme" section at the bottom of this file and are switched on by
+   <html data-theme="dark"> (set by the inline script in src/app/layout.tsx and
+   the toggle in src/components/ThemeToggle.tsx). */
 :root {
   --bg: 247 245 251; /* stone-50 */
   --fg: 23 15 46; /* ink */
+  --surface: 255 255 255;
+  --stone-50: 247 245 251;
+  --stone-100: 239 235 246;
+  --stone-200: 225 217 238;
+  --stone-300: 201 190 222;
+  --stone-400: 163 150 184;
+  --stone-500: 122 112 137;
+  --stone-600: 91 82 102;
+  --stone-700: 66 57 76;
+  --stone-800: 43 36 51;
+  --stone-900: 26 21 34;
+  --brand-50: 242 239 255;
+  --brand-100: 229 222 255;
+  --brand-200: 202 189 255;
+  --brand-300: 166 140 255;
+  --brand-700: 86 23 173;
 }
 
 body {
@@ -167,5 +188,287 @@ h1, h2, h3, h4 {
 @media print {
   .a6-sheet {
     width: 105mm;
+  }
+}
+
+/* =======================================================================
+   Dark theme (added 2026-11-19) — charcoal. Switched on by
+   <html data-theme="dark">; remove that attribute (or use the sun/moon
+   button in the top bar) to get the original light look back.
+   Everything below only applies under html[data-theme="dark"], so the
+   light theme is untouched.
+   To tweak the dark colours, edit the variable values just below.
+======================================================================= */
+html[data-theme="dark"] {
+  color-scheme: dark; /* dark native date pickers, selects, scrollbars */
+  --bg: 14 14 17;
+  --fg: 236 236 241;
+  --surface: 24 24 29;
+  --stone-50: 23 23 27;
+  --stone-100: 30 30 36;
+  --stone-200: 43 43 52;
+  --stone-300: 59 59 71;
+  --stone-400: 126 126 142;
+  --stone-500: 156 156 171;
+  --stone-600: 182 182 195;
+  --stone-700: 208 208 218;
+  --stone-800: 229 229 236;
+  --stone-900: 244 244 248;
+  --brand-50: 29 23 48;
+  --brand-100: 39 29 69;
+  --brand-200: 58 43 107;
+  --brand-300: 90 67 168;
+  --brand-700: 187 166 255;
+}
+
+/* Printed receipts / handover sheets are paper: keep them light. */
+html[data-theme="dark"] .a6-sheet {
+  color-scheme: light;
+  color: rgb(23 15 46);
+  background-color: #fff;
+  --fg: 23 15 46;
+  --surface: 255 255 255;
+  --stone-50: 247 245 251;
+  --stone-100: 239 235 246;
+  --stone-200: 225 217 238;
+  --stone-300: 201 190 222;
+  --stone-400: 163 150 184;
+  --stone-500: 122 112 137;
+  --stone-600: 91 82 102;
+  --stone-700: 66 57 76;
+  --stone-800: 43 36 51;
+  --stone-900: 26 21 34;
+  --brand-50: 242 239 255;
+  --brand-100: 229 222 255;
+  --brand-200: 202 189 255;
+  --brand-300: 166 140 255;
+  --brand-700: 86 23 173;
+}
+
+/* Background: neutral charcoal, only a whisper of the colourful blobs. */
+html[data-theme="dark"] .app-ambient {
+  background-image: none;
+}
+html[data-theme="dark"] .app-ambient span {
+  opacity: 0.2;
+}
+
+/* Glass surfaces */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .stat-chip {
+  border-color: rgb(255 255 255 / 0.07);
+  background-color: rgb(var(--surface) / 0.85);
+  box-shadow: 0 10px 30px -18px rgb(0 0 0 / 0.7);
+}
+html[data-theme="dark"] .input {
+  background-color: rgb(var(--stone-50));
+  border-color: rgb(var(--stone-200));
+  color: rgb(var(--fg));
+}
+html[data-theme="dark"] .btn-secondary {
+  background-color: rgb(var(--surface) / 0.8);
+  border-color: rgb(var(--stone-200));
+  color: rgb(var(--stone-700));
+}
+html[data-theme="dark"] .btn-secondary:hover {
+  background-color: rgb(var(--stone-100));
+  color: rgb(var(--brand-700));
+}
+
+/* Hard-coded white surfaces used across pages */
+html[data-theme="dark"] .bg-white { background-color: rgb(var(--surface)); }
+html[data-theme="dark"] .bg-white\/95 { background-color: rgb(var(--surface) / 0.95); }
+html[data-theme="dark"] .bg-white\/90 { background-color: rgb(var(--surface) / 0.9); }
+html[data-theme="dark"] .bg-white\/85 { background-color: rgb(var(--surface) / 0.85); }
+html[data-theme="dark"] .bg-white\/80 { background-color: rgb(var(--surface) / 0.8); }
+html[data-theme="dark"] .bg-white\/75 { background-color: rgb(var(--surface) / 0.75); }
+html[data-theme="dark"] .bg-white\/70 { background-color: rgb(var(--surface) / 0.7); }
+html[data-theme="dark"] .bg-white\/60 { background-color: rgb(var(--surface) / 0.6); }
+html[data-theme="dark"] .bg-white\/50 { background-color: rgb(var(--surface) / 0.5); }
+html[data-theme="dark"] .bg-white\/40 { background-color: rgb(var(--surface) / 0.4); }
+html[data-theme="dark"] .hover\:bg-white:hover { background-color: rgb(var(--stone-100)); }
+html[data-theme="dark"] .border-white\/80,
+html[data-theme="dark"] .border-white\/70,
+html[data-theme="dark"] .border-white\/60,
+html[data-theme="dark"] .border-white\/50 { border-color: rgb(255 255 255 / 0.08); }
+
+/* Dark chrome on light pages (chips/buttons that were near-black) */
+html[data-theme="dark"] .bg-stone-900 { background-color: rgb(58 58 71); }
+html[data-theme="dark"] .bg-stone-800 { background-color: rgb(46 46 56); }
+html[data-theme="dark"] .hover\:bg-stone-800:hover { background-color: rgb(70 70 84); }
+html[data-theme="dark"] .text-ink { color: rgb(var(--fg)); }
+
+/* Sidebar / hero gradients */
+html[data-theme="dark"] .bg-ink-gradient {
+  background-image: linear-gradient(180deg, #17171c 0%, #101013 100%);
+}
+html[data-theme="dark"] .bg-brand-gradient-soft {
+  background-image: linear-gradient(135deg, #1d1730 0%, #271a30 50%, #2b2015 100%);
+}
+
+/* Status badge text that is too dim on charcoal */
+html[data-theme="dark"] .badge-status-repairing { color: #a78bfa; }
+html[data-theme="dark"] .badge-status-received { color: #94a3b8; }
+
+/* Tinted alert/pill colours: translucent tint + light text instead of
+   near-white boxes (red, green, amber, etc. from Tailwind's default palette). */
+html[data-theme="dark"] .bg-red-50,
+html[data-theme="dark"] .bg-red-100 { background-color: rgb(239 68 68 / 0.14); }
+html[data-theme="dark"] .hover\:bg-red-50:hover,
+html[data-theme="dark"] .hover\:bg-red-100:hover { background-color: rgb(239 68 68 / 0.22); }
+html[data-theme="dark"] .border-red-100,
+html[data-theme="dark"] .border-red-200 { border-color: rgb(239 68 68 / 0.35); }
+html[data-theme="dark"] .text-red-600,
+html[data-theme="dark"] .text-red-700,
+html[data-theme="dark"] .text-red-800,
+html[data-theme="dark"] .text-red-900 { color: rgb(252 165 165); }
+html[data-theme="dark"] .bg-rose-50,
+html[data-theme="dark"] .bg-rose-100 { background-color: rgb(244 63 94 / 0.14); }
+html[data-theme="dark"] .hover\:bg-rose-50:hover,
+html[data-theme="dark"] .hover\:bg-rose-100:hover { background-color: rgb(244 63 94 / 0.22); }
+html[data-theme="dark"] .border-rose-100,
+html[data-theme="dark"] .border-rose-200 { border-color: rgb(244 63 94 / 0.35); }
+html[data-theme="dark"] .text-rose-600,
+html[data-theme="dark"] .text-rose-700,
+html[data-theme="dark"] .text-rose-800,
+html[data-theme="dark"] .text-rose-900 { color: rgb(253 164 175); }
+html[data-theme="dark"] .bg-orange-50,
+html[data-theme="dark"] .bg-orange-100 { background-color: rgb(249 115 22 / 0.14); }
+html[data-theme="dark"] .hover\:bg-orange-50:hover,
+html[data-theme="dark"] .hover\:bg-orange-100:hover { background-color: rgb(249 115 22 / 0.22); }
+html[data-theme="dark"] .border-orange-100,
+html[data-theme="dark"] .border-orange-200 { border-color: rgb(249 115 22 / 0.35); }
+html[data-theme="dark"] .text-orange-600,
+html[data-theme="dark"] .text-orange-700,
+html[data-theme="dark"] .text-orange-800,
+html[data-theme="dark"] .text-orange-900 { color: rgb(253 186 116); }
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] .bg-amber-100 { background-color: rgb(245 158 11 / 0.14); }
+html[data-theme="dark"] .hover\:bg-amber-50:hover,
+html[data-theme="dark"] .hover\:bg-amber-100:hover { background-color: rgb(245 158 11 / 0.22); }
+html[data-theme="dark"] .border-amber-100,
+html[data-theme="dark"] .border-amber-200 { border-color: rgb(245 158 11 / 0.35); }
+html[data-theme="dark"] .text-amber-600,
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-amber-800,
+html[data-theme="dark"] .text-amber-900 { color: rgb(252 211 77); }
+html[data-theme="dark"] .bg-yellow-50,
+html[data-theme="dark"] .bg-yellow-100 { background-color: rgb(234 179 8 / 0.14); }
+html[data-theme="dark"] .hover\:bg-yellow-50:hover,
+html[data-theme="dark"] .hover\:bg-yellow-100:hover { background-color: rgb(234 179 8 / 0.22); }
+html[data-theme="dark"] .border-yellow-100,
+html[data-theme="dark"] .border-yellow-200 { border-color: rgb(234 179 8 / 0.35); }
+html[data-theme="dark"] .text-yellow-600,
+html[data-theme="dark"] .text-yellow-700,
+html[data-theme="dark"] .text-yellow-800,
+html[data-theme="dark"] .text-yellow-900 { color: rgb(253 224 71); }
+html[data-theme="dark"] .bg-green-50,
+html[data-theme="dark"] .bg-green-100 { background-color: rgb(34 197 94 / 0.14); }
+html[data-theme="dark"] .hover\:bg-green-50:hover,
+html[data-theme="dark"] .hover\:bg-green-100:hover { background-color: rgb(34 197 94 / 0.22); }
+html[data-theme="dark"] .border-green-100,
+html[data-theme="dark"] .border-green-200 { border-color: rgb(34 197 94 / 0.35); }
+html[data-theme="dark"] .text-green-600,
+html[data-theme="dark"] .text-green-700,
+html[data-theme="dark"] .text-green-800,
+html[data-theme="dark"] .text-green-900 { color: rgb(134 239 172); }
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] .bg-emerald-100 { background-color: rgb(16 185 129 / 0.14); }
+html[data-theme="dark"] .hover\:bg-emerald-50:hover,
+html[data-theme="dark"] .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / 0.22); }
+html[data-theme="dark"] .border-emerald-100,
+html[data-theme="dark"] .border-emerald-200 { border-color: rgb(16 185 129 / 0.35); }
+html[data-theme="dark"] .text-emerald-600,
+html[data-theme="dark"] .text-emerald-700,
+html[data-theme="dark"] .text-emerald-800,
+html[data-theme="dark"] .text-emerald-900 { color: rgb(110 231 183); }
+html[data-theme="dark"] .bg-teal-50,
+html[data-theme="dark"] .bg-teal-100 { background-color: rgb(20 184 166 / 0.14); }
+html[data-theme="dark"] .hover\:bg-teal-50:hover,
+html[data-theme="dark"] .hover\:bg-teal-100:hover { background-color: rgb(20 184 166 / 0.22); }
+html[data-theme="dark"] .border-teal-100,
+html[data-theme="dark"] .border-teal-200 { border-color: rgb(20 184 166 / 0.35); }
+html[data-theme="dark"] .text-teal-600,
+html[data-theme="dark"] .text-teal-700,
+html[data-theme="dark"] .text-teal-800,
+html[data-theme="dark"] .text-teal-900 { color: rgb(94 234 212); }
+html[data-theme="dark"] .bg-cyan-50,
+html[data-theme="dark"] .bg-cyan-100 { background-color: rgb(6 182 212 / 0.14); }
+html[data-theme="dark"] .hover\:bg-cyan-50:hover,
+html[data-theme="dark"] .hover\:bg-cyan-100:hover { background-color: rgb(6 182 212 / 0.22); }
+html[data-theme="dark"] .border-cyan-100,
+html[data-theme="dark"] .border-cyan-200 { border-color: rgb(6 182 212 / 0.35); }
+html[data-theme="dark"] .text-cyan-600,
+html[data-theme="dark"] .text-cyan-700,
+html[data-theme="dark"] .text-cyan-800,
+html[data-theme="dark"] .text-cyan-900 { color: rgb(103 232 249); }
+html[data-theme="dark"] .bg-sky-50,
+html[data-theme="dark"] .bg-sky-100 { background-color: rgb(14 165 233 / 0.14); }
+html[data-theme="dark"] .hover\:bg-sky-50:hover,
+html[data-theme="dark"] .hover\:bg-sky-100:hover { background-color: rgb(14 165 233 / 0.22); }
+html[data-theme="dark"] .border-sky-100,
+html[data-theme="dark"] .border-sky-200 { border-color: rgb(14 165 233 / 0.35); }
+html[data-theme="dark"] .text-sky-600,
+html[data-theme="dark"] .text-sky-700,
+html[data-theme="dark"] .text-sky-800,
+html[data-theme="dark"] .text-sky-900 { color: rgb(125 211 252); }
+html[data-theme="dark"] .bg-blue-50,
+html[data-theme="dark"] .bg-blue-100 { background-color: rgb(59 130 246 / 0.14); }
+html[data-theme="dark"] .hover\:bg-blue-50:hover,
+html[data-theme="dark"] .hover\:bg-blue-100:hover { background-color: rgb(59 130 246 / 0.22); }
+html[data-theme="dark"] .border-blue-100,
+html[data-theme="dark"] .border-blue-200 { border-color: rgb(59 130 246 / 0.35); }
+html[data-theme="dark"] .text-blue-600,
+html[data-theme="dark"] .text-blue-700,
+html[data-theme="dark"] .text-blue-800,
+html[data-theme="dark"] .text-blue-900 { color: rgb(147 197 253); }
+html[data-theme="dark"] .bg-indigo-50,
+html[data-theme="dark"] .bg-indigo-100 { background-color: rgb(99 102 241 / 0.14); }
+html[data-theme="dark"] .hover\:bg-indigo-50:hover,
+html[data-theme="dark"] .hover\:bg-indigo-100:hover { background-color: rgb(99 102 241 / 0.22); }
+html[data-theme="dark"] .border-indigo-100,
+html[data-theme="dark"] .border-indigo-200 { border-color: rgb(99 102 241 / 0.35); }
+html[data-theme="dark"] .text-indigo-600,
+html[data-theme="dark"] .text-indigo-700,
+html[data-theme="dark"] .text-indigo-800,
+html[data-theme="dark"] .text-indigo-900 { color: rgb(165 180 252); }
+html[data-theme="dark"] .bg-violet-50,
+html[data-theme="dark"] .bg-violet-100 { background-color: rgb(139 92 246 / 0.14); }
+html[data-theme="dark"] .hover\:bg-violet-50:hover,
+html[data-theme="dark"] .hover\:bg-violet-100:hover { background-color: rgb(139 92 246 / 0.22); }
+html[data-theme="dark"] .border-violet-100,
+html[data-theme="dark"] .border-violet-200 { border-color: rgb(139 92 246 / 0.35); }
+html[data-theme="dark"] .text-violet-600,
+html[data-theme="dark"] .text-violet-700,
+html[data-theme="dark"] .text-violet-800,
+html[data-theme="dark"] .text-violet-900 { color: rgb(196 181 253); }
+html[data-theme="dark"] .bg-purple-50,
+html[data-theme="dark"] .bg-purple-100 { background-color: rgb(168 85 247 / 0.14); }
+html[data-theme="dark"] .hover\:bg-purple-50:hover,
+html[data-theme="dark"] .hover\:bg-purple-100:hover { background-color: rgb(168 85 247 / 0.22); }
+html[data-theme="dark"] .border-purple-100,
+html[data-theme="dark"] .border-purple-200 { border-color: rgb(168 85 247 / 0.35); }
+html[data-theme="dark"] .text-purple-600,
+html[data-theme="dark"] .text-purple-700,
+html[data-theme="dark"] .text-purple-800,
+html[data-theme="dark"] .text-purple-900 { color: rgb(216 180 254); }
+html[data-theme="dark"] .bg-pink-50,
+html[data-theme="dark"] .bg-pink-100 { background-color: rgb(236 72 153 / 0.14); }
+html[data-theme="dark"] .hover\:bg-pink-50:hover,
+html[data-theme="dark"] .hover\:bg-pink-100:hover { background-color: rgb(236 72 153 / 0.22); }
+html[data-theme="dark"] .border-pink-100,
+html[data-theme="dark"] .border-pink-200 { border-color: rgb(236 72 153 / 0.35); }
+html[data-theme="dark"] .text-pink-600,
+html[data-theme="dark"] .text-pink-700,
+html[data-theme="dark"] .text-pink-800,
+html[data-theme="dark"] .text-pink-900 { color: rgb(249 168 212); }
+
+@media print {
+  html[data-theme="dark"] body {
+    background: #fff;
+    color: #170f2e;
+  }
+  html[data-theme="dark"] .app-ambient {
+    display: none;
   }
 }

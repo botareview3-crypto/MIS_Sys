@@ -10,8 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate && prisma generate --schema prisma/outside-tasks/schema.prisma",
+    "prisma:generate": "prisma generate && prisma generate --schema prisma/outside-tasks/schema.prisma",
+    "prisma:outside-push": "prisma db push --schema prisma/outside-tasks/schema.prisma",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
