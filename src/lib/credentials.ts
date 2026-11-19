@@ -35,3 +35,14 @@ export function decryptCredential(storedValue: string): string {
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
 }
+
+/**
+ * True when a stored (encrypted) credential actually holds a value. The
+ * stored format is base64(iv[12] + tag[16] + ciphertext), so an empty
+ * plaintext leaves nothing after the first 28 bytes — no key is needed to
+ * tell, and nothing is decrypted.
+ */
+export function hasStoredCredential(storedValue: string | null | undefined): boolean {
+  if (!storedValue) return false;
+  return Buffer.from(storedValue, "base64").length > 28;
+}

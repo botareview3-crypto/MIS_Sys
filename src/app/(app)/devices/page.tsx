@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { deviceLabel } from "@/lib/device-label";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 const PAGE_SIZE = 10;
 
 export default async function ManageDevicesPage({
@@ -25,6 +26,26 @@ export default async function ManageDevicesPage({
   const isSecondaryAdmin = session.role === "Secondary Admin";
   const isTechnicianRole = session.role === "Technician";
 
+  // Barcode scanners type the scanned code then send Enter, which submits
+  // this search form. When the scanned value is an exact match for one
+  // device's serial number, asset barcode, or hostname, skip the filtered
+  // list entirely and jump straight to that device's full record.
+  if (search) {
+    const scanMatches = await prisma.repairJob.findMany({
+      where: {
+        ...(isSecondaryAdmin ? { assignedSecondaryAdminId: session.userId } : {}),
+        OR: [
+          { serialNumber: { equals: search, mode: "insensitive" } },
+          { aucAssetBarcode: { equals: search, mode: "insensitive" } },
+          { hostname: { equals: search, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+      take: 2,
+    });
+    if (scanMatches.length === 1) redirect(`/devices/${scanMatches[0].id}`);
+  }
+
   const where: RepairJobWhereInput = {
     ...(isSecondaryAdmin ? { assignedSecondaryAdminId: session.userId } : {}),
     ...(!isTechnicianRole && technicianFilter ? { assignedTechnicianId: technicianFilter } : {}),
@@ -32,16 +53,10 @@ export default async function ManageDevicesPage({
     ...(search
       ? {
           OR: [
-            { jobId: { contains: search, mode: "insensitive" } },
-            { receiptNumber: { contains: search, mode: "insensitive" } },
             { aucAssetBarcode: { contains: search, mode: "insensitive" } },
             { serialNumber: { contains: search, mode: "insensitive" } },
-            { macAddress: { contains: search, mode: "insensitive" } },
             { hostname: { contains: search, mode: "insensitive" } },
             { customer: { fullName: { contains: search, mode: "insensitive" } } },
-            { customer: { phoneNumber: { contains: search, mode: "insensitive" } } },
-            { customer: { outlookEmail: { contains: search, mode: "insensitive" } } },
-            { technician: { fullName: { contains: search, mode: "insensitive" } } },
           ],
         }
       : {}),
@@ -78,15 +93,15 @@ export default async function ManageDevicesPage({
 
   return (
     <main className="p-8">
-      <h1 className="text-lg font-semibold text-slate-900">Manage Devices</h1>
-      <p className="mt-1 text-sm text-slate-500">{totalRecords} device(s) found</p>
+      <h1 className="text-lg font-semibold text-stone-900">Manage Devices</h1>
+      <p className="mt-1 text-sm text-stone-500">{totalRecords} device(s) found</p>
 
       <form className="card mt-6 flex flex-wrap gap-3 p-4" method="GET">
         <input
           type="text"
           name="search"
           defaultValue={search}
-          placeholder="Search job ID, barcode, serial, customer…"
+          placeholder="Search hostname, serial, customer…"
           className="input flex-1 min-w-[220px]"
         />
         <select name="status" defaultValue={statusFilter} className="input w-40">
@@ -114,9 +129,9 @@ export default async function ManageDevicesPage({
 
       <div className="card mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-stone-500">
             <tr>
-              <th className="px-4 py-3">Job ID</th>
+              <th className="px-4 py-3">Hostname</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Barcode / Serial</th>
               <th className="px-4 py-3">Status</th>
@@ -126,14 +141,14 @@ export default async function ManageDevicesPage({
           </thead>
           <tbody>
             {devices.map((d: (typeof devices)[number]) => (
-              <tr key={d.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">
+              <tr key={d.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50">
+                <td className="px-4 py-3 font-medium text-stone-900">
                   <Link href={`/devices/${d.id}`} className="text-brand-600 hover:underline">
-                    {d.jobId}
+                    {deviceLabel(d.hostname)}
                   </Link>
                 </td>
                 <td className="px-4 py-3">{d.customer.fullName}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-stone-500">
                   {d.aucAssetBarcode} / {d.serialNumber}
                 </td>
                 <td className="px-4 py-3">
@@ -141,13 +156,13 @@ export default async function ManageDevicesPage({
                     {d.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-500">{d.technician?.fullName ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-500">{d.receivedAt.toISOString().slice(0, 10)}</td>
+                <td className="px-4 py-3 text-stone-500">{d.technician?.fullName ?? "—"}</td>
+                <td className="px-4 py-3 text-stone-500">{d.receivedAt.toISOString().slice(0, 10)}</td>
               </tr>
             ))}
             {devices.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
                   No devices match these filters.
                 </td>
               </tr>
@@ -160,16 +175,16 @@ export default async function ManageDevicesPage({
         <div className="mt-4 flex items-center justify-center gap-2 text-sm">
           <Link
             href={buildUrl({ page: String(Math.max(1, page - 1)) })}
-            className={`rounded-md px-3 py-1.5 ${page <= 1 ? "pointer-events-none text-slate-300" : "text-brand-600 hover:bg-brand-50"}`}
+            className={`rounded-md px-3 py-1.5 ${page <= 1 ? "pointer-events-none text-stone-300" : "text-brand-600 hover:bg-brand-50"}`}
           >
             Previous
           </Link>
-          <span className="text-slate-500">
+          <span className="text-stone-500">
             Page {page} of {totalPages}
           </span>
           <Link
             href={buildUrl({ page: String(Math.min(totalPages, page + 1)) })}
-            className={`rounded-md px-3 py-1.5 ${page >= totalPages ? "pointer-events-none text-slate-300" : "text-brand-600 hover:bg-brand-50"}`}
+            className={`rounded-md px-3 py-1.5 ${page >= totalPages ? "pointer-events-none text-stone-300" : "text-brand-600 hover:bg-brand-50"}`}
           >
             Next
           </Link>

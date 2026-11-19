@@ -4,7 +4,6 @@ import {
   PlusSquare,
   HardDrive,
   ClipboardList,
-  Bell,
   Users,
   BarChart3,
   ShieldCheck,
@@ -12,7 +11,6 @@ import {
   MapPin,
   Network,
   BookOpen,
-  Briefcase,
 } from "lucide-react";
 import type { SessionPayload } from "@/lib/auth";
 
@@ -21,15 +19,16 @@ export type NavItem = {
   href?: string;
   label: string;
   icon: LucideIcon;
-  showBadge?: boolean;
   children?: NavItem[];
 };
 
 /**
  * Mirrors includes/sidebar.php exactly:
  * - Register Device: Admin, Reception, Technician (NOT Secondary Admin)
- * - Notifications: everyone except Admin, in Workspace group;
- *   Admin also gets it, but inside the Administration group instead.
+ * - Notifications (2026-09-26): removed from the sidebar entirely — the
+ *   top bar bell (src/components/TopBar.tsx) is now the only nav entry
+ *   point to /notifications, for every role. Was previously listed here:
+ *   everyone except Admin in Workspace, Admin in Administration.
  * - Administration group: Admin only.
  *
  * "Local" / "Intra" split (added 2026-09-25): the existing device
@@ -42,38 +41,39 @@ export type NavItem = {
  * in how the computers themselves get configured, not in this app yet —
  * do not invent per-group fields/logic without a real design conversation.
  * A third child, "Guide", was added under both groups on 2026-09-25 as an
- * intentionally blank placeholder (`/guide`) — content to be written later.
+ * intentionally blank placeholder. Register/Manage stay identical between
+ * Local and Intra (still true) — but the Guide content itself is meant to
+ * differ per group, so it now points at /guide/local and /guide/intra
+ * instead of one shared /guide route.
+ *
+ * Regional office (2026-09-26): the "regional office" location captured
+ * during registration (Customer.regionalOffice) is the one Intra-specific
+ * addition to the shared Register Device form — the form/route are still
+ * the same component for both groups, just with that one extra optional
+ * field now wired up.
  */
 export function getNavGroups(role: SessionPayload["role"]) {
   const isAdmin = role === "Admin";
   const isReception = role === "Reception";
   const isTechnician = role === "Technician";
 
-  const deviceItems: NavItem[] = [
+  const deviceItems = (guideHref: string): NavItem[] => [
     ...(isAdmin || isReception || isTechnician
       ? [{ href: "/devices/register", label: "Register Device", icon: PlusSquare }]
       : []),
     { href: "/devices", label: "Manage Devices", icon: HardDrive },
-    { href: "/guide", label: "Guide", icon: BookOpen },
+    { href: guideHref, label: "Guide", icon: BookOpen },
   ];
 
   const workspace: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { label: "Local", icon: MapPin, children: deviceItems },
-    { label: "Intra", icon: Network, children: deviceItems },
+    { label: "Local", icon: MapPin, children: deviceItems("/guide/local") },
+    { label: "Intra", icon: Network, children: deviceItems("/guide/intra") },
     { href: "/work-queue", label: "Work Queue", icon: ClipboardList },
-    // Every role logs their own outside-office tasks (added 2026-11-19).
-    // Admin + Secondary Admin see everyone's; others only their own — enforced
-    // server-side in the page and API, not just here.
-    { href: "/outside-tasks", label: "Outside Tasks", icon: Briefcase },
-    ...(!isAdmin
-      ? [{ href: "/notifications", label: "Notifications", icon: Bell, showBadge: true }]
-      : []),
   ];
 
   const administration: NavItem[] = isAdmin
     ? [
-        { href: "/notifications", label: "Notifications", icon: Bell, showBadge: true },
         { href: "/users", label: "Manage Users", icon: Users },
         { href: "/reports", label: "Reports & History", icon: BarChart3 },
         { href: "/audit-history", label: "Audit History", icon: ShieldCheck },

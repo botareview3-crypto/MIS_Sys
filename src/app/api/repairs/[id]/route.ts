@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireApiRoles, apiAuthErrorResponse } from "@/lib/api-auth";
 import { validExpectedCompletionDate } from "@/lib/repair-deadlines";
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 const UpdateRepairSchema = z.object({
   technicianDiagnosis: z.string().trim().max(5000).default(""),
@@ -26,7 +26,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
     session = await requireApiRoles(["Admin", "Secondary Admin", "Technician"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const { id } = await params;
@@ -122,8 +124,12 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
       let workflowReceiptType: "Ready" | "Delivery" | null = null;
       let workflowReceiptReference: string | null = null;
+      let workflowReceiptId: number | null = null;
 
-      if (statusChanged && (data.status === "Ready" || data.status === "Delivered")) {
+      // Ready: only when the status just changed. Delivered: whenever the saved
+      // result is Delivered, so the handover page always has a receipt even if
+      // the job was already Delivered before receipts existed.
+      if ((statusChanged && data.status === "Ready") || data.status === "Delivered") {
         workflowReceiptType = data.status === "Ready" ? "Ready" : "Delivery";
         const existingReceipt = await tx.receipt.findFirst({
           where: { repairJobId: deviceId, receiptType: { equals: workflowReceiptType, mode: "insensitive" } },
@@ -131,10 +137,11 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         });
         if (existingReceipt) {
           workflowReceiptReference = existingReceipt.receiptReference;
+          workflowReceiptId = existingReceipt.id;
         } else {
           const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
           workflowReceiptReference = `REC-${today}-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
-          await tx.receipt.create({
+          const createdReceipt = await tx.receipt.create({
             data: {
               repairJobId: deviceId,
               receiptType: workflowReceiptType,
@@ -142,6 +149,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
               createdBy: session.userId,
             },
           });
+          workflowReceiptId = createdReceipt.id;
         }
       }
 
@@ -191,8 +199,24 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         }
       }
 
-      return { noChanges: false, workflowReceiptType, workflowReceiptReference };
+      return {
+        noChanges: false,
+        workflowReceiptType,
+        workflowReceiptReference,
+        workflowReceiptId,
+        statusChanged,
+        newStatus: data.status,
+      };
     });
+
+    // Fire-and-forget: auto-send the "Ready" WhatsApp notification, only
+    // Auto-send via whatsapp-web.js was removed 2026-09-26 (WhatsApp
+    // itself refused the device link — "couldn't link" on every pairing
+    // attempt). Replaced with the manual click-to-send flow: staff now get
+    // a "Send Ready WhatsApp message" button right in the save response
+    // (see UpdateRepairForm.tsx), which opens wa.me with the message
+    // pre-filled and they tap Send themselves — same flow as the existing
+    // "Prepare Message" button on the device page.
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

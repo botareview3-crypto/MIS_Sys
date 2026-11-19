@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AssignTechnicianForm } from "@/components/repairs/AssignTechnicianForm";
+import { BackLink } from "@/components/nav/BackLink";
+import { deviceLabel } from "@/lib/device-label";
 
 export default async function AssignTechnicianPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -29,8 +31,9 @@ export default async function AssignTechnicianPage({ params }: { params: Promise
 
   return (
     <main className="p-8">
+      <BackLink href="/work-queue" label="Back to Work Queue" />
       <div className="mx-auto max-w-lg">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>
+        <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">{deviceLabel(device.hostname)}</p>
         <h1 className="text-lg font-semibold text-slate-900">Assign Technician</h1>
         <p className="mt-1 text-sm text-slate-500">
           {device.customer.fullName} · currently {device.technician?.fullName ?? "unassigned"}

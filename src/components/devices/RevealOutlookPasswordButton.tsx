@@ -10,7 +10,14 @@ import { useState } from "react";
  * A failed reveal shows the error message in place of the password and
  * leaves the button in the "Show" state so the next click retries.
  */
-export function RevealOutlookPasswordButton({ deviceId }: { deviceId: number }) {
+export function RevealOutlookPasswordButton({
+  deviceId,
+  hasPassword = true,
+}: {
+  deviceId: number;
+  /** False when no Outlook password is stored — nothing to reveal. */
+  hasPassword?: boolean;
+}) {
   const [visible, setVisible] = useState(false);
   const [password, setPassword] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -27,7 +34,7 @@ export function RevealOutlookPasswordButton({ deviceId }: { deviceId: number }) 
       const res = await fetch(`/api/devices/${deviceId}/reveal-outlook-password`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Password could not be revealed.");
-      setPassword(data.password);
+      setPassword(data.password ?? "");
       setVisible(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Password could not be revealed.");
@@ -36,16 +43,23 @@ export function RevealOutlookPasswordButton({ deviceId }: { deviceId: number }) 
     }
   }
 
+  if (!hasPassword) {
+    return <span className="text-stone-400">No password</span>;
+  }
+
+  // Revealed, but the stored password decrypted to nothing.
+  const revealedEmpty = visible && password === "";
+
   return (
     <span className="inline-flex items-center gap-2">
-      <span className={error ? "text-red-600" : "text-slate-700"}>
-        {error || (visible && password ? password : "••••••••")}
+      <span className={error ? "text-red-600" : revealedEmpty ? "text-stone-400" : "text-stone-700"}>
+        {error || (revealedEmpty ? "No password" : visible && password ? password : "••••••••")}
       </span>
       <button
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+        className="rounded-md border border-stone-200 px-2 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-60"
       >
         {loading ? "…" : visible ? "Hide" : "Show"}
       </button>

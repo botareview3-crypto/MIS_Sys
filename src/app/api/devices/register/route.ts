@@ -7,21 +7,25 @@ import { resolveReportedProblem } from "@/lib/reported-problems";
 import { generateUniqueReference } from "@/lib/reference";
 
 const RegisterDeviceSchema = z.object({
+  customerId: z.string().default(""), // set when reusing/updating an existing customer
   title: z.enum(["Mr", "Ms", ""]).optional().default(""),
   customerFullName: z.string().trim().min(1).max(150),
   phoneNumber: z.string().trim().min(1).max(30),
   outlookEmail: z.string().trim().min(1), // local part or full address; normalized below
   outlookPassword: z.string().default(""),
+  regionalOffice: z.string().trim().max(150).optional().default(""),
   givenByName: z.string().trim().min(1).max(150),
   aucAssetBarcode: z.string().trim().min(1),
   serialNumber: z.string().trim().min(1),
   macAddress: z.string().trim().max(50).optional().default(""),
-  hostname: z.string().trim().max(255).optional().default(""),
+  hostname: z.string().trim().min(1).max(255),
   reportedProblemType: z.string().default(""),
   reportedProblemCustom: z.string().default(""),
   assignedTechnicianId: z.string().default(""),
   expectedCompletionDate: z.string().default(""), // "" or YYYY-MM-DD
   chargerReceived: z.boolean().default(false),
+  // Only required client-side when the "NIC received" checkbox is on;
+  // the checkbox itself isn't persisted, so this stays optional here.
   networkCableBarcode: z.string().trim().default(""),
   bagReceived: z.boolean().default(false),
 });
@@ -41,7 +45,9 @@ export async function POST(req: NextRequest) {
   try {
     session = await requireApiRoles(["Admin", "Reception", "Technician"]);
   } catch (e) {
-    return apiAuthErrorResponse(e)!;
+    const authError = apiAuthErrorResponse(e);
+    if (authError) return authError;
+    throw e;
   }
 
   const body = await req.json().catch(() => null);
@@ -70,12 +76,16 @@ export async function POST(req: NextRequest) {
     data.givenByName === "" ||
     data.aucAssetBarcode === "" ||
     data.serialNumber === "" ||
+    data.hostname === "" ||
     reportedProblem === ""
   ) {
     return NextResponse.json({ error: "Please complete every required field." }, { status: 400 });
   }
   if (assignedTechnicianId !== "" && !/^\d+$/.test(assignedTechnicianId)) {
     return NextResponse.json({ error: "Please select a valid Technician." }, { status: 400 });
+  }
+  if (data.customerId !== "" && !/^\d+$/.test(data.customerId)) {
+    return NextResponse.json({ error: "Invalid customer reference." }, { status: 400 });
   }
   if (data.expectedCompletionDate) {
     const valid = /^\d{4}-\d{2}-\d{2}$/.test(data.expectedCompletionDate);
@@ -109,8 +119,8 @@ export async function POST(req: NextRequest) {
     let error = "This manufacturer serial number is already registered.";
     if (macMatch) error = "This MAC address is already registered.";
     else if (hostnameMatch) error = "This hostname is already registered.";
-    else if (barcodeMatch && serialMatch) error = "The AUC barcode and serial number are already registered.";
-    else if (barcodeMatch) error = "This AUC asset barcode is already registered.";
+    else if (barcodeMatch && serialMatch) error = "The PC barcode and serial number are already registered.";
+    else if (barcodeMatch) error = "This PC barcode is already registered.";
 
     return NextResponse.json({ error, duplicate: true }, { status: 409 });
   }
@@ -141,16 +151,73 @@ export async function POST(req: NextRequest) {
       const jobId = await generateUniqueReference("jobId", "AUC");
       const receiptNumber = await generateUniqueReference("receiptNumber", "REC");
 
-      const customer = await tx.customer.create({
-        data: {
+      // Reuse an existing customer (picked via the search autocomplete, or
+      // carried over from an earlier device in the same batch/session)
+      // instead of always inserting a new row — keeps one customer from
+      // accumulating a duplicate row per visit or per device in a batch.
+      // If their details were changed on the form and they already have
+      // devices on file, a new customer row is created for this device so the
+      // older devices keep their original details. The password is only
+      // overwritten if a new one was typed.
+      let customer;
+      if (data.customerId) {
+        const existingCustomer = await tx.customer.findUnique({ where: { id: Number(data.customerId) } });
+        if (!existingCustomer) {
+          throw new Error("The selected customer no longer exists. Please search again or start a new customer.");
+        }
+        const newDetails = {
           title: data.title || null,
           fullName: data.customerFullName,
           phoneNumber: data.phoneNumber,
           outlookEmail: normalizedEmail,
-          outlookPasswordEncrypted: encryptedOutlookPassword,
-          createdBy: session.userId,
-        },
-      });
+          regionalOffice: data.regionalOffice || null,
+        };
+        const detailsChanged =
+          (existingCustomer.title ?? null) !== newDetails.title ||
+          existingCustomer.fullName !== newDetails.fullName ||
+          existingCustomer.phoneNumber !== newDetails.phoneNumber ||
+          existingCustomer.outlookEmail.toLowerCase() !== newDetails.outlookEmail.toLowerCase() ||
+          (existingCustomer.regionalOffice ?? null) !== newDetails.regionalOffice;
+        const otherDevices = detailsChanged
+          ? await tx.repairJob.count({ where: { customerId: existingCustomer.id } })
+          : 0;
+
+        if (otherDevices > 0) {
+          // The customer already has devices on file. Changing their name,
+          // phone etc. here must not rewrite those older devices, so this
+          // device gets its own customer row with the new details.
+          customer = await tx.customer.create({
+            data: {
+              ...newDetails,
+              outlookPasswordEncrypted: data.outlookPassword
+                ? encryptedOutlookPassword
+                : existingCustomer.outlookPasswordEncrypted,
+              personalEmail: existingCustomer.personalEmail,
+              createdBy: session.userId,
+            },
+          });
+        } else {
+          customer = await tx.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              ...newDetails,
+              ...(data.outlookPassword ? { outlookPasswordEncrypted: encryptedOutlookPassword } : {}),
+            },
+          });
+        }
+      } else {
+        customer = await tx.customer.create({
+          data: {
+            title: data.title || null,
+            fullName: data.customerFullName,
+            phoneNumber: data.phoneNumber,
+            outlookEmail: normalizedEmail,
+            outlookPasswordEncrypted: encryptedOutlookPassword,
+            regionalOffice: data.regionalOffice || null,
+            createdBy: session.userId,
+          },
+        });
+      }
 
       const repairJob = await tx.repairJob.create({
         data: {
@@ -238,8 +305,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return { jobId, receiptNumber, repairJobId: repairJob.id };
+      return { jobId, receiptNumber, repairJobId: repairJob.id, customerId: customer.id };
     });
+
+    // Auto-send via whatsapp-web.js was removed 2026-09-26 — see the
+    // matching comment in src/app/api/repairs/[id]/route.ts. Staff use the
+    // existing manual "Prepare Received Message" button on the device page
+    // instead (src/components/devices/WhatsappMessageForm.tsx).
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

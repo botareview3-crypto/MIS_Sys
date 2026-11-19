@@ -4,41 +4,26 @@ Append one entry per work session/commit. Newest at the top.
 
 ---
 
-## 2026-11-19 (16) — Dark theme + "Outside Tasks" section
+## 2026-10-23 (16) — Removed the Render self-ping
 
-**Scope:** (1) whole-app colour change to a dark/charcoal theme; (2) new
-`/outside-tasks` page where every user logs work done outside the office.
+**Scope:** Zemen asked to remove the keep-alive self-ping.
 
-**Dark theme:** done in `tailwind.config.ts` by REMAPPING the `slate`, `brand`,
-`red`, `green`, `amber` scales (low numbers = dark, high numbers = light) and
-adding a `surface` colour, instead of editing every class. `bg-white` →
-`bg-surface` (6 places), destructive buttons `bg-red-600/hover:bg-red-700` →
-`bg-red-500/hover:bg-red-400`, `.btn-primary` hover → `brand-500`, modal
-overlay darkened, dashboard donut colours updated, `color-scheme: dark` set.
-To change the look later, edit the palette block in `tailwind.config.ts`.
+**Changed:**
+- Deleted `src/instrumentation.ts` (the 10-minute `setInterval` fetch of
+  `/api/health`; needs `git rm`/`Remove-Item`, a zip can't delete files).
+- `next.config.js` — removed `experimental.instrumentationHook` (only that
+  file used it).
+- `.env.example` — removed the `APP_BASE_URL` block; `render.yaml` — removed
+  the comment about `RENDER_EXTERNAL_URL`; `CLAUDE.md`, `docs/status.md`,
+  `src/app/api/health/route.ts` — notes/comments updated.
+- `GET /api/health` stays (external pinger / Render health check).
 
-**Outside Tasks:**
-- SEPARATE DATABASE: logs live in their own Neon project, NOT the shared
-  production DB (owner can't access that Neon account). Own schema:
-  `prisma/outside-tasks/schema.prisma` (client generated to
-  `src/generated/outside-client` by `postinstall`, gitignored), own env var
-  `OUTSIDE_TASKS_DATABASE_URL`, singleton in `src/lib/prisma-outside.ts`.
-  No FK to `users` (different DB): user id + full name are stored at log time.
-  Main `prisma/schema.prisma` is unchanged. Create the table with
-  `npm run prisma:outside-push` or `prisma/outside-tasks/outside_tasks.sql`.
-  The page shows a friendly message if the env var is missing.
-- Fields: user (from session), customer name, issue (dropdown), notes
-  (optional), `logged_at` set server-side — the user never types the date.
-- Issue list lives in `src/lib/outside-tasks.ts` (`OUTSIDE_TASK_ISSUES`) —
-  the initial list is a placeholder, edit it to the real jobs.
-- Visibility: Admin + Secondary Admin see all entries (with a staff filter);
-  Reception/Technician see only their own — enforced in the page query, not
-  just the UI. All four roles can log entries (`POST /api/outside-tasks`).
-- Dates display in Africa/Addis_Ababa time.
-- Nav: "Outside Tasks" added to Workspace for all roles.
+**Caveat:** on the free tier the service now sleeps after ~15 min idle; the
+first request takes 30-60 s, and the `/api/cron/sync-repair-deadlines` trigger
+only runs when something calls it (a call wakes the app).
 
-**Not verified (no network in sandbox):** `prisma generate`, `tsc`,
-`next build` — run `npm run build` locally before pushing if possible.
+**Not verified:** `tsc`/build not run in this session (sandbox cannot install
+packages); nothing else imports `instrumentation.ts`.
 
 ---
 

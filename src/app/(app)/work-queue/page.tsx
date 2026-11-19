@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isJobOverdue } from "@/lib/repair-overdue";
+import { WorkQueueBoard } from "@/components/work-queue/WorkQueueBoard";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RepairJobWhereInput = any;
 
-const STATUSES = ["Received", "Diagnosing", "Repairing", "Ready", "Delivered"] as const;
+const STATUSES = ["Received", "Repairing", "Ready", "Delivered"] as const;
 
 export default async function WorkQueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; view?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -25,7 +28,7 @@ export default async function WorkQueuePage({
   if (!hasAccess) {
     return (
       <main className="p-8">
-        <div className="card p-6 text-sm text-slate-500">
+        <div className="card p-6 text-sm text-stone-500">
           Your role does not have access to the Work Queue.
         </div>
       </main>
@@ -35,6 +38,43 @@ export default async function WorkQueuePage({
   const params = await searchParams;
   const search = (params.search ?? "").trim();
   const statusFilter = STATUSES.includes(params.status as (typeof STATUSES)[number]) ? params.status! : "";
+  const view = params.view === "board" ? "board" : "list";
+  const baseQuery: Record<string, string> = {
+    ...(search ? { search } : {}),
+    ...(statusFilter ? { status: statusFilter } : {}),
+  };
+  const listHref = `?${new URLSearchParams({ ...baseQuery, view: "list" }).toString()}`;
+  const boardHref = `?${new URLSearchParams({ ...baseQuery, view: "board" }).toString()}`;
+  // Same role list the device-detail page's WhatsApp button already uses
+  // (UpdateRepairForm's canSendWhatsapp, repairs/[id]/page.tsx) — Secondary
+  // Admin excluded, matching the established WhatsApp-access pattern.
+  // Reception can't reach Work Queue at all, but the expression is kept
+  // identical to that other call site on purpose rather than hand-simplified.
+  const canSendWhatsapp = (["Admin", "Reception", "Technician"] as string[]).includes(session.role);
+
+  // Barcode scanners type the scanned code then send Enter, which submits
+  // this search form. When the scanned value is an exact match for one
+  // device's serial number, asset barcode, or hostname, skip the filtered
+  // list entirely and jump straight to that device's full record.
+  if (search) {
+    const scanMatches = await prisma.repairJob.findMany({
+      where: {
+        ...(requiresAssignment
+          ? isSecondaryAdmin
+            ? { assignedSecondaryAdminId: session.userId }
+            : { assignedTechnicianId: session.userId }
+          : {}),
+        OR: [
+          { serialNumber: { equals: search, mode: "insensitive" } },
+          { aucAssetBarcode: { equals: search, mode: "insensitive" } },
+          { hostname: { equals: search, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+      take: 2,
+    });
+    if (scanMatches.length === 1) redirect(`/devices/${scanMatches[0].id}`);
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
@@ -47,22 +87,17 @@ export default async function WorkQueuePage({
     ...(search
       ? {
           OR: [
-            { jobId: { contains: search, mode: "insensitive" } },
-            { receiptNumber: { contains: search, mode: "insensitive" } },
             { aucAssetBarcode: { contains: search, mode: "insensitive" } },
             { serialNumber: { contains: search, mode: "insensitive" } },
-            { macAddress: { contains: search, mode: "insensitive" } },
             { hostname: { contains: search, mode: "insensitive" } },
             { customer: { fullName: { contains: search, mode: "insensitive" } } },
-            { customer: { phoneNumber: { contains: search, mode: "insensitive" } } },
-            { customer: { outlookEmail: { contains: search, mode: "insensitive" } } },
           ],
         }
       : {}),
   };
 
   const activeWhere: RepairJobWhereInput = {
-    status: { in: ["Received", "Diagnosing", "Repairing"] },
+    status: { in: ["Received", "Repairing"] },
     ...(requiresAssignment
       ? isSecondaryAdmin
         ? { assignedSecondaryAdminId: session.userId }
@@ -70,7 +105,7 @@ export default async function WorkQueuePage({
       : {}),
   };
 
-  const [workQueue, activeJobs] = await Promise.all([
+  const [workQueue, activeJobs, technicianOptions] = await Promise.all([
     prisma.repairJob.findMany({
       where,
       include: { customer: true, technician: true },
@@ -83,19 +118,24 @@ export default async function WorkQueuePage({
       orderBy: [{ expectedCompletionDate: "asc" }, { receivedAt: "asc" }, { id: "asc" }],
       take: 50,
     }),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { role: { in: ["Technician", "Admin"] }, isActive: true, deletedAt: null },
+          select: { id: true, fullName: true, role: true },
+          orderBy: { fullName: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
-
-  const today = new Date().toISOString().slice(0, 10);
 
   // Overdue-first, then earliest deadline, then received order (mirrors the SQL ORDER BY).
   const sortedQueue = [...workQueue].sort((a, b) => {
-    const aOverdue = a.expectedCompletionDate && a.expectedCompletionDate.toISOString().slice(0, 10) < today && a.status !== "Delivered";
-    const bOverdue = b.expectedCompletionDate && b.expectedCompletionDate.toISOString().slice(0, 10) < today && b.status !== "Delivered";
+    const aOverdue = isJobOverdue(a);
+    const bOverdue = isJobOverdue(b);
     if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
     const aDate = a.expectedCompletionDate?.getTime() ?? Infinity;
     const bDate = b.expectedCompletionDate?.getTime() ?? Infinity;
     if (aDate !== bDate) return aDate - bDate;
-    const order = { Received: 1, Diagnosing: 2, Repairing: 3, Ready: 4, Delivered: 5 } as const;
+    const order = { Received: 1, Repairing: 2, Ready: 3, Delivered: 4 } as const;
     const aOrder = order[a.status as keyof typeof order] ?? 6;
     const bOrder = order[b.status as keyof typeof order] ?? 6;
     if (aOrder !== bOrder) return aOrder - bOrder;
@@ -105,22 +145,51 @@ export default async function WorkQueuePage({
   const currentQueueItem = activeJobs[0] ?? null;
   const remainingActiveJobs = activeJobs.length;
 
-  const statusTotals: Record<string, number> = { Received: 0, Diagnosing: 0, Repairing: 0, Ready: 0, Delivered: 0 };
+  const statusTotals: Record<string, number> = { Received: 0, Repairing: 0, Ready: 0, Delivered: 0 };
+  let overdueTotal = 0;
   for (const item of workQueue) {
     if (item.status in statusTotals) statusTotals[item.status]++;
+    if (isJobOverdue(item)) overdueTotal++;
   }
 
   return (
     <main className="p-8">
-      <h1 className="text-lg font-semibold text-slate-900">Work Queue</h1>
-      <p className="mt-1 text-sm text-slate-500">All Registered Devices</p>
+      <h1 className="text-lg font-semibold text-stone-900">Work Queue</h1>
+      <p className="mt-1 text-sm text-stone-500">All Registered Devices</p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {Object.entries(statusTotals).map(([status, count]) => (
-          <span key={status} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-            {status}: {count}
-          </span>
-        ))}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(statusTotals).map(([status, count]) => (
+            <span key={status} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+              {status}: {count}
+            </span>
+          ))}
+          {overdueTotal > 0 && (
+            <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Overdue: {overdueTotal}
+            </span>
+          )}
+        </div>
+
+        <div className="flex rounded-full bg-stone-100 p-1 text-xs font-semibold">
+          <Link
+            href={listHref}
+            className={`rounded-full px-3 py-1.5 transition-colors ${
+              view === "list" ? "bg-white text-ink shadow-sm" : "text-stone-500 hover:text-stone-700"
+            }`}
+          >
+            List
+          </Link>
+          <Link
+            href={boardHref}
+            className={`rounded-full px-3 py-1.5 transition-colors ${
+              view === "board" ? "bg-white text-ink shadow-sm" : "text-stone-500 hover:text-stone-700"
+            }`}
+          >
+            Board
+          </Link>
+        </div>
       </div>
 
       {currentQueueItem && (
@@ -128,10 +197,10 @@ export default async function WorkQueuePage({
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
             Current focus · {remainingActiveJobs} active job(s)
           </p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">
-            {currentQueueItem.jobId} — {currentQueueItem.customer.fullName}
+          <h2 className="mt-1 text-base font-semibold text-stone-900">
+            {currentQueueItem.hostname || "Device"} — {currentQueueItem.customer.fullName}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">{currentQueueItem.reportedProblem}</p>
+          <p className="mt-1 text-sm text-stone-500">{currentQueueItem.reportedProblem}</p>
           <div className="mt-3 flex gap-2">
             <Link href={`/repairs/${currentQueueItem.id}`} className="btn-primary">
               Update repair
@@ -141,11 +210,12 @@ export default async function WorkQueuePage({
       )}
 
       <form className="card mt-6 flex flex-wrap gap-3 p-4" method="GET">
+        <input type="hidden" name="view" value={view} />
         <input
           type="text"
           name="search"
           defaultValue={search}
-          placeholder="Search job ID, barcode, serial, customer…"
+          placeholder="Search hostname, serial, customer…"
           className="input flex-1 min-w-[220px]"
         />
         <select name="status" defaultValue={statusFilter} className="input w-40">
@@ -161,68 +231,23 @@ export default async function WorkQueuePage({
         </button>
       </form>
 
-      <div className="card mt-4 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Job ID</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Problem</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Deadline</th>
-              <th className="px-4 py-3">Technician</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedQueue.map((d) => {
-              const overdue =
-                d.expectedCompletionDate &&
-                d.expectedCompletionDate.toISOString().slice(0, 10) < today &&
-                d.status !== "Delivered";
-              return (
-                <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-slate-900">{d.jobId}</td>
-                  <td className="px-4 py-3">{d.customer.fullName}</td>
-                  <td className="px-4 py-3 max-w-[240px] truncate text-slate-500">{d.reportedProblem}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className={`px-4 py-3 ${overdue ? "font-semibold text-red-600" : "text-slate-500"}`}>
-                    {d.expectedCompletionDate ? d.expectedCompletionDate.toISOString().slice(0, 10) : "—"}
-                    {overdue ? " · overdue" : ""}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{d.technician?.fullName ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Link href={`/repairs/${d.id}`} className="text-brand-600 hover:underline">
-                        Update
-                      </Link>
-                      {isAdmin && (
-                        <Link href={`/repairs/${d.id}/assign`} className="text-brand-600 hover:underline">
-                          Assign
-                        </Link>
-                      )}
-                      <Link href={`/devices/${d.id}`} className="text-slate-400 hover:underline">
-                        View
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {sortedQueue.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
-                  No devices match these filters.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <WorkQueueBoard
+        jobs={sortedQueue.map((d) => ({
+          id: d.id,
+          hostname: d.hostname,
+          serialNumber: d.serialNumber,
+          aucAssetBarcode: d.aucAssetBarcode,
+          status: d.status,
+          expectedCompletionDate: d.expectedCompletionDate,
+          overdue: isJobOverdue(d),
+          customer: { fullName: d.customer.fullName },
+          technician: d.technician ? { id: d.technician.id, fullName: d.technician.fullName } : null,
+        }))}
+        isAdmin={isAdmin}
+        technicianOptions={technicianOptions}
+        view={view}
+        canSendWhatsapp={canSendWhatsapp}
+      />
     </main>
   );
 }

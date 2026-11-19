@@ -2,9 +2,15 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { loadDeviceForRole } from "@/lib/devices";
+import { isMyJob } from "@/lib/my-jobs";
 import { manufacturerLookup } from "@/lib/device-manufacturer";
 import { DeleteDeviceButton } from "@/components/devices/DeleteDeviceButton";
 import { RevealOutlookPasswordButton } from "@/components/devices/RevealOutlookPasswordButton";
+import { SelfAssignButton } from "@/components/devices/SelfAssignButton";
+import { RecordDeviceView } from "@/components/devices/RecordDeviceView";
+import { BackLink } from "@/components/nav/BackLink";
+import { deviceLabel } from "@/lib/device-label";
+import { hasStoredCredential } from "@/lib/credentials";
 
 function fmt(d: Date | null) {
   if (!d) return "—";
@@ -26,39 +32,76 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
   const canEdit = ["Admin", "Reception", "Technician"].includes(session.role);
   const canDelete = ["Admin", "Technician"].includes(session.role);
+  // Matches the role + ownership check enforced server-side by
+  // PATCH /api/repairs/[id]: Admin can always update a device's status.
+  // Secondary Admin already only reaches this page for devices assigned
+  // to them (loadDeviceForRole scopes the query), so no extra check is
+  // needed here. Technician is scoped to their own jobs — registered by
+  // them (acceptedBy) or assigned to them — same definition as "My Jobs"
+  // on the dashboard. Reception has no status-update access, same as today.
+  const canUpdateStatus =
+    session.role === "Admin" ||
+    session.role === "Secondary Admin" ||
+    (session.role === "Technician" && isMyJob(device, session.userId));
+  // Registering a device does NOT formally assign the technician who
+  // registered it (src/app/api/devices/register/route.ts forces
+  // assignedTechnicianId blank even for a Technician registrant) — only
+  // acceptedBy is set. So a device can be "mine" per isMyJob (above, used
+  // for looser things like the Update Status button and the dashboard's
+  // My Jobs list) while still showing "Unassigned" in the Technician
+  // field everywhere else. Offer the explicit claim action whenever
+  // that's the case, so status auto-advances (see
+  // /api/repairs/[id]/self-assign) only once the device is genuinely
+  // assigned — not the moment it's merely "mine" in the loose sense.
+  const canSelfAssign = session.role === "Technician" && !device.assignedTechnicianId && device.status !== "Delivered";
 
   return (
     <main className="p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-start justify-between">
+      <RecordDeviceView deviceId={device.id} />
+      {/* Reached from the devices list, Work Queue, the dashboard, and the
+          receipt preview page — no single parent, so this returns to
+          whichever of those the user actually came from. */}
+      <BackLink href="/devices" label="Back to Devices" useHistory />
+
+      <div className="mx-auto mt-2 max-w-4xl space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Job {device.jobId}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{deviceLabel(device.hostname)}</p>
             <h1 className="text-lg font-semibold text-slate-900">{device.customer.fullName}</h1>
             <span className="mt-1 inline-block rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
               {device.status}
             </span>
           </div>
           <div className="flex gap-2">
+            {canSelfAssign && <SelfAssignButton deviceId={device.id} />}
+            {canUpdateStatus && (
+              <Link href={`/repairs/${device.id}`} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+                Update Status
+              </Link>
+            )}
             {canEdit && (
               <Link href={`/devices/${device.id}/edit`} className="btn-primary">
                 Edit
               </Link>
             )}
-            {canDelete && <DeleteDeviceButton deviceId={device.id} jobId={device.jobId} />}
+            {canDelete && <DeleteDeviceButton deviceId={device.id} label={deviceLabel(device.hostname)} />}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-slate-900">Customer</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <Row label="Name" value={`${device.customer.title ?? ""} ${device.customer.fullName}`.trim()} />
               <Row label="Phone" value={device.customer.phoneNumber} />
               <Row label="Outlook email" value={device.customer.outlookEmail} />
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Outlook password</dt>
-                <dd className="text-right">
-                  <RevealOutlookPasswordButton deviceId={device.id} />
+              <div>
+                <dt className="text-xs text-slate-400">Outlook password</dt>
+                <dd className="mt-0.5">
+                  <RevealOutlookPasswordButton
+                    deviceId={device.id}
+                    hasPassword={hasStoredCredential(device.customer.outlookPasswordEncrypted)}
+                  />
                 </dd>
               </div>
               {device.customer.regionalOffice && <Row label="Regional office" value={device.customer.regionalOffice} />}
@@ -68,11 +111,11 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-slate-900">Device</h2>
             <dl className="mt-3 space-y-2 text-sm">
-              <Row label="AUC barcode" value={device.aucAssetBarcode} />
+              <Row label="PC barcode" value={device.aucAssetBarcode} />
               <Row label="Serial number" value={device.serialNumber} />
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Manufacturer</dt>
-                <dd className="text-right text-slate-700">
+              <div>
+                <dt className="text-xs text-slate-400">Manufacturer</dt>
+                <dd className="mt-0.5 break-words text-slate-700">
                   {lookup.manufacturer}
                   {lookup.productNumber && ` · ${lookup.productNumber}`}{" "}
                   <Link href={`/devices/${device.id}/manufacturer`} className="text-brand-600 hover:underline">
@@ -91,7 +134,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </dl>
           </section>
 
-          <section className="card p-5 col-span-2">
+          <section className="card p-5 sm:col-span-2">
             <h2 className="text-sm font-semibold text-slate-900">Reported problem</h2>
             <p className="mt-2 text-sm text-slate-600">{device.reportedProblem}</p>
             {device.technicianDiagnosis && (
@@ -126,7 +169,7 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             </dl>
           </section>
 
-          <section className="card col-span-2 p-5">
+          <section className="card sm:col-span-2 p-5">
             <h2 className="text-sm font-semibold text-slate-900">Status history</h2>
             {device.statusHistory.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">No status changes recorded.</p>
@@ -147,26 +190,46 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
             )}
           </section>
 
-          <section className="card col-span-2 p-5">
+          <section className="card sm:col-span-2 p-5">
             <h2 className="text-sm font-semibold text-slate-900">Receipts</h2>
             {device.receipts.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">Generated receipts will appear here.</p>
             ) : (
               <ul className="mt-3 space-y-1 text-sm">
                 {device.receipts.map((r: (typeof device.receipts)[number]) => (
-                  <li key={r.id} className="flex justify-between border-b border-slate-100 py-1.5 last:border-0">
+                  <li key={r.id} className="flex items-center justify-between gap-4 border-b border-slate-100 py-1.5 last:border-0">
                     <span>
                       {r.receiptType} · {r.receiptReference}
+                      {r.printCount > 0 && (
+                        <span className="ml-2 text-xs text-slate-400">(printed {r.printCount}×)</span>
+                      )}
                     </span>
-                    <span className="text-slate-400">{fmt(r.generatedAt)}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-slate-400">{fmt(r.generatedAt)}</span>
+                      {["Admin", "Reception", "Technician"].includes(session.role) && (
+                        <Link href={`/receipts/${r.id}`} className="text-brand-600 hover:underline">
+                          {r.receiptType.toLowerCase() === "delivery" ? "Handover form" : "Preview"}
+                        </Link>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
           </section>
 
-          <section className="card col-span-2 p-5">
-            <h2 className="text-sm font-semibold text-slate-900">WhatsApp messages</h2>
+          <section className="card sm:col-span-2 p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">WhatsApp messages</h2>
+              {["Received", "Ready", "Delivered"].includes(device.status) && (
+                <Link
+                  href={`/devices/${device.id}/whatsapp?type=${device.status}`}
+                  className="btn-primary bg-emerald-600 px-3 py-1.5 text-xs hover:bg-emerald-700"
+                >
+                  Prepare {device.status} Message
+                </Link>
+              )}
+            </div>
             {device.whatsappLogs.length === 0 ? (
               <p className="mt-2 text-sm text-slate-400">No WhatsApp messages prepared yet.</p>
             ) : (
@@ -190,9 +253,9 @@ export default async function ViewDevicePage({ params }: { params: Promise<{ id:
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-slate-400">{label}</dt>
-      <dd className="text-right text-slate-700">{value}</dd>
+    <div>
+      <dt className="text-xs text-slate-400">{label}</dt>
+      <dd className="mt-0.5 break-words text-slate-700">{value}</dd>
     </div>
   );
 }
