@@ -11,15 +11,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Circuit-indigo: primary accent. Replaces the generic SaaS blue.
+        // Teal: primary accent (was circuit-indigo/purple until 2026-11-22).
         brand: {
           50: "rgb(var(--brand-50) / <alpha-value>)",
           100: "rgb(var(--brand-100) / <alpha-value>)",
           200: "rgb(var(--brand-200) / <alpha-value>)",
           300: "rgb(var(--brand-300) / <alpha-value>)",
-          400: "#8a5cff",
-          500: "#7c3aed",
-          600: "#6b21d8",
+          400: "#2dd4bf",
+          500: "#14b8a6",
+          600: "#0d9488",
           700: "rgb(var(--brand-700) / <alpha-value>)",
         },
         // Warm solder-orange / candy accents: used for the second and third
@@ -40,9 +40,9 @@ const config: Config = {
         // violet-black so it reads as part of the same gradient family
         // instead of a flat neutral slab.
         ink: {
-          DEFAULT: "#170f2e",
-          soft: "#241a42",
-          muted: "#a79bd1",
+          DEFAULT: "#0f1a19",
+          soft: "#16231f",
+          muted: "#8fb5ae",
         },
         // Stone: warm-neutral scale replacing the default blue-grey slate,
         // used as the workspace background + hairlines throughout the app.
@@ -65,7 +65,7 @@ const config: Config = {
         status: {
           received: "#64748b",
           diagnosing: "#f59e0b",
-          repairing: "#7c3aed",
+          repairing: "#3b82f6",
           ready: "#10b981",
           delivered: "#06b6d4",
         },
@@ -81,15 +81,15 @@ const config: Config = {
         "3xl": "1.75rem",
       },
       backgroundImage: {
-        "brand-gradient": "linear-gradient(135deg, #7c3aed 0%, #d946ef 50%, #ff6a3d 100%)",
-        "brand-gradient-soft": "linear-gradient(135deg, #f2efff 0%, #ffe4f5 50%, #ffedd9 100%)",
-        "ink-gradient": "linear-gradient(180deg, #1e1240 0%, #170f2e 55%, #240f33 100%)",
-        "aurora": "radial-gradient(45% 45% at 15% 10%, rgba(124,58,237,0.22) 0%, rgba(124,58,237,0) 100%), radial-gradient(40% 40% at 85% 0%, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0) 100%), radial-gradient(50% 50% at 90% 85%, rgba(6,182,212,0.16) 0%, rgba(6,182,212,0) 100%), radial-gradient(40% 40% at 5% 90%, rgba(245,158,11,0.14) 0%, rgba(245,158,11,0) 100%)",
+        "brand-gradient": "linear-gradient(135deg, #0f766e 0%, #0d9488 45%, #059669 100%)",
+        "brand-gradient-soft": "linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 50%, #f7fee7 100%)",
+        "ink-gradient": "linear-gradient(180deg, #0e1f1d 0%, #0b1514 55%, #0f1a14 100%)",
+        "aurora": "radial-gradient(45% 45% at 15% 10%, rgba(20,184,166,0.20) 0%, rgba(20,184,166,0) 100%), radial-gradient(40% 40% at 85% 0%, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0) 100%), radial-gradient(50% 50% at 90% 85%, rgba(6,182,212,0.14) 0%, rgba(6,182,212,0) 100%), radial-gradient(40% 40% at 5% 90%, rgba(132,204,22,0.10) 0%, rgba(132,204,22,0) 100%)",
       },
       boxShadow: {
-        glow: "0 8px 30px -8px rgba(124,58,237,0.45)",
-        "glow-lg": "0 20px 60px -15px rgba(124,58,237,0.5)",
-        candy: "0 10px 30px -10px rgba(217,70,239,0.35)",
+        glow: "0 8px 30px -8px rgba(13,148,136,0.45)",
+        "glow-lg": "0 20px 60px -15px rgba(13,148,136,0.5)",
+        candy: "0 10px 30px -10px rgba(16,185,129,0.35)",
       },
       keyframes: {
         "bell-shake": {

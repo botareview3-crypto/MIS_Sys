@@ -31,7 +31,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { workspace, administration } = getNavGroups(session.role);
+  const { outside, workspace, administration } = getNavGroups(session.role);
   // Local/Intra (and any future parent items) default to expanded.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -46,7 +46,7 @@ export function Sidebar({
       ...(item.children ? collectHrefs(item.children) : []),
     ]);
   }
-  const allHrefs = [...collectHrefs(workspace), ...collectHrefs(administration)];
+  const allHrefs = [...collectHrefs(outside), ...collectHrefs(workspace), ...collectHrefs(administration)];
   const matchingHrefs = allHrefs.filter((href) =>
     href === "/dashboard" ? pathname === href : pathname === href || pathname.startsWith(href + "/")
   );
@@ -164,7 +164,7 @@ export function Sidebar({
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-pop-pink/20 blur-3xl"
+        className="pointer-events-none absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl"
         aria-hidden
       />
 
@@ -186,8 +186,10 @@ export function Sidebar({
       </div>
 
       <nav className="no-scrollbar relative flex-1 overflow-y-auto px-3 py-2">
-        {renderGroup("Workspace", workspace)}
-        {administration.length > 0 && renderGroup("Administration", administration)}
+        {/* Two sections (2026-11-22): Outside, then Configuration — which holds
+            everything the sidebar had before Outside Tasks was added. */}
+        {renderGroup("Outside", outside)}
+        {renderGroup("Configuration", [...workspace, ...administration])}
       </nav>
 
       <div className="relative border-t border-white/[0.08] p-3">

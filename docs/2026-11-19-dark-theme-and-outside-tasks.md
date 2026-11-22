@@ -42,3 +42,20 @@ there when convenient.)
 
 **Not verified:** `prisma generate`, `tsc`, `next build` were not run (no
 network in the sandbox). Run `npm run build` before relying on it.
+
+---
+
+## 2026-11-22 addendum — teal accent + sidebar sections
+
+- Accent changed from purple to teal/green (dark and light themes):
+  `tailwind.config.ts` (brand/ink/status colours, gradients, shadows) and the
+  variables + dark overrides in `src/app/globals.css`. Decorative pink glows
+  (`bg-pop-pink/20|25`) are overridden to emerald in `globals.css`.
+  "Repairing" status colour changed from violet to blue.
+- Sidebar now has two sections: **Outside** (Outside Tasks) and
+  **Configuration** (everything the sidebar had before Outside Tasks:
+  Dashboard, Local, Intra, Work Queue and, for Admin, the Administration
+  items — now under one heading). `src/lib/nav.ts` returns
+  `{ outside, workspace, administration }`; `src/components/Sidebar.tsx`
+  renders them as the two sections.
+- Not seen in a browser; tsc/build not run (no network in the sandbox).

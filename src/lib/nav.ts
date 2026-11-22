@@ -71,11 +71,15 @@ export function getNavGroups(role: SessionPayload["role"]) {
     { label: "Local", icon: MapPin, children: deviceItems("/guide/local") },
     { label: "Intra", icon: Network, children: deviceItems("/guide/intra") },
     { href: "/work-queue", label: "Work Queue", icon: ClipboardList },
-    // Outside Tasks (2026-11-19): every role logs their own outside-office
-    // work here. Admin + Secondary Admin also see everyone's entries — that
-    // rule is enforced server-side in the page query and the API, not here.
-    { href: "/outside-tasks", label: "Outside Tasks", icon: Briefcase },
   ];
+
+  // Sidebar sections (2026-11-22): "Outside" holds Outside Tasks; "Configuration"
+  // holds everything the sidebar had before Outside Tasks was added
+  // (`workspace` + `administration`, rendered under one heading in Sidebar.tsx).
+  // Outside Tasks: every role logs their own outside-office work. Admin +
+  // Secondary Admin also see everyone's entries — that rule is enforced
+  // server-side in the page query and the API, not here.
+  const outside: NavItem[] = [{ href: "/outside-tasks", label: "Outside Tasks", icon: Briefcase }];
 
   const administration: NavItem[] = isAdmin
     ? [
@@ -86,5 +90,5 @@ export function getNavGroups(role: SessionPayload["role"]) {
       ]
     : [];
 
-  return { workspace, administration };
+  return { outside, workspace, administration };
 }
