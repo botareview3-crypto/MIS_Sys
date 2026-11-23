@@ -59,3 +59,17 @@ network in the sandbox). Run `npm run build` before relying on it.
   `{ outside, workspace, administration }`; `src/components/Sidebar.tsx`
   renders them as the two sections.
 - Not seen in a browser; tsc/build not run (no network in the sandbox).
+
+---
+
+## 2026-11-23 addendum — navy & cyan palette, "Assistance" names
+
+- Palette changed to **navy + cyan** (chosen from the colour-options canvas):
+  navy surfaces (`--bg/--surface/--stone-*` in the dark block of
+  `src/app/globals.css`), cyan brand gradient/accents (`tailwind.config.ts`
+  brand/ink/gradients/shadows). Text on the cyan gradient is dark navy
+  (`.btn-primary`, `.bg-brand-gradient.text-white` override, TopBar bell).
+  Light theme recoloured to match (white + blue-grey + cyan).
+- Renamed: sidebar section "Outside" -> **Assistance**; page/nav item
+  "Outside Tasks" -> **Assistance Log**. The route is still `/outside-tasks`
+  and the code/table names are unchanged (only user-visible labels changed).

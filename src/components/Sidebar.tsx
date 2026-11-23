@@ -186,9 +186,9 @@ export function Sidebar({
       </div>
 
       <nav className="no-scrollbar relative flex-1 overflow-y-auto px-3 py-2">
-        {/* Two sections (2026-11-22): Outside, then Configuration — which holds
+        {/* Two sections: Assistance, then Configuration — which holds
             everything the sidebar had before Outside Tasks was added. */}
-        {renderGroup("Outside", outside)}
+        {renderGroup("Assistance", outside)}
         {renderGroup("Configuration", [...workspace, ...administration])}
       </nav>
 

@@ -158,7 +158,7 @@ export function TopBar({
               hasUnread
                 ? "animate-bell-shake text-solder-500 motion-reduce:animate-none"
                 : active || open
-                  ? "text-white"
+                  ? "text-[#03161c]"
                   : "text-stone-500"
             }
           />

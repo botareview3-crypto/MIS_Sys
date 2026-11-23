@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!outsideTasksConfigured) {
-    return NextResponse.json({ error: "Outside Tasks storage is not set up yet. Ask an administrator." }, { status: 503 });
+    return NextResponse.json({ error: "Assistance Log storage is not set up yet. Ask an administrator." }, { status: 503 });
   }
 
   const parsed = Schema.safeParse(await req.json().catch(() => null));

@@ -20,9 +20,9 @@ export default async function OutsideTasksPage({
   if (!outsideTasksConfigured) {
     return (
       <main className="p-8">
-        <h1 className="text-lg font-semibold text-stone-900">Outside Tasks</h1>
+        <h1 className="text-lg font-semibold text-stone-900">Assistance Log</h1>
         <div className="card mt-6 p-6 text-sm text-stone-500">
-          Outside Tasks storage is not set up yet. An administrator needs to add the
+          Assistance Log storage is not set up yet. An administrator needs to add the
           OUTSIDE_TASKS_DATABASE_URL setting.
         </div>
       </main>
@@ -47,7 +47,7 @@ export default async function OutsideTasksPage({
 
   return (
     <main className="p-8">
-      <h1 className="text-lg font-semibold text-stone-900">Outside Tasks</h1>
+      <h1 className="text-lg font-semibold text-stone-900">Assistance Log</h1>
       <p className="mt-1 text-sm text-stone-500">
         {viewAll
           ? "Work logged by staff outside the office."
